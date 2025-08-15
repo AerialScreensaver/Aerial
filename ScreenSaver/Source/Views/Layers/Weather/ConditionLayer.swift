@@ -53,11 +53,24 @@ class ConditionLayer: CALayer {
         let combinedHeight = tempBlock.frame.height + feelsBlock.frame.height
 
         // Create a symbol that fits the size
-        let imglayer = ConditionSymbolLayer(weather: condition.weather![0],
-                                            dt: condition.dt!,
-                                            sunrise: condition.sys!.sunrise,
-                                            sunset: condition.sys!.sunset,
-                                            size: Int(combinedHeight))
+        let imglayer: ConditionSymbolLayer
+        if let weather = condition.weather?.first,
+           let dt = condition.dt,
+           let sys = condition.sys {
+            imglayer = ConditionSymbolLayer(weather: weather,
+                                          dt: dt,
+                                          sunrise: sys.sunrise,
+                                          sunset: sys.sunset,
+                                          size: Int(combinedHeight))
+        } else {
+            // Fallback with default values if weather data is incomplete
+            let defaultWeather = OWWeather(id: 800, main: "Clear", weatherDescription: "clear sky", icon: "01d")
+            imglayer = ConditionSymbolLayer(weather: defaultWeather,
+                                          dt: Int(Date().timeIntervalSince1970),
+                                          sunrise: 0,
+                                          sunset: 0,
+                                          size: Int(combinedHeight))
+        }
 
         // Add the Wind layer
         var windHeight: CGFloat = 0
@@ -99,7 +112,7 @@ class ConditionLayer: CALayer {
     func makeCityNameBlock() -> CATextLayer {
         let temp = CATextLayer()
         temp.isWrapped = true
-        temp.string = condition!.name
+        temp.string = condition?.name ?? "--"
         (temp.font, temp.fontSize) = temp.makeFont(name: PrefsInfo.weather.fontName, size: PrefsInfo.weather.fontSize/1.5)
         temp.alignmentMode = .center
         // ReRect the temperature
@@ -116,10 +129,20 @@ class ConditionLayer: CALayer {
 
         // First we start with the real temperature
         // We keep the decimal for now on celcius, this may become optional
+        guard let condition = condition, let main = condition.main else {
+            // Fallback for missing weather data
+            temp.string = "--°"
+            (temp.font, temp.fontSize) = temp.makeFont(name: PrefsInfo.weather.fontName, size: PrefsInfo.weather.fontSize)
+            let rect = temp.calculateRect(string: temp.string as! String, font: temp.font as! NSFont)
+            temp.frame = rect
+            temp.contentsScale = self.contentsScale
+            return temp
+        }
+        
         if PrefsInfo.weather.degree == .celsius {
-            temp.string = "\(condition!.main!.temp)°"
+            temp.string = "\(main.temp)°"
         } else {
-            temp.string = "\(Int(condition!.main!.temp))°"
+            temp.string = "\(Int(main.temp))°"
         }
 
         (temp.font, temp.fontSize) = temp.makeFont(name: PrefsInfo.weather.fontName, size: PrefsInfo.weather.fontSize)
@@ -135,10 +158,21 @@ class ConditionLayer: CALayer {
     func makeFeelsLikeBlock() -> CATextLayer {
         // Make a vertically centered layer for t°
         let feel = CAVCTextLayer()
+        
+        guard let condition = condition, let main = condition.main else {
+            // Fallback for missing weather data
+            feel.string = "(--°)"
+            feel.contentsScale = self.contentsScale
+            (feel.font, feel.fontSize) = feel.makeFont(name: PrefsInfo.weather.fontName, size: PrefsInfo.weather.fontSize/2.2)
+            let rect2 = feel.calculateRect(string: feel.string as! String, font: feel.font as! NSFont)
+            feel.frame = rect2
+            return feel
+        }
+        
         if PrefsInfo.weather.degree == .celsius {
-            feel.string = "(\(condition!.main!.feelsLike)°)"
+            feel.string = "(\(main.feelsLike)°)"
         } else {
-            feel.string = "(\(Int(condition!.main!.feelsLike))°)"
+            feel.string = "(\(Int(main.feelsLike))°)"
         }
 
         feel.contentsScale = self.contentsScale
