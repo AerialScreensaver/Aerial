@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildMachineOSBuild</key>
+	<string>25A5338b</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>Aerial</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.JohnCoates.Aerial</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Aerial</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>4.0.0pa1</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>25A5327f</string>
+	<key>DTPlatformName</key>
+	<string>macosx</string>
+	<key>DTPlatformVersion</key>
+	<string>26.0</string>
+	<key>DTSDKBuild</key>
+	<string>25A5327f</string>
+	<key>DTSDKName</key>
+	<string>macosx26.0</string>
+	<key>DTXcode</key>
+	<string>2600</string>
+	<key>DTXcodeBuild</key>
+	<string>17A5295f</string>
+	<key>LSApplicationCategoryType</key>
+	<string></string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.14</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Aerial uses location services to calculate Sunset and Sunrise times from your position</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aerial uses location services to calculate Sunset and Sunrise times from your position</string>
+	<key>NSPrincipalClass</key>
+	<string>AerialView</string>
+</dict>
+</plist>

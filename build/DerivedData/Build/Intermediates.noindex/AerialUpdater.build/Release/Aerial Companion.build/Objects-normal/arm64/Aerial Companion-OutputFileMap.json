@@ -1,0 +1,196 @@
+{
+  "" : {
+    "const-values" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.swiftconstvalues",
+    "dependencies" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.d",
+    "diagnostics" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.dia",
+    "emit-module-dependencies" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary-emit-module.dia",
+    "pch" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.swiftdeps"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/AppDelegate.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/AppDelegate.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/FirstTimeSetupWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FirstTimeSetupWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FirstTimeSetupWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FirstTimeSetupWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/MenuModeViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuModeViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuModeViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuModeViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/NextViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NextViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NextViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NextViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/ReleaseViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ReleaseViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ReleaseViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ReleaseViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/ThanksViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ThanksViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ThanksViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ThanksViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/First Time setup/WelcomeViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/WelcomeViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/WelcomeViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/WelcomeViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/BackgroundCheck.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/BackgroundCheck.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/BackgroundCheck.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/BackgroundCheck.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/Locations.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Locations.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Locations.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Locations.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/NightShift.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NightShift.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NightShift.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NightShift.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/PluginBridge.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/PluginBridge.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/PluginBridge.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/PluginBridge.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Consts.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Consts.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Consts.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Consts.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/DesktopLauncher.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/DesktopLauncher.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/DesktopLauncher.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/DesktopLauncher.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/ErrorLog.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ErrorLog.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ErrorLog.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ErrorLog.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/FileDownloader.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FileDownloader.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FileDownloader.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/FileDownloader.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/Helpers.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Helpers.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Helpers.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Helpers.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/NSButton+Image.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSButton+Image.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSButton+Image.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSButton+Image.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/NSScreen+Id.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSScreen+Id.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSScreen+Id.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/NSScreen+Id.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/String+version.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/String+version.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/String+version.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/String+version.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/HostedSettingsWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/HostedSettingsWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/HostedSettingsWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/HostedSettingsWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/LaunchAgent.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LaunchAgent.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LaunchAgent.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LaunchAgent.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/LocalVersion.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LocalVersion.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LocalVersion.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/LocalVersion.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Manifest/CachedManifest.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CachedManifest.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CachedManifest.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CachedManifest.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Manifest/Manifest.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Manifest.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Manifest.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Manifest.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Preferences.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Preferences.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Preferences.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Preferences.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/SaverLauncher.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SaverLauncher.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SaverLauncher.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SaverLauncher.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/SystemPrefs.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SystemPrefs.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SystemPrefs.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SystemPrefs.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/Update.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Update.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Update.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Update.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/UpdaterVersion.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdaterVersion.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdaterVersion.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdaterVersion.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/CompanionPopoverViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CompanionPopoverViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CompanionPopoverViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/CompanionPopoverViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/ExperimentalReadmeWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ExperimentalReadmeWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ExperimentalReadmeWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/ExperimentalReadmeWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/InfoWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/InfoWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/InfoWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/InfoWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/MenuViewController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuViewController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuViewController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/MenuViewController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/SetDefaultWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SetDefaultWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SetDefaultWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SetDefaultWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/SettingsWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SettingsWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SettingsWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/SettingsWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/Companion/UI/UpdateCheckWindowController.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdateCheckWindowController.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdateCheckWindowController.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/UpdateCheckWindowController.o"
+  },
+  "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

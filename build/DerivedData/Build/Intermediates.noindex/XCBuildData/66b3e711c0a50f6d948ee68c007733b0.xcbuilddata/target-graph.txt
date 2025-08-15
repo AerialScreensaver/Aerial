@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'Aerial Companion' in project 'AerialUpdater'
+➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+Target 'Sparkle' in project 'Sparkle' (no dependencies)

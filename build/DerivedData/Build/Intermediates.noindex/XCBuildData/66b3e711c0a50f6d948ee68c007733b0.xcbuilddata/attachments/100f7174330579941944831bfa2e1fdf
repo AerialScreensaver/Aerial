@@ -1,0 +1,37 @@
+/Users/guillaume/dev/AerialCompanion/Companion/Model/UpdaterVersion.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/NextViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/NSButton+Image.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/NSScreen+Id.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Manifest/Manifest.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/InfoWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/BackgroundCheck.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/String+version.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Consts.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/LocalVersion.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/HostedSettingsWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Manifest/CachedManifest.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Update.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/SaverLauncher.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/ThanksViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/DesktopLauncher.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/PluginBridge.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/MenuModeViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/FirstTimeSetupWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/SettingsWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/WelcomeViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/First\ Time\ setup/ReleaseViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/MenuViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/Helpers.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/UpdateCheckWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Preferences.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/ExperimentalReadmeWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/Locations.swift
+/Users/guillaume/dev/AerialCompanion/Companion/AppDelegate.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/LaunchAgent.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/CompanionPopoverViewController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/UI/SetDefaultWindowController.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/FileDownloader.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Helpers/ErrorLog.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/SystemPrefs.swift
+/Users/guillaume/dev/AerialCompanion/Companion/Model/Bridge/NightShift.swift
+/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial\ Companion.build/DerivedSources/GeneratedAssetSymbols.swift

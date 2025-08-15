@@ -1,0 +1,12 @@
+{
+  "/Users/guillaume/dev/AerialCompanion/Companion/Model/UpdaterVersion.swift" : {
+    "abi-baseline-json" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial_Companion.abi.json",
+    "const-values" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.swiftconstvalues",
+    "dependencies" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.d",
+    "diagnostics" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial Companion-primary.dia",
+    "objc-header" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial_Companion-Swift.h",
+    "swiftdoc" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial_Companion.swiftdoc",
+    "swiftmodule" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial_Companion.swiftmodule",
+    "swiftsourceinfo" : "/Users/guillaume/dev/AerialCompanion/build/DerivedData/Build/Intermediates.noindex/AerialUpdater.build/Release/Aerial Companion.build/Objects-normal/arm64/Aerial_Companion.swiftsourceinfo"
+  }
+}
