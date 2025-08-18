@@ -80,7 +80,7 @@ struct NightShift {
         }
 
         // /usr/bin/corebrightnessdiag nightshift-internal | grep nextSunset | cut -d \" -f2
-        warnLog("Location services may be disabled, Night Shift can't detect Sunrise and Sunset times without them")
+        CompanionLogging.warnLog("Location services may be disabled, Night Shift can't detect Sunrise and Sunset times without them")
         return (false, nil, nil, "Location services may be disabled")
     }
 

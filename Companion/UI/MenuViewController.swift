@@ -76,7 +76,7 @@ class MenuViewController: NSViewController, UpdateCallback {
     
     // This is only called once at startup
     func updateMenuSettings() {
-        debugLog("ums")
+        CompanionLogging.debugLog("ums")
         // Desired video format
         switch Preferences.desiredVersion {
         case .beta:
@@ -125,7 +125,7 @@ class MenuViewController: NSViewController, UpdateCallback {
     
     // This is called periodically to refresh the view
     func updateMenuContent() {
-        debugLog("umc")
+        CompanionLogging.debugLog("umc")
         DispatchQueue.main.async {
             // If we have fetched the versions, put them in the UI
             if let manifest = CachedManifest.instance.manifest {
@@ -146,7 +146,7 @@ class MenuViewController: NSViewController, UpdateCallback {
             }
             
             let (statusString, shouldInstall) = Update.instance.check()
-            debugLog("\(statusString) \(shouldInstall)")
+            CompanionLogging.debugLog("\(statusString) \(shouldInstall)")
             
             self.versionLabel.stringValue = statusString
             self.goodTrick.isHidden = true
@@ -339,7 +339,7 @@ class MenuViewController: NSViewController, UpdateCallback {
         if !Bundle.main.loadNibNamed(NSNib.Name("UpdateCheckWindowController"),
                             owner: updateCheckWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for InfoWindow, please report")
+            CompanionLogging.errorLog("Could not load nib for InfoWindow, please report")
         }
         //updateCheckWindowController.setCallback(self)
         updateCheckWindowController.windowDidLoad()
@@ -361,7 +361,7 @@ class MenuViewController: NSViewController, UpdateCallback {
         if !Bundle.main.loadNibNamed(NSNib.Name("InfoWindowController"),
                             owner: infoWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for InfoWindow, please report")
+            CompanionLogging.errorLog("Could not load nib for InfoWindow, please report")
         }
         infoWindowController.windowDidLoad()
         infoWindowController.showWindow(self)

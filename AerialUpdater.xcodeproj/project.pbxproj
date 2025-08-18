@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		03076A072505EF8E00CDF16C /* kofi1@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03076A062505EF8E00CDF16C /* kofi1@2x.png */; };
-		0316C21A2577DD6B007BAF70 /* AerialDesktop.m in Sources */ = {isa = PBXBuildFile; fileRef = 0316C2182577DD6B007BAF70 /* AerialDesktop.m */; };
 		0316C21B2577DD6B007BAF70 /* AerialDesktop.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0316C2192577DD6B007BAF70 /* AerialDesktop.xib */; };
 		0316C21F2577EBF6007BAF70 /* DesktopLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */; };
 		0319375527B06FB40089A063 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0319375327B06FB40089A063 /* SettingsWindowController.swift */; };
@@ -48,24 +47,154 @@
 		03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592AB724CC80FD00C1AE52 /* Helpers.swift */; };
 		03592ABC24CC821500C1AE52 /* Update.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592ABB24CC821500C1AE52 /* Update.swift */; };
 		03592ABE24CC86E900C1AE52 /* CachedManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592ABD24CC86E900C1AE52 /* CachedManifest.swift */; };
-		035F6F1C24CC8D97002E4EEE /* ErrorLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035F6F1B24CC8D97002E4EEE /* ErrorLog.swift */; };
+		035F6F1C24CC8D97002E4EEE /* CompanionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */; };
 		036899942522608200136AE5 /* MenuView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 036899962522608200136AE5 /* MenuView.xib */; };
 		036899A925235C5A00136AE5 /* Consts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036899A825235C5A00136AE5 /* Consts.swift */; };
-		03889BFA24FA5EE4007C6B9B /* WindowMode.m in Sources */ = {isa = PBXBuildFile; fileRef = 03889BF924FA5EE4007C6B9B /* WindowMode.m */; };
 		03ADA8EC24E034A40093D0A2 /* LaunchAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */; };
-		03BA141824FA8FE800BAAE1D /* AerialWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 03BA141624FA8FE800BAAE1D /* AerialWindow.m */; };
 		03BA141924FA8FE800BAAE1D /* AerialWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 03BA141724FA8FE800BAAE1D /* AerialWindow.xib */; };
 		03C491B624FBBDA00041D71C /* ExperimentalReadmeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C491B424FBBDA00041D71C /* ExperimentalReadmeWindowController.swift */; };
 		03C491B724FBBDA00041D71C /* ExperimentalReadmeWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 03C491B524FBBDA00041D71C /* ExperimentalReadmeWindowController.xib */; };
 		03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F5824CB0CA700494D32 /* AppDelegate.swift */; };
 		03CE4F5D24CB0CA900494D32 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5C24CB0CA900494D32 /* Assets.xcassets */; };
 		03CE4F6024CB0CA900494D32 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5E24CB0CA900494D32 /* Main.storyboard */; };
-		03CE4F7E24CB43FE00494D32 /* Manifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F7D24CB43FE00494D32 /* Manifest.swift */; };
+		03CE4F7E24CB43FE00494D32 /* CompanionManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */; };
 		03CE4F8024CB4CFB00494D32 /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */; };
 		03F5E1472575360600BF4F45 /* icon-512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1462575360600BF4F45 /* icon-512@2x.png */; };
 		03F5E14A2575369200BF4F45 /* LogoIcon-128px@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */; };
+		11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371B8 /* CompanionAerialView.swift */; };
+		11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */; };
+		11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BB /* SwiftAerialWindow.swift */; };
 		73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */; };
 		F003C15429116AE1003FCB17 /* HostedSettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */; };
+		F02C822E2E4F971500D48D4B /* AerialPlayerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F32E4F70580066F2C4 /* AerialPlayerItem.swift */; };
+		F02C822F2E4F971500D48D4B /* FiltersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FFA2E4F70580066F2C4 /* FiltersViewController.swift */; };
+		F02C82302E4F971500D48D4B /* HelpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE82E4F70580066F2C4 /* HelpViewController.swift */; };
+		F02C82312E4F971500D48D4B /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
+		F02C82322E4F971500D48D4B /* VideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060802E4F70580066F2C4 /* VideoCache.swift */; };
+		F02C82332E4F971500D48D4B /* ArtworkLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BD2E4F70580066F2C4 /* ArtworkLayer.swift */; };
+		F02C82352E4F971500D48D4B /* DescriptionCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F02E4F70580066F2C4 /* DescriptionCellView.swift */; };
+		F02C82362E4F971500D48D4B /* SourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AA2E4F70580066F2C4 /* SourceList.swift */; };
+		F02C82372E4F971500D48D4B /* DateLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CD2E4F70580066F2C4 /* DateLayer.swift */; };
+		F02C82382E4F971500D48D4B /* InfoTableSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E82E4F70580066F2C4 /* InfoTableSource.swift */; };
+		F02C82392E4F971500D48D4B /* SourceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A92E4F70580066F2C4 /* SourceInfo.swift */; };
+		F02C823A2E4F971500D48D4B /* NSButton+icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608D2E4F70580066F2C4 /* NSButton+icons.swift */; };
+		F02C823B2E4F971500D48D4B /* AVPlayerItem+vibrance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608A2E4F70580066F2C4 /* AVPlayerItem+vibrance.swift */; };
+		F02C823C2E4F971500D48D4B /* VideoList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AB2E4F70580066F2C4 /* VideoList.swift */; };
+		F02C823D2E4F971500D48D4B /* InfoSettingsTableSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E62E4F70580066F2C4 /* InfoSettingsTableSource.swift */; };
+		F02C823E2E4F971500D48D4B /* TimerLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D32E4F70580066F2C4 /* TimerLayer.swift */; };
+		F02C823F2E4F971500D48D4B /* InfoContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E02E4F70580066F2C4 /* InfoContainerView.swift */; };
+		F02C82402E4F971500D48D4B /* InfoBatteryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DD2E4F70580066F2C4 /* InfoBatteryView.swift */; };
+		F02C82412E4F971500D48D4B /* TimeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B02E4F70580066F2C4 /* TimeManagement.swift */; };
+		F02C82422E4F971500D48D4B /* InfoLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E32E4F70580066F2C4 /* InfoLocationView.swift */; };
+		F02C82432E4F971500D48D4B /* Music.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609D2E4F70580066F2C4 /* Music.swift */; };
+		F02C82442E4F971500D48D4B /* InfoCommonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DF2E4F70580066F2C4 /* InfoCommonView.swift */; };
+		F02C82452E4F971500D48D4B /* InfoCountdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E12E4F70580066F2C4 /* InfoCountdownView.swift */; };
+		F02C82462E4F971500D48D4B /* YahooLogoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C52E4F70580066F2C4 /* YahooLogoLayer.swift */; };
+		F02C82472E4F971500D48D4B /* VideoHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EB2E4F70580066F2C4 /* VideoHeaderView.swift */; };
+		F02C82482E4F971500D48D4B /* PanelWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060052E4F70580066F2C4 /* PanelWindowController.swift */; };
+		F02C82492E4F971500D48D4B /* VideoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060832E4F70580066F2C4 /* VideoManager.swift */; };
+		F02C824A2E4F971500D48D4B /* AerialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F42E4F70580066F2C4 /* AerialView.swift */; };
+		F02C824B2E4F971500D48D4B /* Aerial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B22E4F70580066F2C4 /* Aerial.swift */; };
+		F02C824C2E4F971500D48D4B /* AssetLoaderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607B2E4F70580066F2C4 /* AssetLoaderDelegate.swift */; };
+		F02C824D2E4F971500D48D4B /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060992E4F70580066F2C4 /* DisplayDetection.swift */; };
+		F02C824E2E4F971500D48D4B /* DisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DC2E4F70580066F2C4 /* DisplayView.swift */; };
+		F02C824F2E4F971500D48D4B /* PrefsVideos.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */; };
+		F02C82502E4F971500D48D4B /* TimeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060022E4F70580066F2C4 /* TimeViewController.swift */; };
+		F02C82512E4F971500D48D4B /* CreditsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE62E4F70580066F2C4 /* CreditsViewController.swift */; };
+		F02C82522E4F971500D48D4B /* AerialView+Brightness.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F52E4F70580066F2C4 /* AerialView+Brightness.swift */; };
+		F02C82532E4F971500D48D4B /* GeoCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060772E4F70580066F2C4 /* GeoCoding.swift */; };
+		F02C82542E4F971500D48D4B /* CheckCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DB2E4F70580066F2C4 /* CheckCellView.swift */; };
+		F02C82552E4F971500D48D4B /* InfoDateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E22E4F70580066F2C4 /* InfoDateView.swift */; };
+		F02C82562E4F971500D48D4B /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BB2E4F70580066F2C4 /* SeededGenerator.swift */; };
+		F02C82572E4F971500D48D4B /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
+		F02C82592E4F971500D48D4B /* AerialView+Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F62E4F70580066F2C4 /* AerialView+Player.swift */; };
+		F02C825A2E4F971500D48D4B /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
+		F02C825B2E4F971500D48D4B /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060912E4F70580066F2C4 /* Sound.swift */; };
+		F02C825C2E4F971500D48D4B /* OneCall.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060782E4F70580066F2C4 /* OneCall.swift */; };
+		F02C825D2E4F971500D48D4B /* APISecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060752E4F70580066F2C4 /* APISecrets.swift */; };
+		F02C825E2E4F971500D48D4B /* LocationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D12E4F70580066F2C4 /* LocationLayer.swift */; };
+		F02C825F2E4F971500D48D4B /* AdvancedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF02E4F70580066F2C4 /* AdvancedViewController.swift */; };
+		F02C82602E4F971500D48D4B /* TimeMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */; };
+		F02C82622E4F971500D48D4B /* SoundOutputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060922E4F70580066F2C4 /* SoundOutputManager.swift */; };
+		F02C82632E4F971500D48D4B /* WeatherLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C32E4F70580066F2C4 /* WeatherLayer.swift */; };
+		F02C82642E4F971500D48D4B /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
+		F02C82652E4F971500D48D4B /* ActionCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EE2E4F70580066F2C4 /* ActionCellView.swift */; };
+		F02C82662E4F971500D48D4B /* SidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060072E4F70580066F2C4 /* SidebarViewController.swift */; };
+		F02C82672E4F971500D48D4B /* PlayingCollectionViewItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FED2E4F70580066F2C4 /* PlayingCollectionViewItem.swift */; };
+		F02C82682E4F971500D48D4B /* CountdownLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CC2E4F70580066F2C4 /* CountdownLayer.swift */; };
+		F02C82692E4F971500D48D4B /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */; };
+		F02C826A2E4F971500D48D4B /* NowPlayingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FFC2E4F70580066F2C4 /* NowPlayingViewController.swift */; };
+		F02C826B2E4F971500D48D4B /* VideoCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D92E4F70580066F2C4 /* VideoCellView.swift */; };
+		F02C826C2E4F971500D48D4B /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
+		F02C826D2E4F971500D48D4B /* DispatchQueue+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608C2E4F70580066F2C4 /* DispatchQueue+Extension.swift */; };
+		F02C826F2E4F971500D48D4B /* VideosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060092E4F70580066F2C4 /* VideosViewController.swift */; };
+		F02C82702E4F971500D48D4B /* CompanionCacheViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF62E4F70580066F2C4 /* CompanionCacheViewController.swift */; };
+		F02C82712E4F971500D48D4B /* SidebarOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D82E4F70580066F2C4 /* SidebarOutlineView.swift */; };
+		F02C82722E4F971500D48D4B /* PrefsInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A22E4F70580066F2C4 /* PrefsInfo.swift */; };
+		F02C82732E4F971500D48D4B /* VideoViewItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EC2E4F70580066F2C4 /* VideoViewItem.swift */; };
+		F02C82742E4F971500D48D4B /* InfoTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E92E4F70580066F2C4 /* InfoTimerView.swift */; };
+		F02C82752E4F971500D48D4B /* IOBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AE2E4F70580066F2C4 /* IOBridge.m */; };
+		F02C82762E4F971500D48D4B /* HardwareDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609A2E4F70580066F2C4 /* HardwareDetection.swift */; };
+		F02C82772E4F971500D48D4B /* Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A72E4F70580066F2C4 /* Sidebar.swift */; };
+		F02C82782E4F971500D48D4B /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060862E4F70580066F2C4 /* DownloadManager.swift */; };
+		F02C82792E4F971500D48D4B /* OverlaysViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FFE2E4F70580066F2C4 /* OverlaysViewController.swift */; };
+		F02C827A2E4F971500D48D4B /* NowPlayingCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D62E4F70580066F2C4 /* NowPlayingCollectionView.swift */; };
+		F02C827B2E4F971500D48D4B /* NSMenuItem+icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608F2E4F70580066F2C4 /* NSMenuItem+icons.swift */; };
+		F02C827C2E4F971500D48D4B /* SoundOutputManager+Goodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060932E4F70580066F2C4 /* SoundOutputManager+Goodies.swift */; };
+		F02C827D2E4F971500D48D4B /* SourcesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060002E4F70580066F2C4 /* SourcesViewController.swift */; };
+		F02C827E2E4F971500D48D4B /* MessageLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D22E4F70580066F2C4 /* MessageLayer.swift */; };
+		F02C827F2E4F971500D48D4B /* PrefsDisplays.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */; };
+		F02C82802E4F971500D48D4B /* SoundOutputManager+Properties.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060942E4F70580066F2C4 /* SoundOutputManager+Properties.swift */; };
+		F02C82812E4F971500D48D4B /* InfoSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E72E4F70580066F2C4 /* InfoSettingsView.swift */; };
+		F02C82822E4F971500D48D4B /* CustomVideoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060722E4F70580066F2C4 /* CustomVideoController.swift */; };
+		F02C82832E4F971500D48D4B /* Thumbnails.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607E2E4F70580066F2C4 /* Thumbnails.swift */; };
+		F02C82842E4F971500D48D4B /* DisplaysViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF82E4F70580066F2C4 /* DisplaysViewController.swift */; };
+		F02C82852E4F971500D48D4B /* MusicLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BE2E4F70580066F2C4 /* MusicLayer.swift */; };
+		F02C82862E4F971500D48D4B /* Forecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060762E4F70580066F2C4 /* Forecast.swift */; };
+		F02C82872E4F971500D48D4B /* InfoMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E52E4F70580066F2C4 /* InfoMusicView.swift */; };
+		F02C82882E4F971500D48D4B /* OpenWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060792E4F70580066F2C4 /* OpenWeather.swift */; };
+		F02C82892E4F971500D48D4B /* LayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CF2E4F70580066F2C4 /* LayerManager.swift */; };
+		F02C828A2E4F971500D48D4B /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A82E4F70580066F2C4 /* Source.swift */; };
+		F02C828B2E4F971500D48D4B /* InfoWeatherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EA2E4F70580066F2C4 /* InfoWeatherView.swift */; };
+		F02C828C2E4F971500D48D4B /* BatteryIconLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CA2E4F70580066F2C4 /* BatteryIconLayer.swift */; };
+		F02C828D2E4F971500D48D4B /* ShadowTextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D72E4F70580066F2C4 /* ShadowTextFieldCell.swift */; };
+		F02C828E2E4F971500D48D4B /* BrightnessViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF22E4F70580066F2C4 /* BrightnessViewController.swift */; };
+		F02C828F2E4F971500D48D4B /* PrefsUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A42E4F70580066F2C4 /* PrefsUpdates.swift */; };
+		F02C82902E4F971500D48D4B /* LayerOffsets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D02E4F70580066F2C4 /* LayerOffsets.swift */; };
+		F02C82912E4F971500D48D4B /* CustomVideoFolders.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B52E4F70580066F2C4 /* CustomVideoFolders.swift */; };
+		F02C82922E4F971500D48D4B /* CacheViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF42E4F70580066F2C4 /* CacheViewController.swift */; };
+		F02C82932E4F971500D48D4B /* VideoDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060812E4F70580066F2C4 /* VideoDownload.swift */; };
+		F02C82942E4F971500D48D4B /* ManifestLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B92E4F70580066F2C4 /* ManifestLoader.swift */; };
+		F02C82952E4F971500D48D4B /* NSImage+trim.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608E2E4F70580066F2C4 /* NSImage+trim.swift */; };
+		F02C82962E4F971500D48D4B /* InfoMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E42E4F70580066F2C4 /* InfoMessageView.swift */; };
+		F02C82972E4F971500D48D4B /* AspectFillNSImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D52E4F70580066F2C4 /* AspectFillNSImageView.swift */; };
+		F02C82982E4F971500D48D4B /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
+		F02C82992E4F971500D48D4B /* ClockLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CB2E4F70580066F2C4 /* ClockLayer.swift */; };
+		F02C829A2E4F971500D48D4B /* CheckboxCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EF2E4F70580066F2C4 /* CheckboxCellView.swift */; };
+		F02C829B2E4F971500D48D4B /* Solar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AF2E4F70580066F2C4 /* Solar.swift */; };
+		F02C829C2E4F971500D48D4B /* InfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FEA2E4F70580066F2C4 /* InfoViewController.swift */; };
+		F02C829D2E4F971500D48D4B /* AerialVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B32E4F70580066F2C4 /* AerialVideo.swift */; };
+		F02C829E2E4F971500D48D4B /* AnimationTextLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C92E4F70580066F2C4 /* AnimationTextLayer.swift */; };
+		F02C829F2E4F971500D48D4B /* WindDirectionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C42E4F70580066F2C4 /* WindDirectionLayer.swift */; };
+		F02C82A12E4F971500D48D4B /* FileHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060872E4F70580066F2C4 /* FileHelpers.swift */; };
+		F02C82A22E4F971500D48D4B /* PrefsTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A32E4F70580066F2C4 /* PrefsTime.swift */; };
+		F02C82A32E4F971500D48D4B /* ForecastLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C22E4F70580066F2C4 /* ForecastLayer.swift */; };
+		F02C82A42E4F971500D48D4B /* PlaybackSpeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BA2E4F70580066F2C4 /* PlaybackSpeed.swift */; };
+		F02C82A52E4F971500D48D4B /* CustomVideoFolders+helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B62E4F70580066F2C4 /* CustomVideoFolders+helpers.swift */; };
+		F02C82A62E4F971500D48D4B /* InfoClockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DE2E4F70580066F2C4 /* InfoClockView.swift */; };
+		F02C82A72E4F971500D48D4B /* CompanionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B42E4F70580066F2C4 /* CompanionBridge.swift */; };
+		F02C82A82E4F971500D48D4B /* ConditionSymbolLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C12E4F70580066F2C4 /* ConditionSymbolLayer.swift */; };
+		F02C82A92E4F971500D48D4B /* AnimationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C82E4F70580066F2C4 /* AnimationLayer.swift */; };
+		F02C82AA2E4F971500D48D4B /* SourceOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F12E4F70580066F2C4 /* SourceOutlineView.swift */; };
+		F02C82AB2E4F971500D48D4B /* NightShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609B2E4F70580066F2C4 /* NightShift.swift */; };
+		F02C82AC2E4F971500D48D4B /* AnimatableLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C72E4F70580066F2C4 /* AnimatableLayer.swift */; };
+		F02C82AD2E4F971500D48D4B /* Brightness.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060972E4F70580066F2C4 /* Brightness.swift */; };
+		F02C82AE2E4F971500D48D4B /* DownloadIndicatorLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CE2E4F70580066F2C4 /* DownloadIndicatorLayer.swift */; };
+		F02C82AF2E4F971500D48D4B /* AVPlayerViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608B2E4F70580066F2C4 /* AVPlayerViewExtension.swift */; };
+		F02C82B02E4F971500D48D4B /* PoiStringProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607D2E4F70580066F2C4 /* PoiStringProvider.swift */; };
+		F02C82B12E4F971500D48D4B /* VideoLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060822E4F70580066F2C4 /* VideoLoader.swift */; };
+		F02C82B22E4F971500D48D4B /* ConditionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C02E4F70580066F2C4 /* ConditionLayer.swift */; };
+		F02C82BE2E4FAAB500D48D4B /* ErrorLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B72E4F70580066F2C4 /* ErrorLog.swift */; };
 		F03F59F32AC312B000DB6B77 /* SetDefaultWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */; };
 		F03F59F42AC312B000DB6B77 /* SetDefaultWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F03F59F22AC312B000DB6B77 /* SetDefaultWindowController.xib */; };
 		F03F59FA2AC3182800DB6B77 /* settings_numbered.png in Resources */ = {isa = PBXBuildFile; fileRef = F03F59F92AC3182800DB6B77 /* settings_numbered.png */; };
@@ -87,7 +216,6 @@
 		F0C060FD2E4F70580066F2C4 /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
 		F0C060FE2E4F70580066F2C4 /* VideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060802E4F70580066F2C4 /* VideoCache.swift */; };
 		F0C060FF2E4F70580066F2C4 /* ArtworkLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BD2E4F70580066F2C4 /* ArtworkLayer.swift */; };
-		F0C061002E4F70580066F2C4 /* VideoFormatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE12E4F70580066F2C4 /* VideoFormatViewController.swift */; };
 		F0C061012E4F70580066F2C4 /* DescriptionCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F02E4F70580066F2C4 /* DescriptionCellView.swift */; };
 		F0C061022E4F70580066F2C4 /* Locations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B82E4F70580066F2C4 /* Locations.swift */; };
 		F0C061032E4F70580066F2C4 /* SourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AA2E4F70580066F2C4 /* SourceList.swift */; };
@@ -125,7 +253,6 @@
 		F0C061232E4F70580066F2C4 /* InfoDateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E22E4F70580066F2C4 /* InfoDateView.swift */; };
 		F0C061242E4F70580066F2C4 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BB2E4F70580066F2C4 /* SeededGenerator.swift */; };
 		F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
-		F0C061262E4F70580066F2C4 /* RecapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDD2E4F70580066F2C4 /* RecapViewController.swift */; };
 		F0C061272E4F70580066F2C4 /* AerialView+Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F62E4F70580066F2C4 /* AerialView+Player.swift */; };
 		F0C061282E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
 		F0C061292E4F70580066F2C4 /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060912E4F70580066F2C4 /* Sound.swift */; };
@@ -134,7 +261,6 @@
 		F0C0612C2E4F70580066F2C4 /* LocationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D12E4F70580066F2C4 /* LocationLayer.swift */; };
 		F0C0612D2E4F70580066F2C4 /* AdvancedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF02E4F70580066F2C4 /* AdvancedViewController.swift */; };
 		F0C0612E2E4F70580066F2C4 /* TimeMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */; };
-		F0C0612F2E4F70580066F2C4 /* FirstSetupWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FD92E4F70580066F2C4 /* FirstSetupWindowController.swift */; };
 		F0C061302E4F70580066F2C4 /* SoundOutputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060922E4F70580066F2C4 /* SoundOutputManager.swift */; };
 		F0C061312E4F70580066F2C4 /* WeatherLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C32E4F70580066F2C4 /* WeatherLayer.swift */; };
 		F0C061322E4F70580066F2C4 /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
@@ -147,7 +273,6 @@
 		F0C061392E4F70580066F2C4 /* VideoCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D92E4F70580066F2C4 /* VideoCellView.swift */; };
 		F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
 		F0C0613B2E4F70580066F2C4 /* DispatchQueue+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608C2E4F70580066F2C4 /* DispatchQueue+Extension.swift */; };
-		F0C0613C2E4F70580066F2C4 /* TimeSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDF2E4F70580066F2C4 /* TimeSetupViewController.swift */; };
 		F0C0613D2E4F70580066F2C4 /* VideosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060092E4F70580066F2C4 /* VideosViewController.swift */; };
 		F0C0613E2E4F70580066F2C4 /* CompanionCacheViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF62E4F70580066F2C4 /* CompanionCacheViewController.swift */; };
 		F0C0613F2E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D82E4F70580066F2C4 /* SidebarOutlineView.swift */; };
@@ -192,14 +317,11 @@
 		F0C061662E4F70580066F2C4 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
 		F0C061672E4F70580066F2C4 /* ClockLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CB2E4F70580066F2C4 /* ClockLayer.swift */; };
 		F0C061682E4F70580066F2C4 /* CheckboxCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EF2E4F70580066F2C4 /* CheckboxCellView.swift */; };
-		F0C061692E4F70580066F2C4 /* NextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDB2E4F70580066F2C4 /* NextViewController.swift */; };
 		F0C0616A2E4F70580066F2C4 /* Solar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AF2E4F70580066F2C4 /* Solar.swift */; };
 		F0C0616B2E4F70580066F2C4 /* InfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FEA2E4F70580066F2C4 /* InfoViewController.swift */; };
 		F0C0616C2E4F70580066F2C4 /* AerialVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B32E4F70580066F2C4 /* AerialVideo.swift */; };
 		F0C0616D2E4F70580066F2C4 /* AnimationTextLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C92E4F70580066F2C4 /* AnimationTextLayer.swift */; };
-		F0C0616E2E4F70580066F2C4 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE32E4F70580066F2C4 /* WelcomeViewController.swift */; };
 		F0C0616F2E4F70580066F2C4 /* WindDirectionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C42E4F70580066F2C4 /* WindDirectionLayer.swift */; };
-		F0C061702E4F70580066F2C4 /* CacheSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FD72E4F70580066F2C4 /* CacheSetupViewController.swift */; };
 		F0C061712E4F70580066F2C4 /* FileHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060872E4F70580066F2C4 /* FileHelpers.swift */; };
 		F0C061722E4F70580066F2C4 /* PrefsTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A32E4F70580066F2C4 /* PrefsTime.swift */; };
 		F0C061732E4F70580066F2C4 /* ForecastLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C22E4F70580066F2C4 /* ForecastLayer.swift */; };
@@ -210,7 +332,6 @@
 		F0C061782E4F70580066F2C4 /* ConditionSymbolLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C12E4F70580066F2C4 /* ConditionSymbolLayer.swift */; };
 		F0C061792E4F70580066F2C4 /* AnimationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C82E4F70580066F2C4 /* AnimationLayer.swift */; };
 		F0C0617A2E4F70580066F2C4 /* SourceOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F12E4F70580066F2C4 /* SourceOutlineView.swift */; };
-		F0C0617B2E4F70580066F2C4 /* NightShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609B2E4F70580066F2C4 /* NightShift.swift */; };
 		F0C0617C2E4F70580066F2C4 /* AnimatableLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C72E4F70580066F2C4 /* AnimatableLayer.swift */; };
 		F0C0617D2E4F70580066F2C4 /* Brightness.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060972E4F70580066F2C4 /* Brightness.swift */; };
 		F0C0617E2E4F70580066F2C4 /* DownloadIndicatorLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CE2E4F70580066F2C4 /* DownloadIndicatorLayer.swift */; };
@@ -231,7 +352,6 @@
 		F0C0618D2E4F70580066F2C4 /* eye.slash.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060272E4F70580066F2C4 /* eye.slash.pdf */; };
 		F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE92E4F70580066F2C4 /* HelpViewController.xib */; };
 		F0C0618F2E4F70580066F2C4 /* moon.stars.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605D2E4F70580066F2C4 /* moon.stars.pdf */; };
-		F0C061902E4F70580066F2C4 /* NextViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDC2E4F70580066F2C4 /* NextViewController.xib */; };
 		F0C061912E4F70580066F2C4 /* mappin.and.ellipse.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060312E4F70580066F2C4 /* mappin.and.ellipse.pdf */; };
 		F0C061922E4F70580066F2C4 /* person.3.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060322E4F70580066F2C4 /* person.3.pdf */; };
 		F0C061932E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060182E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png */; };
@@ -275,7 +395,6 @@
 		F0C061B92E4F70580066F2C4 /* sparkles.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060382E4F70580066F2C4 /* sparkles.pdf */; };
 		F0C061BA2E4F70580066F2C4 /* OverlaysViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FFF2E4F70580066F2C4 /* OverlaysViewController.xib */; };
 		F0C061BB2E4F70580066F2C4 /* purple_retina.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600F2E4F70580066F2C4 /* purple_retina.png */; };
-		F0C061BC2E4F70580066F2C4 /* CacheSetupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FD82E4F70580066F2C4 /* CacheSetupViewController.xib */; };
 		F0C061BD2E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060212E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf */; };
 		F0C061BE2E4F70580066F2C4 /* film.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060282E4F70580066F2C4 /* film.pdf */; };
 		F0C061BF2E4F70580066F2C4 /* cloud.sun.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060572E4F70580066F2C4 /* cloud.sun.pdf */; };
@@ -289,7 +408,6 @@
 		F0C061C82E4F70580066F2C4 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FD02E4F70580066F2C4 /* Readme.md */; };
 		F0C061C92E4F70580066F2C4 /* info.circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0602F2E4F70580066F2C4 /* info.circle.pdf */; };
 		F0C061CA2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0601B2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png */; };
-		F0C061CB2E4F70580066F2C4 /* RecapViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDE2E4F70580066F2C4 /* RecapViewController.xib */; };
 		F0C061CC2E4F70580066F2C4 /* AdvancedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF12E4F70580066F2C4 /* AdvancedViewController.xib */; };
 		F0C061CD2E4F70580066F2C4 /* flame.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060292E4F70580066F2C4 /* flame.pdf */; };
 		F0C061CE2E4F70580066F2C4 /* arrow.down.circle.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0601F2E4F70580066F2C4 /* arrow.down.circle.fill.pdf */; };
@@ -322,7 +440,6 @@
 		F0C061E92E4F70580066F2C4 /* wind.snow.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060692E4F70580066F2C4 /* wind.snow.pdf */; };
 		F0C061EA2E4F70580066F2C4 /* xmark.circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060462E4F70580066F2C4 /* xmark.circle.pdf */; };
 		F0C061EB2E4F70580066F2C4 /* icon-512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0606D2E4F70580066F2C4 /* icon-512@2x.png */; };
-		F0C061EC2E4F70580066F2C4 /* WelcomeViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE42E4F70580066F2C4 /* WelcomeViewController.xib */; };
 		F0C061ED2E4F70580066F2C4 /* CustomVideos.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600D2E4F70580066F2C4 /* CustomVideos.xib */; };
 		F0C061EE2E4F70580066F2C4 /* checkmark.circle.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060222E4F70580066F2C4 /* checkmark.circle.fill.pdf */; };
 		F0C061EF2E4F70580066F2C4 /* cloud.moon.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060522E4F70580066F2C4 /* cloud.moon.bolt.pdf */; };
@@ -332,19 +449,16 @@
 		F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060012E4F70580066F2C4 /* SourcesViewController.xib */; };
 		F0C061F42E4F70580066F2C4 /* star.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0603B2E4F70580066F2C4 /* star.fill.pdf */; };
 		F0C061F52E4F70580066F2C4 /* cloud.sun.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060582E4F70580066F2C4 /* cloud.sun.bolt.pdf */; };
-		F0C061F62E4F70580066F2C4 /* VideoFormatViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE22E4F70580066F2C4 /* VideoFormatViewController.xib */; };
 		F0C061F72E4F70580066F2C4 /* cloud.sun.rain.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060592E4F70580066F2C4 /* cloud.sun.rain.pdf */; };
 		F0C061F82E4F70580066F2C4 /* thermometer.snowflake.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060642E4F70580066F2C4 /* thermometer.snowflake.pdf */; };
 		F0C061F92E4F70580066F2C4 /* pl.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCD2E4F70580066F2C4 /* pl.json */; };
 		F0C061FA2E4F70580066F2C4 /* hurricane.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605A2E4F70580066F2C4 /* hurricane.pdf */; };
 		F0C061FB2E4F70580066F2C4 /* nl.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCC2E4F70580066F2C4 /* nl.json */; };
-		F0C061FC2E4F70580066F2C4 /* FirstSetupWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDA2E4F70580066F2C4 /* FirstSetupWindowController.xib */; };
 		F0C061FD2E4F70580066F2C4 /* VideosViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600A2E4F70580066F2C4 /* VideosViewController.xib */; };
 		F0C061FE2E4F70580066F2C4 /* missingvideos.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCB2E4F70580066F2C4 /* missingvideos.json */; };
 		F0C061FF2E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060172E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png */; };
 		F0C062002E4F70580066F2C4 /* openweather_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060702E4F70580066F2C4 /* openweather_logo.png */; };
 		F0C062012E4F70580066F2C4 /* sunset.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0603D2E4F70580066F2C4 /* sunset.pdf */; };
-		F0C062022E4F70580066F2C4 /* TimeSetupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE02E4F70580066F2C4 /* TimeSetupViewController.xib */; };
 		F0C062032E4F70580066F2C4 /* circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060232E4F70580066F2C4 /* circle.pdf */; };
 		F0C062042E4F70580066F2C4 /* cloud.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0604B2E4F70580066F2C4 /* cloud.bolt.pdf */; };
 		F0C062052E4F70580066F2C4 /* location.north.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605B2E4F70580066F2C4 /* location.north.pdf */; };
@@ -365,7 +479,6 @@
 		F0C062142E4F70580066F2C4 /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
 		F0C062152E4F70580066F2C4 /* VideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060802E4F70580066F2C4 /* VideoCache.swift */; };
 		F0C062162E4F70580066F2C4 /* ArtworkLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BD2E4F70580066F2C4 /* ArtworkLayer.swift */; };
-		F0C062172E4F70580066F2C4 /* VideoFormatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE12E4F70580066F2C4 /* VideoFormatViewController.swift */; };
 		F0C062182E4F70580066F2C4 /* DescriptionCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F02E4F70580066F2C4 /* DescriptionCellView.swift */; };
 		F0C062192E4F70580066F2C4 /* Locations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B82E4F70580066F2C4 /* Locations.swift */; };
 		F0C0621A2E4F70580066F2C4 /* SourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AA2E4F70580066F2C4 /* SourceList.swift */; };
@@ -403,7 +516,6 @@
 		F0C0623A2E4F70580066F2C4 /* InfoDateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060E22E4F70580066F2C4 /* InfoDateView.swift */; };
 		F0C0623B2E4F70580066F2C4 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060BB2E4F70580066F2C4 /* SeededGenerator.swift */; };
 		F0C0623C2E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
-		F0C0623D2E4F70580066F2C4 /* RecapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDD2E4F70580066F2C4 /* RecapViewController.swift */; };
 		F0C0623E2E4F70580066F2C4 /* AerialView+Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F62E4F70580066F2C4 /* AerialView+Player.swift */; };
 		F0C0623F2E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
 		F0C062402E4F70580066F2C4 /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060912E4F70580066F2C4 /* Sound.swift */; };
@@ -412,7 +524,6 @@
 		F0C062432E4F70580066F2C4 /* LocationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D12E4F70580066F2C4 /* LocationLayer.swift */; };
 		F0C062442E4F70580066F2C4 /* AdvancedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF02E4F70580066F2C4 /* AdvancedViewController.swift */; };
 		F0C062452E4F70580066F2C4 /* TimeMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */; };
-		F0C062462E4F70580066F2C4 /* FirstSetupWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FD92E4F70580066F2C4 /* FirstSetupWindowController.swift */; };
 		F0C062472E4F70580066F2C4 /* SoundOutputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060922E4F70580066F2C4 /* SoundOutputManager.swift */; };
 		F0C062482E4F70580066F2C4 /* WeatherLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C32E4F70580066F2C4 /* WeatherLayer.swift */; };
 		F0C062492E4F70580066F2C4 /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
@@ -425,7 +536,6 @@
 		F0C062502E4F70580066F2C4 /* VideoCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D92E4F70580066F2C4 /* VideoCellView.swift */; };
 		F0C062512E4F70580066F2C4 /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
 		F0C062522E4F70580066F2C4 /* DispatchQueue+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608C2E4F70580066F2C4 /* DispatchQueue+Extension.swift */; };
-		F0C062532E4F70580066F2C4 /* TimeSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDF2E4F70580066F2C4 /* TimeSetupViewController.swift */; };
 		F0C062542E4F70580066F2C4 /* VideosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060092E4F70580066F2C4 /* VideosViewController.swift */; };
 		F0C062552E4F70580066F2C4 /* CompanionCacheViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FF62E4F70580066F2C4 /* CompanionCacheViewController.swift */; };
 		F0C062562E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060D82E4F70580066F2C4 /* SidebarOutlineView.swift */; };
@@ -470,14 +580,11 @@
 		F0C0627D2E4F70580066F2C4 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
 		F0C0627E2E4F70580066F2C4 /* ClockLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060CB2E4F70580066F2C4 /* ClockLayer.swift */; };
 		F0C0627F2E4F70580066F2C4 /* CheckboxCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060EF2E4F70580066F2C4 /* CheckboxCellView.swift */; };
-		F0C062802E4F70580066F2C4 /* NextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FDB2E4F70580066F2C4 /* NextViewController.swift */; };
 		F0C062812E4F70580066F2C4 /* Solar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AF2E4F70580066F2C4 /* Solar.swift */; };
 		F0C062822E4F70580066F2C4 /* InfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FEA2E4F70580066F2C4 /* InfoViewController.swift */; };
 		F0C062832E4F70580066F2C4 /* AerialVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B32E4F70580066F2C4 /* AerialVideo.swift */; };
 		F0C062842E4F70580066F2C4 /* AnimationTextLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C92E4F70580066F2C4 /* AnimationTextLayer.swift */; };
-		F0C062852E4F70580066F2C4 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE32E4F70580066F2C4 /* WelcomeViewController.swift */; };
 		F0C062862E4F70580066F2C4 /* WindDirectionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C42E4F70580066F2C4 /* WindDirectionLayer.swift */; };
-		F0C062872E4F70580066F2C4 /* CacheSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FD72E4F70580066F2C4 /* CacheSetupViewController.swift */; };
 		F0C062882E4F70580066F2C4 /* FileHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060872E4F70580066F2C4 /* FileHelpers.swift */; };
 		F0C062892E4F70580066F2C4 /* PrefsTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A32E4F70580066F2C4 /* PrefsTime.swift */; };
 		F0C0628A2E4F70580066F2C4 /* ForecastLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C22E4F70580066F2C4 /* ForecastLayer.swift */; };
@@ -509,7 +616,6 @@
 		F0C062A42E4F70580066F2C4 /* eye.slash.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060272E4F70580066F2C4 /* eye.slash.pdf */; };
 		F0C062A52E4F70580066F2C4 /* HelpViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE92E4F70580066F2C4 /* HelpViewController.xib */; };
 		F0C062A62E4F70580066F2C4 /* moon.stars.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605D2E4F70580066F2C4 /* moon.stars.pdf */; };
-		F0C062A72E4F70580066F2C4 /* NextViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDC2E4F70580066F2C4 /* NextViewController.xib */; };
 		F0C062A82E4F70580066F2C4 /* mappin.and.ellipse.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060312E4F70580066F2C4 /* mappin.and.ellipse.pdf */; };
 		F0C062A92E4F70580066F2C4 /* person.3.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060322E4F70580066F2C4 /* person.3.pdf */; };
 		F0C062AA2E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060182E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png */; };
@@ -553,7 +659,6 @@
 		F0C062D02E4F70580066F2C4 /* sparkles.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060382E4F70580066F2C4 /* sparkles.pdf */; };
 		F0C062D12E4F70580066F2C4 /* OverlaysViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FFF2E4F70580066F2C4 /* OverlaysViewController.xib */; };
 		F0C062D22E4F70580066F2C4 /* purple_retina.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600F2E4F70580066F2C4 /* purple_retina.png */; };
-		F0C062D32E4F70580066F2C4 /* CacheSetupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FD82E4F70580066F2C4 /* CacheSetupViewController.xib */; };
 		F0C062D42E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060212E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf */; };
 		F0C062D52E4F70580066F2C4 /* film.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060282E4F70580066F2C4 /* film.pdf */; };
 		F0C062D62E4F70580066F2C4 /* cloud.sun.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060572E4F70580066F2C4 /* cloud.sun.pdf */; };
@@ -567,7 +672,6 @@
 		F0C062DF2E4F70580066F2C4 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FD02E4F70580066F2C4 /* Readme.md */; };
 		F0C062E02E4F70580066F2C4 /* info.circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0602F2E4F70580066F2C4 /* info.circle.pdf */; };
 		F0C062E12E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0601B2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png */; };
-		F0C062E22E4F70580066F2C4 /* RecapViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDE2E4F70580066F2C4 /* RecapViewController.xib */; };
 		F0C062E32E4F70580066F2C4 /* AdvancedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF12E4F70580066F2C4 /* AdvancedViewController.xib */; };
 		F0C062E42E4F70580066F2C4 /* flame.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060292E4F70580066F2C4 /* flame.pdf */; };
 		F0C062E52E4F70580066F2C4 /* arrow.down.circle.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0601F2E4F70580066F2C4 /* arrow.down.circle.fill.pdf */; };
@@ -600,7 +704,6 @@
 		F0C063002E4F70580066F2C4 /* wind.snow.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060692E4F70580066F2C4 /* wind.snow.pdf */; };
 		F0C063012E4F70580066F2C4 /* xmark.circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060462E4F70580066F2C4 /* xmark.circle.pdf */; };
 		F0C063022E4F70580066F2C4 /* icon-512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C0606D2E4F70580066F2C4 /* icon-512@2x.png */; };
-		F0C063032E4F70580066F2C4 /* WelcomeViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE42E4F70580066F2C4 /* WelcomeViewController.xib */; };
 		F0C063042E4F70580066F2C4 /* CustomVideos.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600D2E4F70580066F2C4 /* CustomVideos.xib */; };
 		F0C063052E4F70580066F2C4 /* checkmark.circle.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060222E4F70580066F2C4 /* checkmark.circle.fill.pdf */; };
 		F0C063062E4F70580066F2C4 /* cloud.moon.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060522E4F70580066F2C4 /* cloud.moon.bolt.pdf */; };
@@ -610,19 +713,16 @@
 		F0C0630A2E4F70580066F2C4 /* SourcesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060012E4F70580066F2C4 /* SourcesViewController.xib */; };
 		F0C0630B2E4F70580066F2C4 /* star.fill.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0603B2E4F70580066F2C4 /* star.fill.pdf */; };
 		F0C0630C2E4F70580066F2C4 /* cloud.sun.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060582E4F70580066F2C4 /* cloud.sun.bolt.pdf */; };
-		F0C0630D2E4F70580066F2C4 /* VideoFormatViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE22E4F70580066F2C4 /* VideoFormatViewController.xib */; };
 		F0C0630E2E4F70580066F2C4 /* cloud.sun.rain.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060592E4F70580066F2C4 /* cloud.sun.rain.pdf */; };
 		F0C0630F2E4F70580066F2C4 /* thermometer.snowflake.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060642E4F70580066F2C4 /* thermometer.snowflake.pdf */; };
 		F0C063102E4F70580066F2C4 /* pl.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCD2E4F70580066F2C4 /* pl.json */; };
 		F0C063112E4F70580066F2C4 /* hurricane.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605A2E4F70580066F2C4 /* hurricane.pdf */; };
 		F0C063122E4F70580066F2C4 /* nl.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCC2E4F70580066F2C4 /* nl.json */; };
-		F0C063132E4F70580066F2C4 /* FirstSetupWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FDA2E4F70580066F2C4 /* FirstSetupWindowController.xib */; };
 		F0C063142E4F70580066F2C4 /* VideosViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600A2E4F70580066F2C4 /* VideosViewController.xib */; };
 		F0C063152E4F70580066F2C4 /* missingvideos.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FCB2E4F70580066F2C4 /* missingvideos.json */; };
 		F0C063162E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060172E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png */; };
 		F0C063172E4F70580066F2C4 /* openweather_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = F0C060702E4F70580066F2C4 /* openweather_logo.png */; };
 		F0C063182E4F70580066F2C4 /* sunset.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0603D2E4F70580066F2C4 /* sunset.pdf */; };
-		F0C063192E4F70580066F2C4 /* TimeSetupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE02E4F70580066F2C4 /* TimeSetupViewController.xib */; };
 		F0C0631A2E4F70580066F2C4 /* circle.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C060232E4F70580066F2C4 /* circle.pdf */; };
 		F0C0631B2E4F70580066F2C4 /* cloud.bolt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0604B2E4F70580066F2C4 /* cloud.bolt.pdf */; };
 		F0C0631C2E4F70580066F2C4 /* location.north.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F0C0605B2E4F70580066F2C4 /* location.north.pdf */; };
@@ -658,8 +758,6 @@
 
 /* Begin PBXFileReference section */
 		03076A062505EF8E00CDF16C /* kofi1@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "kofi1@2x.png"; sourceTree = "<group>"; };
-		0316C2172577DD6A007BAF70 /* AerialDesktop.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AerialDesktop.h; sourceTree = "<group>"; };
-		0316C2182577DD6B007BAF70 /* AerialDesktop.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AerialDesktop.m; sourceTree = "<group>"; };
 		0316C2192577DD6B007BAF70 /* AerialDesktop.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AerialDesktop.xib; sourceTree = "<group>"; };
 		0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLauncher.swift; sourceTree = "<group>"; };
 		0319375327B06FB40089A063 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
@@ -668,7 +766,6 @@
 		031954BF256409EC0058467C /* SaverLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverLauncher.swift; sourceTree = "<group>"; };
 		031A3A6524D835B10011E738 /* InfoWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoWindowController.swift; sourceTree = "<group>"; };
 		031A3A6624D835B10011E738 /* InfoWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = InfoWindowController.xib; sourceTree = "<group>"; };
-		031D3E5C27B0006A00FC4115 /* AerialView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AerialView.h; sourceTree = "<group>"; };
 		0323BBE824E005270041759E /* checkmark.circle.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = checkmark.circle.pdf; sourceTree = "<group>"; };
 		0323BBEA24E0067C0041759E /* exclamationmark.triangle.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = exclamationmark.triangle.pdf; sourceTree = "<group>"; };
 		0333115124D8369700E4622D /* btn_donate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = btn_donate.png; sourceTree = "<group>"; };
@@ -700,16 +797,12 @@
 		03592AB724CC80FD00C1AE52 /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		03592ABB24CC821500C1AE52 /* Update.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Update.swift; sourceTree = "<group>"; };
 		03592ABD24CC86E900C1AE52 /* CachedManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedManifest.swift; sourceTree = "<group>"; };
-		035F6F1B24CC8D97002E4EEE /* ErrorLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLog.swift; sourceTree = "<group>"; };
+		035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionLog.swift; sourceTree = "<group>"; };
 		036899952522608200136AE5 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MenuView.xib; sourceTree = "<group>"; };
 		036899982522608900136AE5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MenuView.xib; sourceTree = "<group>"; };
 		036899A825235C5A00136AE5 /* Consts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Consts.swift; sourceTree = "<group>"; };
 		03889BF724FA5EE4007C6B9B /* Aerial-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Aerial-Bridging-Header.h"; sourceTree = "<group>"; };
-		03889BF824FA5EE4007C6B9B /* WindowMode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WindowMode.h; sourceTree = "<group>"; };
-		03889BF924FA5EE4007C6B9B /* WindowMode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WindowMode.m; sourceTree = "<group>"; };
 		03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAgent.swift; sourceTree = "<group>"; };
-		03BA141524FA8FE800BAAE1D /* AerialWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AerialWindow.h; sourceTree = "<group>"; };
-		03BA141624FA8FE800BAAE1D /* AerialWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AerialWindow.m; sourceTree = "<group>"; };
 		03BA141724FA8FE800BAAE1D /* AerialWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AerialWindow.xib; sourceTree = "<group>"; };
 		03C491B424FBBDA00041D71C /* ExperimentalReadmeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalReadmeWindowController.swift; sourceTree = "<group>"; };
 		03C491B524FBBDA00041D71C /* ExperimentalReadmeWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ExperimentalReadmeWindowController.xib; sourceTree = "<group>"; };
@@ -719,10 +812,13 @@
 		03CE4F5F24CB0CA900494D32 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		03CE4F6124CB0CA900494D32 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03CE4F6224CB0CA900494D32 /* AerialUpdater.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AerialUpdater.entitlements; sourceTree = "<group>"; };
-		03CE4F7D24CB43FE00494D32 /* Manifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Manifest.swift; sourceTree = "<group>"; };
+		03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionManifest.swift; sourceTree = "<group>"; };
 		03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloader.swift; sourceTree = "<group>"; };
 		03F5E1462575360600BF4F45 /* icon-512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512@2x.png"; sourceTree = "<group>"; };
 		03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoIcon-128px@2x.png"; sourceTree = "<group>"; };
+		11374231735C4A908F3371B8 /* CompanionAerialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionAerialView.swift; sourceTree = "<group>"; };
+		11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialDesktop.swift; sourceTree = "<group>"; };
+		11374231735C4A908F3371BB /* SwiftAerialWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialWindow.swift; sourceTree = "<group>"; };
 		73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSScreen+Id.swift"; sourceTree = "<group>"; };
 		F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostedSettingsWindowController.swift; sourceTree = "<group>"; };
 		F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDefaultWindowController.swift; sourceTree = "<group>"; };
@@ -1090,6 +1186,9 @@
 				F05C63B028F1D9D50068B545 /* CompanionPopoverViewController.swift */,
 				F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */,
 				F03F59F22AC312B000DB6B77 /* SetDefaultWindowController.xib */,
+				11374231735C4A908F3371B8 /* CompanionAerialView.swift */,
+				11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */,
+				11374231735C4A908F3371BB /* SwiftAerialWindow.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -1153,7 +1252,7 @@
 		035F6F1924CC8774002E4EEE /* Manifest */ = {
 			isa = PBXGroup;
 			children = (
-				03CE4F7D24CB43FE00494D32 /* Manifest.swift */,
+				03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */,
 				03592ABD24CC86E900C1AE52 /* CachedManifest.swift */,
 			);
 			path = Manifest;
@@ -1164,7 +1263,7 @@
 			children = (
 				03592AB724CC80FD00C1AE52 /* Helpers.swift */,
 				03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */,
-				035F6F1B24CC8D97002E4EEE /* ErrorLog.swift */,
+				035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */,
 				0333115824D85CCA00E4622D /* String+version.swift */,
 				73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */,
 				F0EB5B062A58412200910682 /* NSButton+Image.swift */,
@@ -1175,16 +1274,9 @@
 		03889BF624FA5EAC007C6B9B /* ObjC */ = {
 			isa = PBXGroup;
 			children = (
-				03889BF824FA5EE4007C6B9B /* WindowMode.h */,
-				03889BF924FA5EE4007C6B9B /* WindowMode.m */,
-				03BA141524FA8FE800BAAE1D /* AerialWindow.h */,
-				03BA141624FA8FE800BAAE1D /* AerialWindow.m */,
 				03BA141724FA8FE800BAAE1D /* AerialWindow.xib */,
-				0316C2172577DD6A007BAF70 /* AerialDesktop.h */,
-				0316C2182577DD6B007BAF70 /* AerialDesktop.m */,
 				0316C2192577DD6B007BAF70 /* AerialDesktop.xib */,
 				03889BF724FA5EE4007C6B9B /* Aerial-Bridging-Header.h */,
-				031D3E5C27B0006A00FC4115 /* AerialView.h */,
 			);
 			path = ObjC;
 			sourceTree = "<group>";
@@ -2032,6 +2124,24 @@
 				0333115F24D8796F00E4622D /* UpdateCheckWindowController.xib in Resources */,
 				033B0B6C24E96D4C00622CA7 /* sun.max.pdf in Resources */,
 				03C491B724FBBDA00041D71C /* ExperimentalReadmeWindowController.xib in Resources */,
+				F0C0620B2E4F70580066F2C4 /* PanelWindowController.xib in Resources */,
+				F0C061992E4F70580066F2C4 /* SidebarViewController.xib in Resources */,
+				F0C061FD2E4F70580066F2C4 /* VideosViewController.xib in Resources */,
+				F0C061DF2E4F70580066F2C4 /* NowPlayingViewController.xib in Resources */,
+				F0C061982E4F70580066F2C4 /* InfoViewController.xib in Resources */,
+				F0C0620E2E4F70580066F2C4 /* CreditsViewController.xib in Resources */,
+				F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */,
+				F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
+				F0C061AB2E4F70580066F2C4 /* TimeViewController.xib in Resources */,
+				F0C062102E4F70580066F2C4 /* DisplaysViewController.xib in Resources */,
+				F0C061E12E4F70580066F2C4 /* BrightnessViewController.xib in Resources */,
+				F0C061B12E4F70580066F2C4 /* CacheViewController.xib in Resources */,
+				F0C061C52E4F70580066F2C4 /* CompanionCacheViewController.xib in Resources */,
+				F0C061BA2E4F70580066F2C4 /* OverlaysViewController.xib in Resources */,
+				F0C061A32E4F70580066F2C4 /* FiltersViewController.xib in Resources */,
+				F0C061CC2E4F70580066F2C4 /* AdvancedViewController.xib in Resources */,
+				F0C061C02E4F70580066F2C4 /* PlayingCollectionViewItem.xib in Resources */,
+				F0C061ED2E4F70580066F2C4 /* CustomVideos.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2052,7 +2162,6 @@
 				F0C0618D2E4F70580066F2C4 /* eye.slash.pdf in Resources */,
 				F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */,
 				F0C0618F2E4F70580066F2C4 /* moon.stars.pdf in Resources */,
-				F0C061902E4F70580066F2C4 /* NextViewController.xib in Resources */,
 				F0C061912E4F70580066F2C4 /* mappin.and.ellipse.pdf in Resources */,
 				F0C061922E4F70580066F2C4 /* person.3.pdf in Resources */,
 				F0C061932E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png in Resources */,
@@ -2096,7 +2205,6 @@
 				F0C061B92E4F70580066F2C4 /* sparkles.pdf in Resources */,
 				F0C061BA2E4F70580066F2C4 /* OverlaysViewController.xib in Resources */,
 				F0C061BB2E4F70580066F2C4 /* purple_retina.png in Resources */,
-				F0C061BC2E4F70580066F2C4 /* CacheSetupViewController.xib in Resources */,
 				F0C061BD2E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf in Resources */,
 				F0C061BE2E4F70580066F2C4 /* film.pdf in Resources */,
 				F0C061BF2E4F70580066F2C4 /* cloud.sun.pdf in Resources */,
@@ -2110,7 +2218,6 @@
 				F0C061C82E4F70580066F2C4 /* Readme.md in Resources */,
 				F0C061C92E4F70580066F2C4 /* info.circle.pdf in Resources */,
 				F0C061CA2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png in Resources */,
-				F0C061CB2E4F70580066F2C4 /* RecapViewController.xib in Resources */,
 				F0C061CC2E4F70580066F2C4 /* AdvancedViewController.xib in Resources */,
 				F0C061CD2E4F70580066F2C4 /* flame.pdf in Resources */,
 				F0C061CE2E4F70580066F2C4 /* arrow.down.circle.fill.pdf in Resources */,
@@ -2143,7 +2250,6 @@
 				F0C061E92E4F70580066F2C4 /* wind.snow.pdf in Resources */,
 				F0C061EA2E4F70580066F2C4 /* xmark.circle.pdf in Resources */,
 				F0C061EB2E4F70580066F2C4 /* icon-512@2x.png in Resources */,
-				F0C061EC2E4F70580066F2C4 /* WelcomeViewController.xib in Resources */,
 				F0C061ED2E4F70580066F2C4 /* CustomVideos.xib in Resources */,
 				F0C061EE2E4F70580066F2C4 /* checkmark.circle.fill.pdf in Resources */,
 				F0C061EF2E4F70580066F2C4 /* cloud.moon.bolt.pdf in Resources */,
@@ -2153,19 +2259,16 @@
 				F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
 				F0C061F42E4F70580066F2C4 /* star.fill.pdf in Resources */,
 				F0C061F52E4F70580066F2C4 /* cloud.sun.bolt.pdf in Resources */,
-				F0C061F62E4F70580066F2C4 /* VideoFormatViewController.xib in Resources */,
 				F0C061F72E4F70580066F2C4 /* cloud.sun.rain.pdf in Resources */,
 				F0C061F82E4F70580066F2C4 /* thermometer.snowflake.pdf in Resources */,
 				F0C061F92E4F70580066F2C4 /* pl.json in Resources */,
 				F0C061FA2E4F70580066F2C4 /* hurricane.pdf in Resources */,
 				F0C061FB2E4F70580066F2C4 /* nl.json in Resources */,
-				F0C061FC2E4F70580066F2C4 /* FirstSetupWindowController.xib in Resources */,
 				F0C061FD2E4F70580066F2C4 /* VideosViewController.xib in Resources */,
 				F0C061FE2E4F70580066F2C4 /* missingvideos.json in Resources */,
 				F0C061FF2E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png in Resources */,
 				F0C062002E4F70580066F2C4 /* openweather_logo.png in Resources */,
 				F0C062012E4F70580066F2C4 /* sunset.pdf in Resources */,
-				F0C062022E4F70580066F2C4 /* TimeSetupViewController.xib in Resources */,
 				F0C062032E4F70580066F2C4 /* circle.pdf in Resources */,
 				F0C062042E4F70580066F2C4 /* cloud.bolt.pdf in Resources */,
 				F0C062052E4F70580066F2C4 /* location.north.pdf in Resources */,
@@ -2203,7 +2306,6 @@
 				F0C062A42E4F70580066F2C4 /* eye.slash.pdf in Resources */,
 				F0C062A52E4F70580066F2C4 /* HelpViewController.xib in Resources */,
 				F0C062A62E4F70580066F2C4 /* moon.stars.pdf in Resources */,
-				F0C062A72E4F70580066F2C4 /* NextViewController.xib in Resources */,
 				F0C062A82E4F70580066F2C4 /* mappin.and.ellipse.pdf in Resources */,
 				F0C062A92E4F70580066F2C4 /* person.3.pdf in Resources */,
 				F0C062AA2E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png in Resources */,
@@ -2247,7 +2349,6 @@
 				F0C062D02E4F70580066F2C4 /* sparkles.pdf in Resources */,
 				F0C062D12E4F70580066F2C4 /* OverlaysViewController.xib in Resources */,
 				F0C062D22E4F70580066F2C4 /* purple_retina.png in Resources */,
-				F0C062D32E4F70580066F2C4 /* CacheSetupViewController.xib in Resources */,
 				F0C062D42E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf in Resources */,
 				F0C062D52E4F70580066F2C4 /* film.pdf in Resources */,
 				F0C062D62E4F70580066F2C4 /* cloud.sun.pdf in Resources */,
@@ -2261,7 +2362,6 @@
 				F0C062DF2E4F70580066F2C4 /* Readme.md in Resources */,
 				F0C062E02E4F70580066F2C4 /* info.circle.pdf in Resources */,
 				F0C062E12E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png in Resources */,
-				F0C062E22E4F70580066F2C4 /* RecapViewController.xib in Resources */,
 				F0C062E32E4F70580066F2C4 /* AdvancedViewController.xib in Resources */,
 				F0C062E42E4F70580066F2C4 /* flame.pdf in Resources */,
 				F0C062E52E4F70580066F2C4 /* arrow.down.circle.fill.pdf in Resources */,
@@ -2294,7 +2394,6 @@
 				F0C063002E4F70580066F2C4 /* wind.snow.pdf in Resources */,
 				F0C063012E4F70580066F2C4 /* xmark.circle.pdf in Resources */,
 				F0C063022E4F70580066F2C4 /* icon-512@2x.png in Resources */,
-				F0C063032E4F70580066F2C4 /* WelcomeViewController.xib in Resources */,
 				F0C063042E4F70580066F2C4 /* CustomVideos.xib in Resources */,
 				F0C063052E4F70580066F2C4 /* checkmark.circle.fill.pdf in Resources */,
 				F0C063062E4F70580066F2C4 /* cloud.moon.bolt.pdf in Resources */,
@@ -2304,19 +2403,16 @@
 				F0C0630A2E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
 				F0C0630B2E4F70580066F2C4 /* star.fill.pdf in Resources */,
 				F0C0630C2E4F70580066F2C4 /* cloud.sun.bolt.pdf in Resources */,
-				F0C0630D2E4F70580066F2C4 /* VideoFormatViewController.xib in Resources */,
 				F0C0630E2E4F70580066F2C4 /* cloud.sun.rain.pdf in Resources */,
 				F0C0630F2E4F70580066F2C4 /* thermometer.snowflake.pdf in Resources */,
 				F0C063102E4F70580066F2C4 /* pl.json in Resources */,
 				F0C063112E4F70580066F2C4 /* hurricane.pdf in Resources */,
 				F0C063122E4F70580066F2C4 /* nl.json in Resources */,
-				F0C063132E4F70580066F2C4 /* FirstSetupWindowController.xib in Resources */,
 				F0C063142E4F70580066F2C4 /* VideosViewController.xib in Resources */,
 				F0C063152E4F70580066F2C4 /* missingvideos.json in Resources */,
 				F0C063162E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png in Resources */,
 				F0C063172E4F70580066F2C4 /* openweather_logo.png in Resources */,
 				F0C063182E4F70580066F2C4 /* sunset.pdf in Resources */,
-				F0C063192E4F70580066F2C4 /* TimeSetupViewController.xib in Resources */,
 				F0C0631A2E4F70580066F2C4 /* circle.pdf in Resources */,
 				F0C0631B2E4F70580066F2C4 /* cloud.bolt.pdf in Resources */,
 				F0C0631C2E4F70580066F2C4 /* location.north.pdf in Resources */,
@@ -2345,14 +2441,11 @@
 				033B0B6524E967C600622CA7 /* NextViewController.swift in Sources */,
 				F0EB5B072A58412200910682 /* NSButton+Image.swift in Sources */,
 				73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */,
-				0316C21A2577DD6B007BAF70 /* AerialDesktop.m in Sources */,
-				03CE4F7E24CB43FE00494D32 /* Manifest.swift in Sources */,
+				03CE4F7E24CB43FE00494D32 /* CompanionManifest.swift in Sources */,
 				031A3A6724D835B10011E738 /* InfoWindowController.swift in Sources */,
 				0319460624CDBD2600F37B35 /* BackgroundCheck.swift in Sources */,
 				0333115924D85CCA00E4622D /* String+version.swift in Sources */,
-				03889BFA24FA5EE4007C6B9B /* WindowMode.m in Sources */,
 				036899A925235C5A00136AE5 /* Consts.swift in Sources */,
-				03BA141824FA8FE800BAAE1D /* AerialWindow.m in Sources */,
 				03592AB524CC809F00C1AE52 /* LocalVersion.swift in Sources */,
 				F003C15429116AE1003FCB17 /* HostedSettingsWindowController.swift in Sources */,
 				03592ABE24CC86E900C1AE52 /* CachedManifest.swift in Sources */,
@@ -2375,35 +2468,21 @@
 				03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */,
 				03ADA8EC24E034A40093D0A2 /* LaunchAgent.swift in Sources */,
 				F05C63B228F1D9D50068B545 /* CompanionPopoverViewController.swift in Sources */,
+				11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */,
+				11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */,
+				11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */,
 				F03F59F32AC312B000DB6B77 /* SetDefaultWindowController.swift in Sources */,
 				03CE4F8024CB4CFB00494D32 /* FileDownloader.swift in Sources */,
-				035F6F1C24CC8D97002E4EEE /* ErrorLog.swift in Sources */,
+				035F6F1C24CC8D97002E4EEE /* CompanionLog.swift in Sources */,
 				F05C63B728F326300068B545 /* SystemPrefs.swift in Sources */,
 				F072218E2AD43D91001F5452 /* NightShift.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F0A3E09228845B8D005E8D8D /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F0A3E09928845B8D005E8D8D /* main.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F0C05C412E4E29950066F2C4 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 				F0C060FA2E4F70580066F2C4 /* AerialPlayerItem.swift in Sources */,
 				F0C060FB2E4F70580066F2C4 /* FiltersViewController.swift in Sources */,
 				F0C060FC2E4F70580066F2C4 /* HelpViewController.swift in Sources */,
 				F0C060FD2E4F70580066F2C4 /* DarkMode.swift in Sources */,
 				F0C060FE2E4F70580066F2C4 /* VideoCache.swift in Sources */,
 				F0C060FF2E4F70580066F2C4 /* ArtworkLayer.swift in Sources */,
-				F0C061002E4F70580066F2C4 /* VideoFormatViewController.swift in Sources */,
 				F0C061012E4F70580066F2C4 /* DescriptionCellView.swift in Sources */,
-				F0C061022E4F70580066F2C4 /* Locations.swift in Sources */,
 				F0C061032E4F70580066F2C4 /* SourceList.swift in Sources */,
 				F0C061042E4F70580066F2C4 /* DateLayer.swift in Sources */,
 				F0C061052E4F70580066F2C4 /* InfoTableSource.swift in Sources */,
@@ -2429,7 +2508,6 @@
 				F0C061192E4F70580066F2C4 /* AssetLoaderDelegate.swift in Sources */,
 				F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */,
 				F0C0611B2E4F70580066F2C4 /* DisplayView.swift in Sources */,
-				F0C0611C2E4F70580066F2C4 /* ErrorLog.swift in Sources */,
 				F0C0611D2E4F70580066F2C4 /* PrefsVideos.swift in Sources */,
 				F0C0611E2E4F70580066F2C4 /* TimeViewController.swift in Sources */,
 				F0C0611F2E4F70580066F2C4 /* CreditsViewController.swift in Sources */,
@@ -2439,7 +2517,6 @@
 				F0C061232E4F70580066F2C4 /* InfoDateView.swift in Sources */,
 				F0C061242E4F70580066F2C4 /* SeededGenerator.swift in Sources */,
 				F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */,
-				F0C061262E4F70580066F2C4 /* RecapViewController.swift in Sources */,
 				F0C061272E4F70580066F2C4 /* AerialView+Player.swift in Sources */,
 				F0C061282E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */,
 				F0C061292E4F70580066F2C4 /* Sound.swift in Sources */,
@@ -2448,7 +2525,6 @@
 				F0C0612C2E4F70580066F2C4 /* LocationLayer.swift in Sources */,
 				F0C0612D2E4F70580066F2C4 /* AdvancedViewController.swift in Sources */,
 				F0C0612E2E4F70580066F2C4 /* TimeMachine.swift in Sources */,
-				F0C0612F2E4F70580066F2C4 /* FirstSetupWindowController.swift in Sources */,
 				F0C061302E4F70580066F2C4 /* SoundOutputManager.swift in Sources */,
 				F0C061312E4F70580066F2C4 /* WeatherLayer.swift in Sources */,
 				F0C061322E4F70580066F2C4 /* Cache.swift in Sources */,
@@ -2461,7 +2537,7 @@
 				F0C061392E4F70580066F2C4 /* VideoCellView.swift in Sources */,
 				F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */,
 				F0C0613B2E4F70580066F2C4 /* DispatchQueue+Extension.swift in Sources */,
-				F0C0613C2E4F70580066F2C4 /* TimeSetupViewController.swift in Sources */,
+				F02C82BE2E4FAAB500D48D4B /* ErrorLog.swift in Sources */,
 				F0C0613D2E4F70580066F2C4 /* VideosViewController.swift in Sources */,
 				F0C0613E2E4F70580066F2C4 /* CompanionCacheViewController.swift in Sources */,
 				F0C0613F2E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */,
@@ -2506,14 +2582,11 @@
 				F0C061662E4F70580066F2C4 /* Battery.swift in Sources */,
 				F0C061672E4F70580066F2C4 /* ClockLayer.swift in Sources */,
 				F0C061682E4F70580066F2C4 /* CheckboxCellView.swift in Sources */,
-				F0C061692E4F70580066F2C4 /* NextViewController.swift in Sources */,
 				F0C0616A2E4F70580066F2C4 /* Solar.swift in Sources */,
 				F0C0616B2E4F70580066F2C4 /* InfoViewController.swift in Sources */,
 				F0C0616C2E4F70580066F2C4 /* AerialVideo.swift in Sources */,
 				F0C0616D2E4F70580066F2C4 /* AnimationTextLayer.swift in Sources */,
-				F0C0616E2E4F70580066F2C4 /* WelcomeViewController.swift in Sources */,
 				F0C0616F2E4F70580066F2C4 /* WindDirectionLayer.swift in Sources */,
-				F0C061702E4F70580066F2C4 /* CacheSetupViewController.swift in Sources */,
 				F0C061712E4F70580066F2C4 /* FileHelpers.swift in Sources */,
 				F0C061722E4F70580066F2C4 /* PrefsTime.swift in Sources */,
 				F0C061732E4F70580066F2C4 /* ForecastLayer.swift in Sources */,
@@ -2524,7 +2597,6 @@
 				F0C061782E4F70580066F2C4 /* ConditionSymbolLayer.swift in Sources */,
 				F0C061792E4F70580066F2C4 /* AnimationLayer.swift in Sources */,
 				F0C0617A2E4F70580066F2C4 /* SourceOutlineView.swift in Sources */,
-				F0C0617B2E4F70580066F2C4 /* NightShift.swift in Sources */,
 				F0C0617C2E4F70580066F2C4 /* AnimatableLayer.swift in Sources */,
 				F0C0617D2E4F70580066F2C4 /* Brightness.swift in Sources */,
 				F0C0617E2E4F70580066F2C4 /* DownloadIndicatorLayer.swift in Sources */,
@@ -2532,6 +2604,151 @@
 				F0C061802E4F70580066F2C4 /* PoiStringProvider.swift in Sources */,
 				F0C061812E4F70580066F2C4 /* VideoLoader.swift in Sources */,
 				F0C061822E4F70580066F2C4 /* ConditionLayer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0A3E09228845B8D005E8D8D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0A3E09928845B8D005E8D8D /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0C05C412E4E29950066F2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F02C822E2E4F971500D48D4B /* AerialPlayerItem.swift in Sources */,
+				F02C822F2E4F971500D48D4B /* FiltersViewController.swift in Sources */,
+				F02C82302E4F971500D48D4B /* HelpViewController.swift in Sources */,
+				F02C82312E4F971500D48D4B /* DarkMode.swift in Sources */,
+				F02C82322E4F971500D48D4B /* VideoCache.swift in Sources */,
+				F02C82332E4F971500D48D4B /* ArtworkLayer.swift in Sources */,
+				F02C82352E4F971500D48D4B /* DescriptionCellView.swift in Sources */,
+				F0C061022E4F70580066F2C4 /* Locations.swift in Sources */,
+				F02C82362E4F971500D48D4B /* SourceList.swift in Sources */,
+				F02C82372E4F971500D48D4B /* DateLayer.swift in Sources */,
+				F02C82382E4F971500D48D4B /* InfoTableSource.swift in Sources */,
+				F02C82392E4F971500D48D4B /* SourceInfo.swift in Sources */,
+				F02C823A2E4F971500D48D4B /* NSButton+icons.swift in Sources */,
+				F02C823B2E4F971500D48D4B /* AVPlayerItem+vibrance.swift in Sources */,
+				F02C823C2E4F971500D48D4B /* VideoList.swift in Sources */,
+				F02C823D2E4F971500D48D4B /* InfoSettingsTableSource.swift in Sources */,
+				F02C823E2E4F971500D48D4B /* TimerLayer.swift in Sources */,
+				F02C823F2E4F971500D48D4B /* InfoContainerView.swift in Sources */,
+				F02C82402E4F971500D48D4B /* InfoBatteryView.swift in Sources */,
+				F02C82412E4F971500D48D4B /* TimeManagement.swift in Sources */,
+				F02C82422E4F971500D48D4B /* InfoLocationView.swift in Sources */,
+				F02C82432E4F971500D48D4B /* Music.swift in Sources */,
+				F02C82442E4F971500D48D4B /* InfoCommonView.swift in Sources */,
+				F02C82452E4F971500D48D4B /* InfoCountdownView.swift in Sources */,
+				F02C82462E4F971500D48D4B /* YahooLogoLayer.swift in Sources */,
+				F02C82472E4F971500D48D4B /* VideoHeaderView.swift in Sources */,
+				F02C82482E4F971500D48D4B /* PanelWindowController.swift in Sources */,
+				F02C82492E4F971500D48D4B /* VideoManager.swift in Sources */,
+				F02C824A2E4F971500D48D4B /* AerialView.swift in Sources */,
+				F02C824B2E4F971500D48D4B /* Aerial.swift in Sources */,
+				F02C824C2E4F971500D48D4B /* AssetLoaderDelegate.swift in Sources */,
+				F02C824D2E4F971500D48D4B /* DisplayDetection.swift in Sources */,
+				F02C824E2E4F971500D48D4B /* DisplayView.swift in Sources */,
+				F0C0611C2E4F70580066F2C4 /* ErrorLog.swift in Sources */,
+				F02C824F2E4F971500D48D4B /* PrefsVideos.swift in Sources */,
+				F02C82502E4F971500D48D4B /* TimeViewController.swift in Sources */,
+				F02C82512E4F971500D48D4B /* CreditsViewController.swift in Sources */,
+				F02C82522E4F971500D48D4B /* AerialView+Brightness.swift in Sources */,
+				F02C82532E4F971500D48D4B /* GeoCoding.swift in Sources */,
+				F02C82542E4F971500D48D4B /* CheckCellView.swift in Sources */,
+				F02C82552E4F971500D48D4B /* InfoDateView.swift in Sources */,
+				F02C82562E4F971500D48D4B /* SeededGenerator.swift in Sources */,
+				F02C82572E4F971500D48D4B /* AVAsset+VideoOrientation.swift in Sources */,
+				F02C82592E4F971500D48D4B /* AerialView+Player.swift in Sources */,
+				F02C825A2E4F971500D48D4B /* PrefsAdvanced.swift in Sources */,
+				F02C825B2E4F971500D48D4B /* Sound.swift in Sources */,
+				F02C825C2E4F971500D48D4B /* OneCall.swift in Sources */,
+				F02C825D2E4F971500D48D4B /* APISecrets.swift in Sources */,
+				F02C825E2E4F971500D48D4B /* LocationLayer.swift in Sources */,
+				F02C825F2E4F971500D48D4B /* AdvancedViewController.swift in Sources */,
+				F02C82602E4F971500D48D4B /* TimeMachine.swift in Sources */,
+				F02C82622E4F971500D48D4B /* SoundOutputManager.swift in Sources */,
+				F02C82632E4F971500D48D4B /* WeatherLayer.swift in Sources */,
+				F02C82642E4F971500D48D4B /* Cache.swift in Sources */,
+				F02C82652E4F971500D48D4B /* ActionCellView.swift in Sources */,
+				F02C82662E4F971500D48D4B /* SidebarViewController.swift in Sources */,
+				F02C82672E4F971500D48D4B /* PlayingCollectionViewItem.swift in Sources */,
+				F02C82682E4F971500D48D4B /* CountdownLayer.swift in Sources */,
+				F02C82692E4F971500D48D4B /* AsynchronousOperation.swift in Sources */,
+				F02C826A2E4F971500D48D4B /* NowPlayingViewController.swift in Sources */,
+				F02C826B2E4F971500D48D4B /* VideoCellView.swift in Sources */,
+				F02C826C2E4F971500D48D4B /* PrefsCache.swift in Sources */,
+				F02C826D2E4F971500D48D4B /* DispatchQueue+Extension.swift in Sources */,
+				F02C826F2E4F971500D48D4B /* VideosViewController.swift in Sources */,
+				F02C82702E4F971500D48D4B /* CompanionCacheViewController.swift in Sources */,
+				F02C82712E4F971500D48D4B /* SidebarOutlineView.swift in Sources */,
+				F02C82722E4F971500D48D4B /* PrefsInfo.swift in Sources */,
+				F02C82732E4F971500D48D4B /* VideoViewItem.swift in Sources */,
+				F02C82742E4F971500D48D4B /* InfoTimerView.swift in Sources */,
+				F02C82752E4F971500D48D4B /* IOBridge.m in Sources */,
+				F02C82762E4F971500D48D4B /* HardwareDetection.swift in Sources */,
+				F02C82772E4F971500D48D4B /* Sidebar.swift in Sources */,
+				F02C82782E4F971500D48D4B /* DownloadManager.swift in Sources */,
+				F02C82792E4F971500D48D4B /* OverlaysViewController.swift in Sources */,
+				F02C827A2E4F971500D48D4B /* NowPlayingCollectionView.swift in Sources */,
+				F02C827B2E4F971500D48D4B /* NSMenuItem+icons.swift in Sources */,
+				F02C827C2E4F971500D48D4B /* SoundOutputManager+Goodies.swift in Sources */,
+				F02C827D2E4F971500D48D4B /* SourcesViewController.swift in Sources */,
+				F02C827E2E4F971500D48D4B /* MessageLayer.swift in Sources */,
+				F02C827F2E4F971500D48D4B /* PrefsDisplays.swift in Sources */,
+				F02C82802E4F971500D48D4B /* SoundOutputManager+Properties.swift in Sources */,
+				F02C82812E4F971500D48D4B /* InfoSettingsView.swift in Sources */,
+				F02C82822E4F971500D48D4B /* CustomVideoController.swift in Sources */,
+				F02C82832E4F971500D48D4B /* Thumbnails.swift in Sources */,
+				F02C82842E4F971500D48D4B /* DisplaysViewController.swift in Sources */,
+				F02C82852E4F971500D48D4B /* MusicLayer.swift in Sources */,
+				F02C82862E4F971500D48D4B /* Forecast.swift in Sources */,
+				F02C82872E4F971500D48D4B /* InfoMusicView.swift in Sources */,
+				F02C82882E4F971500D48D4B /* OpenWeather.swift in Sources */,
+				F02C82892E4F971500D48D4B /* LayerManager.swift in Sources */,
+				F02C828A2E4F971500D48D4B /* Source.swift in Sources */,
+				F02C828B2E4F971500D48D4B /* InfoWeatherView.swift in Sources */,
+				F02C828C2E4F971500D48D4B /* BatteryIconLayer.swift in Sources */,
+				F02C828D2E4F971500D48D4B /* ShadowTextFieldCell.swift in Sources */,
+				F02C828E2E4F971500D48D4B /* BrightnessViewController.swift in Sources */,
+				F02C828F2E4F971500D48D4B /* PrefsUpdates.swift in Sources */,
+				F02C82902E4F971500D48D4B /* LayerOffsets.swift in Sources */,
+				F02C82912E4F971500D48D4B /* CustomVideoFolders.swift in Sources */,
+				F02C82922E4F971500D48D4B /* CacheViewController.swift in Sources */,
+				F02C82932E4F971500D48D4B /* VideoDownload.swift in Sources */,
+				F02C82942E4F971500D48D4B /* ManifestLoader.swift in Sources */,
+				F02C82952E4F971500D48D4B /* NSImage+trim.swift in Sources */,
+				F02C82962E4F971500D48D4B /* InfoMessageView.swift in Sources */,
+				F02C82972E4F971500D48D4B /* AspectFillNSImageView.swift in Sources */,
+				F02C82982E4F971500D48D4B /* Battery.swift in Sources */,
+				F02C82992E4F971500D48D4B /* ClockLayer.swift in Sources */,
+				F02C829A2E4F971500D48D4B /* CheckboxCellView.swift in Sources */,
+				F02C829B2E4F971500D48D4B /* Solar.swift in Sources */,
+				F02C829C2E4F971500D48D4B /* InfoViewController.swift in Sources */,
+				F02C829D2E4F971500D48D4B /* AerialVideo.swift in Sources */,
+				F02C829E2E4F971500D48D4B /* AnimationTextLayer.swift in Sources */,
+				F02C829F2E4F971500D48D4B /* WindDirectionLayer.swift in Sources */,
+				F02C82A12E4F971500D48D4B /* FileHelpers.swift in Sources */,
+				F02C82A22E4F971500D48D4B /* PrefsTime.swift in Sources */,
+				F02C82A32E4F971500D48D4B /* ForecastLayer.swift in Sources */,
+				F02C82A42E4F971500D48D4B /* PlaybackSpeed.swift in Sources */,
+				F02C82A52E4F971500D48D4B /* CustomVideoFolders+helpers.swift in Sources */,
+				F02C82A62E4F971500D48D4B /* InfoClockView.swift in Sources */,
+				F02C82A72E4F971500D48D4B /* CompanionBridge.swift in Sources */,
+				F02C82A82E4F971500D48D4B /* ConditionSymbolLayer.swift in Sources */,
+				F02C82A92E4F971500D48D4B /* AnimationLayer.swift in Sources */,
+				F02C82AA2E4F971500D48D4B /* SourceOutlineView.swift in Sources */,
+				F02C82AB2E4F971500D48D4B /* NightShift.swift in Sources */,
+				F02C82AC2E4F971500D48D4B /* AnimatableLayer.swift in Sources */,
+				F02C82AD2E4F971500D48D4B /* Brightness.swift in Sources */,
+				F02C82AE2E4F971500D48D4B /* DownloadIndicatorLayer.swift in Sources */,
+				F02C82AF2E4F971500D48D4B /* AVPlayerViewExtension.swift in Sources */,
+				F02C82B02E4F971500D48D4B /* PoiStringProvider.swift in Sources */,
+				F02C82B12E4F971500D48D4B /* VideoLoader.swift in Sources */,
+				F02C82B22E4F971500D48D4B /* ConditionLayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2546,7 +2763,6 @@
 				F0C062142E4F70580066F2C4 /* DarkMode.swift in Sources */,
 				F0C062152E4F70580066F2C4 /* VideoCache.swift in Sources */,
 				F0C062162E4F70580066F2C4 /* ArtworkLayer.swift in Sources */,
-				F0C062172E4F70580066F2C4 /* VideoFormatViewController.swift in Sources */,
 				F0C062182E4F70580066F2C4 /* DescriptionCellView.swift in Sources */,
 				F0C062192E4F70580066F2C4 /* Locations.swift in Sources */,
 				F0C0621A2E4F70580066F2C4 /* SourceList.swift in Sources */,
@@ -2584,7 +2800,6 @@
 				F0C0623A2E4F70580066F2C4 /* InfoDateView.swift in Sources */,
 				F0C0623B2E4F70580066F2C4 /* SeededGenerator.swift in Sources */,
 				F0C0623C2E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */,
-				F0C0623D2E4F70580066F2C4 /* RecapViewController.swift in Sources */,
 				F0C0623E2E4F70580066F2C4 /* AerialView+Player.swift in Sources */,
 				F0C0623F2E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */,
 				F0C062402E4F70580066F2C4 /* Sound.swift in Sources */,
@@ -2593,7 +2808,6 @@
 				F0C062432E4F70580066F2C4 /* LocationLayer.swift in Sources */,
 				F0C062442E4F70580066F2C4 /* AdvancedViewController.swift in Sources */,
 				F0C062452E4F70580066F2C4 /* TimeMachine.swift in Sources */,
-				F0C062462E4F70580066F2C4 /* FirstSetupWindowController.swift in Sources */,
 				F0C062472E4F70580066F2C4 /* SoundOutputManager.swift in Sources */,
 				F0C062482E4F70580066F2C4 /* WeatherLayer.swift in Sources */,
 				F0C062492E4F70580066F2C4 /* Cache.swift in Sources */,
@@ -2606,7 +2820,6 @@
 				F0C062502E4F70580066F2C4 /* VideoCellView.swift in Sources */,
 				F0C062512E4F70580066F2C4 /* PrefsCache.swift in Sources */,
 				F0C062522E4F70580066F2C4 /* DispatchQueue+Extension.swift in Sources */,
-				F0C062532E4F70580066F2C4 /* TimeSetupViewController.swift in Sources */,
 				F0C062542E4F70580066F2C4 /* VideosViewController.swift in Sources */,
 				F0C062552E4F70580066F2C4 /* CompanionCacheViewController.swift in Sources */,
 				F0C062562E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */,
@@ -2651,14 +2864,11 @@
 				F0C0627D2E4F70580066F2C4 /* Battery.swift in Sources */,
 				F0C0627E2E4F70580066F2C4 /* ClockLayer.swift in Sources */,
 				F0C0627F2E4F70580066F2C4 /* CheckboxCellView.swift in Sources */,
-				F0C062802E4F70580066F2C4 /* NextViewController.swift in Sources */,
 				F0C062812E4F70580066F2C4 /* Solar.swift in Sources */,
 				F0C062822E4F70580066F2C4 /* InfoViewController.swift in Sources */,
 				F0C062832E4F70580066F2C4 /* AerialVideo.swift in Sources */,
 				F0C062842E4F70580066F2C4 /* AnimationTextLayer.swift in Sources */,
-				F0C062852E4F70580066F2C4 /* WelcomeViewController.swift in Sources */,
 				F0C062862E4F70580066F2C4 /* WindDirectionLayer.swift in Sources */,
-				F0C062872E4F70580066F2C4 /* CacheSetupViewController.swift in Sources */,
 				F0C062882E4F70580066F2C4 /* FileHelpers.swift in Sources */,
 				F0C062892E4F70580066F2C4 /* PrefsTime.swift in Sources */,
 				F0C0628A2E4F70580066F2C4 /* ForecastLayer.swift in Sources */,
@@ -2846,11 +3056,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 1.5.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MARKETING_VERSION = 4.0.0a1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.glouel.AerialUpdater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = COMPANION_APP;
 				SWIFT_OBJC_BRIDGING_HEADER = "Companion/ObjC/Aerial-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -2876,12 +3087,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 1.5.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MARKETING_VERSION = 4.0.0a1;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
 				PRODUCT_BUNDLE_IDENTIFIER = com.glouel.AerialUpdater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = COMPANION_APP;
 				SWIFT_OBJC_BRIDGING_HEADER = "Companion/ObjC/Aerial-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
@@ -2954,6 +3166,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SCREENSAVER;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
@@ -2994,6 +3207,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SCREENSAVER;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;

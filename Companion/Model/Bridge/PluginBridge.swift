@@ -10,12 +10,12 @@ import Foundation
 struct PluginBridge {
     
     static func setNotifications() {
-        debugLog("🌉 seting up PluginBridge")
+        CompanionLogging.debugLog("🌉 seting up PluginBridge")
 
         // Get nightshift
         DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.glouel.aerial.getnightshift"), object: nil, queue: nil) { notification in
-            debugLog("🌉😻 received nightshift, replying")
-            debugLog(notification.debugDescription)
+            CompanionLogging.debugLog("🌉😻 received nightshift, replying")
+            CompanionLogging.debugLog(notification.debugDescription)
             
             // Do the thing
             sendNightShift()
@@ -23,8 +23,8 @@ struct PluginBridge {
 
         // Get location
         DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.glouel.aerial.getlocation"), object: nil, queue: nil) { notification in
-            debugLog("🌉😻 received location, replying")
-            debugLog(notification.debugDescription)
+            CompanionLogging.debugLog("🌉😻 received location, replying")
+            CompanionLogging.debugLog(notification.debugDescription)
             
             // Do the thing
             sendLocation()
@@ -36,11 +36,11 @@ struct PluginBridge {
     static func sendNightShift() {
         let (isNSCapable, sunrise, sunset, _) = NightShift.getInformation()
         if !isNSCapable {
-            errorLog("Trying to use Night Shift on a non capable Mac")
+            CompanionLogging.errorLog("Trying to use Night Shift on a non capable Mac")
             return
         }
 
-        debugLog("🌉 Night shift sunrise: \(sunrise!), sunset: \(sunset!))")
+        CompanionLogging.debugLog("🌉 Night shift sunrise: \(sunrise!), sunset: \(sunset!))")
         DistributedNotificationCenter.default().postNotificationName(NSNotification.Name("com.glouel.aerial.nightshift"), object: nil, userInfo: ["sunrise": sunrise!, "sunset": sunset!], deliverImmediately: true)
     }
     
@@ -48,13 +48,13 @@ struct PluginBridge {
         // Get the location
         let location = Locations.sharedInstance
         location.getCoordinates(failure: { (_) in
-            errorLog("Could not get coordinates")
+            CompanionLogging.errorLog("Could not get coordinates")
         }, success: { (coordinates) in
             // Anonymize a bit
             let lat: Double = (coordinates.latitude*100).rounded() / 100
             let long: Double = (coordinates.longitude*100).rounded() / 100
 
-            debugLog("🌉 Location check: \(lat), sunset: \(long))")
+            CompanionLogging.debugLog("🌉 Location check: \(lat), sunset: \(long))")
             DistributedNotificationCenter.default().postNotificationName(NSNotification.Name("com.glouel.aerial.location"), object: nil, userInfo: ["latitude": lat, "longitude": long], deliverImmediately: true)
         })
     }

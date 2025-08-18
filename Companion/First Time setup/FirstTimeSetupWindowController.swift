@@ -107,7 +107,7 @@ class FirstTimeSetupWindowController: NSWindowController, UpdateCallback {
     }
     
     func updateMenuContent() {
-        debugLog("donee")
+        CompanionLogging.debugLog("donee")
     }
     
     func setIcon(mode: IconMode) {

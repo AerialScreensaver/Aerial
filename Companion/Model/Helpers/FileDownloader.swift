@@ -17,19 +17,19 @@ class FileDownloader {
 
         if FileManager().fileExists(atPath: destinationUrl.path)
         {
-            errorLog("File already exists [\(destinationUrl.path)]")
+            CompanionLogging.errorLog("File already exists [\(destinationUrl.path)]")
             completion(destinationUrl.path, nil)
         }
         else if let dataFromURL = NSData(contentsOf: url)
         {
             if dataFromURL.write(to: destinationUrl, atomically: true)
             {
-                debugLog("file saved [\(destinationUrl.path)]")
+                CompanionLogging.debugLog("file saved [\(destinationUrl.path)]")
                 completion(destinationUrl.path, nil)
             }
             else
             {
-                errorLog("error saving file")
+                CompanionLogging.errorLog("error saving file")
                 let error = NSError(domain:"Error saving file", code:1001, userInfo:nil)
                 completion(destinationUrl.path, error)
             }
@@ -49,7 +49,7 @@ class FileDownloader {
 
         if FileManager().fileExists(atPath: destinationUrl.path)
         {
-            errorLog("File already exists [\(destinationUrl.path)]")
+            CompanionLogging.errorLog("File already exists [\(destinationUrl.path)]")
             completion(destinationUrl.path, nil)
         }
         else

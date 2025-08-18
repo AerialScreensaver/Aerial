@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Manifest
-struct Manifest: Codable {
+struct CompanionManifest: Codable {
     let alphaVersion, alphaSHA256: String?  // This will go away soon
     let updaterVersion, betaVersion, betaSHA256: String
     let releaseVersion, releaseSHA256: String
@@ -16,9 +16,9 @@ struct Manifest: Codable {
 
 // MARK: Manifest convenience initializers and mutators
 
-extension Manifest {
+extension CompanionManifest {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Manifest.self, from: data)
+        self = try newJSONDecoder().decode(CompanionManifest.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -62,7 +62,7 @@ extension Manifest {
 }
 
 // MARK: - Helper functions for creating encoders and decoders
-
+/*
 func newJSONDecoder() -> JSONDecoder {
     let decoder = JSONDecoder()
     if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
@@ -78,3 +78,4 @@ func newJSONEncoder() -> JSONEncoder {
     }
     return encoder
 }
+*/

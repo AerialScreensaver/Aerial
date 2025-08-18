@@ -41,7 +41,7 @@ class SettingsWindowController: NSWindowController {
     }
 
     @IBAction func updateModePopupChange(_ sender: NSPopUpButton) {
-        Preferences.updateMode = UpdateMode(rawValue: sender.indexOfSelectedItem)!
+        Preferences.updateMode = CompanionUpdateMode(rawValue: sender.indexOfSelectedItem)!
     }
 
     @IBAction func checkEveryPopupChange(_ sender: NSPopUpButton) {
@@ -59,7 +59,7 @@ class SettingsWindowController: NSWindowController {
         if !Bundle.main.loadNibNamed(NSNib.Name("UpdateCheckWindowController"),
                             owner: updateCheckWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for InfoWindow, please report")
+            CompanionLogging.errorLog("Could not load nib for InfoWindow, please report")
         }
         let appd = NSApp.delegate as! AppDelegate
         updateCheckWindowController.setCallback(appd.popoverViewController)

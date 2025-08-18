@@ -34,7 +34,7 @@ final class PoiStringProvider {
     init() {
         debugLog("Poi Strings Provider initialized")
         loadBundle()
-        loadCommunity()
+        //loadCommunity()
     }
 
     // MARK: - Bundle management

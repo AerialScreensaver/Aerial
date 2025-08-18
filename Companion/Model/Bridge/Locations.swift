@@ -20,24 +20,24 @@ class Locations: NSObject {
     override init() {
         super.init()
         locationManager.delegate = self
-        debugLog("Starting Location initialization")
+        CompanionLogging.debugLog("Starting Location initialization")
     }
 
     func getCoordinates(failure: @escaping (_ error: String) -> Void,
                         success: @escaping (_ response: CLLocationCoordinate2D) -> Void) {
         // Perhaps they are cached already ?
         if coordinates != nil {
-            debugLog("Location using cached data")
+            CompanionLogging.debugLog("Location using cached data")
             success(coordinates!)
             return
         }
 
         // Check for access & start
         if CLLocationManager.locationServicesEnabled() {
-            debugLog("Location services enabled")
+            CompanionLogging.debugLog("Location services enabled")
             locationManager.startUpdatingLocation()
         } else {
-            debugLog("Location services disabled")
+            CompanionLogging.debugLog("Location services disabled")
             failure("Location services disabled")
         }
 
@@ -58,9 +58,9 @@ class Locations: NSObject {
 extension Locations: CLLocationManagerDelegate {
     // Auth status callback
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        debugLog("LMauth status change : \(status.rawValue)")
+        CompanionLogging.debugLog("LMauth status change : \(status.rawValue)")
         if status == .denied {
-            debugLog("Location services are either globally disabled, or disabled for Aerial. Please enable them at least once so Aerial can get your coordinates, or use another Time management mode.")
+            CompanionLogging.debugLog("Location services are either globally disabled, or disabled for Aerial. Please enable them at least once so Aerial can get your coordinates, or use another Time management mode.")
         }
     }
 
@@ -68,7 +68,7 @@ extension Locations: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let currentLocation = locations[locations.count - 1]
         coordinates = currentLocation.coordinate    // Wondering, why singular?
-        debugLog("Location coordinate : \(currentLocation.coordinate)")
+        CompanionLogging.debugLog("Location coordinate : \(currentLocation.coordinate)")
         locationManager.stopUpdatingLocation()      // We only want them once
 
         for success in successes {

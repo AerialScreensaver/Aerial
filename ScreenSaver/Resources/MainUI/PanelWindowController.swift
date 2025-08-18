@@ -9,7 +9,7 @@
 import Cocoa
 
 @objc class PanelWindowController: NSWindowController {
-    var firstSetupWindowController: FirstSetupWindowController?
+    //var firstSetupWindowController: FirstSetupWindowController?
 
     var splitVC: NSSplitViewController?
     var videosVC: VideosViewController?
@@ -118,7 +118,7 @@ import Cocoa
     }
 
     func doFirstTimeSetup() {
-        if PrefsAdvanced.firstTimeSetup == false && firstSetupWindowController == nil {
+/*        if PrefsAdvanced.firstTimeSetup == false && firstSetupWindowController == nil {
             let bundle = Bundle(for: PanelWindowController.self)
             // We also load our CustomVideos nib here
 
@@ -134,7 +134,7 @@ import Cocoa
                 self.firstSetupWindowController!.showWindow(self)
                 self.firstSetupWindowController!.window!.makeKeyAndOrderFront(self)
             }
-        }
+        }*/
     }
 
     // Switch from one menu list to another

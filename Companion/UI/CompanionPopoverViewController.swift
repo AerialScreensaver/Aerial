@@ -65,11 +65,11 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     }
     
     func updateMenuContent() {
-        debugLog("umc")
+        CompanionLogging.debugLog("umc")
         DispatchQueue.main.async {
             
             let (statusString, shouldInstall) = Update.instance.check()
-            debugLog("\(statusString) \(shouldInstall)")
+            CompanionLogging.debugLog("\(statusString) \(shouldInstall)")
             
             //self.versionLabel.stringValue = statusString
 
@@ -278,7 +278,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
             if !Bundle.main.loadNibNamed(NSNib.Name("SetDefaultWindowController"),
                                          owner: setDefaultWindowController,
                                          topLevelObjects: &topLevelObjects) {
-                errorLog("Could not load nib for SettingsWindow, please report")
+                CompanionLogging.errorLog("Could not load nib for SettingsWindow, please report")
             }
             setDefaultWindowController.windowDidLoad()
             setDefaultWindowController.showWindow(self)
@@ -300,7 +300,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     // Update
     func update() {
         print("update")
-        debugLog("update")
+        CompanionLogging.debugLog("update")
         if hasUpdate {
             updateBarBox.isHidden = false
         } else {
@@ -480,7 +480,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
             }
             //DesktopLauncher.instance.changeSpeed(Int(sender.intValue))
         } else {
-            //debugLog("not here")
+            //CompanionLogging.debugLog("not here")
             SaverLauncher.instance.changeSpeed(Int(sender.intValue))
         }
     }
@@ -545,7 +545,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         if !Bundle.main.loadNibNamed(NSNib.Name("InfoWindowController"),
                             owner: infoWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for InfoWindow, please report")
+            CompanionLogging.errorLog("Could not load nib for InfoWindow, please report")
         }
         infoWindowController.windowDidLoad()
         infoWindowController.showWindow(self)
@@ -559,7 +559,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         if !Bundle.main.loadNibNamed(NSNib.Name("SettingsWindowController"),
                             owner: settingsWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for SettingsWindow, please report")
+            CompanionLogging.errorLog("Could not load nib for SettingsWindow, please report")
         }
         settingsWindowController.windowDidLoad()
         settingsWindowController.showWindow(self)

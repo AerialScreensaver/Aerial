@@ -46,11 +46,11 @@ struct LaunchAgent {
     static private func removeAgent() {
         if FileManager.default.fileExists(atPath: agentPath) {
             do {
-                debugLog("Removing LaunchAgent")
+                CompanionLogging.debugLog("Removing LaunchAgent")
                 try FileManager().removeItem(atPath: agentPath)
             } catch {
                 // ERROR
-                errorLog("Cannot remove LaunchAgent")
+                CompanionLogging.errorLog("Cannot remove LaunchAgent")
                 Helpers.showErrorAlert(question: "Cannot remove launch agent", text: "Please report !")
                 return
             }
@@ -61,7 +61,7 @@ struct LaunchAgent {
         var agent: String = ""
         switch Preferences.launchMode {
         case .manual:
-            errorLog("Calling installAgent in manual mode, please report")
+            CompanionLogging.errorLog("Calling installAgent in manual mode, please report")
             return
         case .startup:
             agent = getStartupAgent()
@@ -71,7 +71,7 @@ struct LaunchAgent {
         
         // We may need to create the "LaunchAgents" folder in library !
         if !FileManager.default.fileExists(atPath: agentFolder) {
-            debugLog("Creating /LaunchAgents/ in user library")
+            CompanionLogging.debugLog("Creating /LaunchAgents/ in user library")
             
             do {
                 try FileManager.default.createDirectory(
@@ -79,21 +79,21 @@ struct LaunchAgent {
                     withIntermediateDirectories: true,
                     attributes: nil)
             } catch {
-                errorLog("Cannot create LaunchAgent directory in your user library")
+                CompanionLogging.errorLog("Cannot create LaunchAgent directory in your user library")
                 print(error.localizedDescription);
             }
         }
         
         do {
             try agent.write(toFile: agentPath, atomically: true, encoding: .utf8)
-            debugLog("LaunchAgent installed")
+            CompanionLogging.debugLog("LaunchAgent installed")
         } catch {
             Helpers.showErrorAlert(question: "Can't install LaunchAgent", text: "Please report the issue")
         }
 
         restart()
         if Preferences.launchMode == .background {
-            debugLog("Quitting after installing background mode")
+            CompanionLogging.debugLog("Quitting after installing background mode")
             NSApplication.shared.terminate(nil)
         }
     }
@@ -101,11 +101,11 @@ struct LaunchAgent {
     // Restarts our agent via launchctl
     // This may not work on very old macOS versions?
     static private func restart() {
-        debugLog("Restarting LaunchAgent")
+        CompanionLogging.debugLog("Restarting LaunchAgent")
         let out1 = Helpers.shell(launchPath: "/bin/launchctl", arguments: ["unload", agentPath])
-        debugLog(out1 ?? "(no output)")
+        CompanionLogging.debugLog(out1 ?? "(no output)")
         let out2 = Helpers.shell(launchPath: "/bin/launchctl", arguments: ["load", agentPath])
-        debugLog(out2 ?? "(no output)")
+        CompanionLogging.debugLog(out2 ?? "(no output)")
     }
     
     static private func getStartupAgent() -> String {

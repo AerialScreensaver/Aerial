@@ -12,7 +12,7 @@ import VideoToolbox
 
 class AdvancedViewController: NSViewController {
     var windowController: PanelWindowController?
-    var firstSetupWindowController: FirstSetupWindowController?
+    //var firstSetupWindowController: FirstSetupWindowController?
 
     @IBOutlet var scrollView: NSScrollView!
     
@@ -150,6 +150,7 @@ class AdvancedViewController: NSViewController {
     }
 
     @IBAction func launchSetupAgainClick(_ sender: NSButton) {
+        /*
         if firstSetupWindowController == nil {
             let bundle = Bundle(for: PanelWindowController.self)
             // We also load our CustomVideos nib here
@@ -167,7 +168,7 @@ class AdvancedViewController: NSViewController {
             self.firstSetupWindowController!.windowDidLoad()
             self.firstSetupWindowController!.showWindow(self)
             self.firstSetupWindowController!.window!.makeKeyAndOrderFront(self)
-        }
+        }*/
     }
 
     @IBAction func videoFormatPopupChange(_ sender: NSPopUpButton) {

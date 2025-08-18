@@ -27,7 +27,7 @@ class BackgroundCheck {
         timer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
         
         if let newTimer = timer {
-            debugLog("Setting timer to: \(Preferences.checkEvery)")
+            CompanionLogging.debugLog("Setting timer to: \(Preferences.checkEvery)")
             switch  Preferences.checkEvery {
             case .hour:
                 newTimer.schedule(deadline: .now(), repeating: .seconds(hourSeconds))

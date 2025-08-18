@@ -26,7 +26,7 @@ class Update {
     }
     
     func unattendedCheck() {
-        debugLog("Checking for new version...")
+        CompanionLogging.debugLog("Checking for new version...")
         if !LocalVersion.isInstalled() {
             return
         }
@@ -48,7 +48,7 @@ class Update {
             }
             
             if shouldUpdate {
-                debugLog("New version available !")
+                CompanionLogging.debugLog("New version available !")
                 if Preferences.updateMode == .automatic {
                     unattendedPerform()
                 } else {
@@ -69,7 +69,7 @@ class Update {
         if let manifest = CachedManifest.instance.manifest {
             let localVersion = LocalVersion.get()
             
-            debugLog("Versions: local \(localVersion), beta \(manifest.betaVersion), release \(manifest.releaseVersion)")
+            CompanionLogging.debugLog("Versions: local \(localVersion), beta \(manifest.betaVersion), release \(manifest.releaseVersion)")
             
             switch Preferences.desiredVersion {
             case .beta:
@@ -103,7 +103,7 @@ class Update {
     }
     
     func report(string: String, done: Bool) {
-        debugLog("report \(done)")
+        CompanionLogging.debugLog("report \(done)")
         if shouldReport {
             if let cb = uiCallback {
                 cb.updateProgress(string: string, done: done)
@@ -119,7 +119,7 @@ class Update {
             if commandLine {
                 // We quit here
                 DispatchQueue.main.async {
-                    debugLog("Update process done, quitting in 20sec.")
+                    CompanionLogging.debugLog("Update process done, quitting in 20sec.")
                     RunLoop.main.run(until: Date() + 0x14)
                     NSApplication.shared.terminate(self)
                 }
@@ -133,12 +133,12 @@ class Update {
         }
 
         guard let manifest = CachedManifest.instance.manifest else {
-            errorLog("Trying to perform update with no manifest, please report")
+            CompanionLogging.errorLog("Trying to perform update with no manifest, please report")
             report(string: "Error: No manifest", done: true)
             return
         }
         
-        debugLog("Performing update")
+        CompanionLogging.debugLog("Performing update")
         
         let supportUrl = URL(fileURLWithPath: Helpers.supportPath)
 
@@ -149,11 +149,11 @@ class Update {
         if FileManager().fileExists(atPath: destinationUrl.path)
         {
             do {
-                debugLog("Deleting old file from AppSupport")
+                CompanionLogging.debugLog("Deleting old file from AppSupport")
                 try FileManager().removeItem(at: destinationUrl)
             } catch {
                 // ERROR
-                errorLog("Cannot delete zip in AppSupport")
+                CompanionLogging.errorLog("Cannot delete zip in AppSupport")
                 report(string: "Cannot delete zip in AppSupport", done: true)
                 return
             }
@@ -162,11 +162,11 @@ class Update {
         if FileManager().fileExists(atPath: destinationSaverUrl.path)
         {
             do {
-                debugLog("Deleting old saver file from AppSupport")
+                CompanionLogging.debugLog("Deleting old saver file from AppSupport")
                 try FileManager().removeItem(at: destinationSaverUrl)
             } catch {
                 // ERROR
-                errorLog("Cannot delete Aerial.saver in AppSupport")
+                CompanionLogging.errorLog("Cannot delete Aerial.saver in AppSupport")
                 report(string: "Cannot delete Aerial.saver in AppSupport", done: true)
                 return
             }
@@ -180,12 +180,12 @@ class Update {
         case .release:
             zipPath = "https://github.com/JohnCoates/Aerial/releases/download/v\(manifest.releaseVersion)/Aerial.saver.zip"
         }
-        debugLog("Downloading...")
+        CompanionLogging.debugLog("Downloading...")
         report(string: "Downloading...", done: false)
         
         FileDownloader.loadFileAsync(url: URL(string:zipPath)!) { (path, error) in
             if let perror = error {
-                errorLog("Download error: \(perror.localizedDescription)")
+                CompanionLogging.errorLog("Download error: \(perror.localizedDescription)")
                 self.report(string: "Error: \(perror.localizedDescription)", done: true)
             } else {
                 self.verifyFile(path: path!, manifest: manifest)
@@ -194,8 +194,8 @@ class Update {
     }
     
     // MARK: - Private helpers
-    private func verifyFile(path: String, manifest: Manifest) {
-        debugLog("Verifying...")
+    private func verifyFile(path: String, manifest: CompanionManifest) {
+        CompanionLogging.debugLog("Verifying...")
         report(string: "Verifying...", done: false)
         
         if FileManager.default.fileExists(atPath: path) {
@@ -210,14 +210,14 @@ class Update {
             }
 
             if tsha == dlsha {
-                debugLog("Unzipping...")
+                CompanionLogging.debugLog("Unzipping...")
                 report(string: "Unzipping...", done: false)
 
                 _ = Helpers.shell(launchPath: "/usr/bin/unzip", arguments: ["-d", String(path[...path.lastIndex(of: "/")!]), path])
                 
                 var saverPath = path
                 saverPath.removeLast(4)
-                debugLog("Verifying signature...")
+                CompanionLogging.debugLog("Verifying signature...")
                 report(string: "Verifying signature...", done: false)
 
                 if FileManager.default.fileExists(atPath: saverPath) {
@@ -226,28 +226,28 @@ class Update {
                     if checkCodesign(result) {
                         if install(saverPath) {
                             // Pfew...
-                            debugLog("Installed ! Setting up as default")
+                            CompanionLogging.debugLog("Installed ! Setting up as default")
                             //setAsDefault()
                             report(string: "OK", done: true)
                         } else {
-                            errorLog("Cannot copy .saver")
+                            CompanionLogging.errorLog("Cannot copy .saver")
                             report(string: "Cannot copy .saver", done: true)
                         }
                         
                     } else {
-                        errorLog("Codesigning verification failed")
+                        CompanionLogging.errorLog("Codesigning verification failed")
                         report(string: "Codesigning verification failed", done: true)
                     }
                 } else {
-                    errorLog("Aerial.saver not found in zip")
+                    CompanionLogging.errorLog("Aerial.saver not found in zip")
                     report(string: "Aerial.saver not found in zip", done: true)
                 }
             } else {
-                errorLog("Downloaded file is corrupted")
+                CompanionLogging.errorLog("Downloaded file is corrupted")
                 report(string: "Downloaded file is corrupted", done: true)
             }
         } else {
-            errorLog("Downloaded file not found")
+            CompanionLogging.errorLog("Downloaded file not found")
             report(string: "Downloaded file not found", done: true)
         }
         
@@ -257,7 +257,7 @@ class Update {
         // defaults -currentHost write com.apple.screensaver moduleDict -dict moduleName Flurry path /System/Library/Screen\ Savers/Flurry.saver/ type 0
         
         _ = Helpers.shell(launchPath: "/usr/bin/defaults", arguments: ["-currentHost","write","com.apple.screensaver","moduleDict","-dict","moduleName","Aerial","path",LocalVersion.aerialPath,"type","0"])
-        //debugLog(ret ?? "Defaults didn't return error")
+        //CompanionLogging.debugLog(ret ?? "Defaults didn't return error")
     }
 
     private func checkCodesign(_ result: String?) -> Bool {
@@ -289,7 +289,7 @@ class Update {
     
     private func install(_ path: String) -> Bool {
         if FileManager.default.fileExists(atPath: LocalVersion.aerialPath) {
-            debugLog("Removing old version...")
+            CompanionLogging.debugLog("Removing old version...")
             report(string: "Removing old version...", done: false)
             if FileManager().fileExists(atPath: LocalVersion.aerialPath)
             {
@@ -297,7 +297,7 @@ class Update {
                     try FileManager().removeItem(at: URL(fileURLWithPath: LocalVersion.aerialPath))
                 } catch {
                     // ERROR
-                    errorLog("Cannot delete zip in downloads directory")
+                    CompanionLogging.errorLog("Cannot delete zip in downloads directory")
                     report(string: "Cannot delete zip in downloads directory", done: true)
                     return false
                 }
@@ -306,7 +306,7 @@ class Update {
         
         // We may need to create the "Screen Savers" folder in library !
         if !FileManager.default.fileExists(atPath: LocalVersion.userLibraryScreenSaverPath) {
-            debugLog("Creating /Screen Savers/ in user library")
+            CompanionLogging.debugLog("Creating /Screen Savers/ in user library")
             
             do {
                 try FileManager.default.createDirectory(
@@ -314,20 +314,20 @@ class Update {
                     withIntermediateDirectories: true,
                     attributes: nil)
             } catch {
-                errorLog("Cannot create Screen Savers directory in your user library")
+                CompanionLogging.errorLog("Cannot create Screen Savers directory in your user library")
                 report(string: "Cannot create Screen Savers directory in your user library", done: true)
 
                 print(error.localizedDescription);
             }
         }
         
-        debugLog("Installing...")
+        CompanionLogging.debugLog("Installing...")
         report(string: "Installing...", done: false)
 
         do {
             try FileManager.default.moveItem(atPath: path, toPath: LocalVersion.aerialPath)
             
-            debugLog("Installed!")
+            CompanionLogging.debugLog("Installed!")
             return true
         } catch {
             return false

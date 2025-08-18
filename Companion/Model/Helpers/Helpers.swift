@@ -43,7 +43,7 @@ struct Helpers {
             true)
 
         if appSupportPaths.isEmpty {
-            errorLog("FATAL : app support does not exist!")
+            CompanionLogging.errorLog("FATAL : app support does not exist!")
             fatalError()
         }
 
@@ -52,7 +52,7 @@ struct Helpers {
         if FileManager.default.fileExists(atPath: appSupportDirectory) {
             return appSupportDirectory
         } else {
-            debugLog("Creating app support directory...")
+            CompanionLogging.debugLog("Creating app support directory...")
 
             let fileManager = FileManager.default
             do {
@@ -60,7 +60,7 @@ struct Helpers {
                                                 withIntermediateDirectories: true, attributes: nil)
                 return appSupportDirectory
             } catch let error {
-                errorLog("FATAL : Couldn't create app support directory in User directory: \(error)")
+                CompanionLogging.errorLog("FATAL : Couldn't create app support directory in User directory: \(error)")
                 fatalError()
             }
         }
@@ -97,6 +97,7 @@ struct Helpers {
 
 }
 
+/*
 extension NSImage {
 
     func tinting(with tintColor: NSColor) -> NSImage {
@@ -113,3 +114,4 @@ extension NSImage {
         }
     }
 }
+*/

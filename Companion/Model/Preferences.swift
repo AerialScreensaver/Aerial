@@ -11,7 +11,7 @@ enum DesiredVersion: Int, Codable {
     case beta, release
 }
 
-enum UpdateMode: Int, Codable {
+enum CompanionUpdateMode: Int, Codable {
     case automatic, notifyme
 }
 
@@ -25,7 +25,7 @@ enum LaunchMode: Int, Codable {
 
 struct Preferences {
     // Which version are we looking for ? Defaults to release
-    @SimpleStorage(key: "intDesiredVersion", defaultValue: DesiredVersion.release.rawValue)
+    @CompanionSimpleStorage(key: "intDesiredVersion", defaultValue: DesiredVersion.release.rawValue)
     static var intDesiredVersion: Int
     
     // We wrap in a separate value, as we can't store an enum as a Codable in
@@ -40,14 +40,14 @@ struct Preferences {
     }
     
     // Automatic or notifications ?
-    @SimpleStorage(key: "intUpdateMode", defaultValue: UpdateMode.notifyme.rawValue)
+    @CompanionSimpleStorage(key: "intUpdateMode", defaultValue: CompanionUpdateMode.notifyme.rawValue)
     static var intUpdateMode: Int
     
     // We wrap in a separate value, as we can't store an enum as a Codable in
     // macOS < 10.15
-    static var updateMode: UpdateMode {
+    static var updateMode: CompanionUpdateMode {
         get {
-            return UpdateMode(rawValue: intUpdateMode)!
+            return CompanionUpdateMode(rawValue: intUpdateMode)!
         }
         set(value) {
             intUpdateMode = value.rawValue
@@ -56,7 +56,7 @@ struct Preferences {
     
     
     // Check frequency
-    @SimpleStorage(key: "intCheckEvery", defaultValue: CheckEvery.day.rawValue)
+    @CompanionSimpleStorage(key: "intCheckEvery", defaultValue: CheckEvery.day.rawValue)
     static var intCheckEvery: Int
     
     // We wrap in a separate value, as we can't store an enum as a Codable in
@@ -71,7 +71,7 @@ struct Preferences {
     }
     
     // Automatic or notifications ?
-    @SimpleStorage(key: "intLaunchMode", defaultValue: LaunchMode.manual.rawValue)
+    @CompanionSimpleStorage(key: "intLaunchMode", defaultValue: LaunchMode.manual.rawValue)
     static var intLaunchMode: Int
     
     // We wrap in a separate value, as we can't store an enum as a Codable in
@@ -85,29 +85,29 @@ struct Preferences {
         }
     }
     
-    @SimpleStorage(key: "debugMode", defaultValue: false)
+    @CompanionSimpleStorage(key: "debugMode", defaultValue: false)
     static var debugMode: Bool
     
-    @SimpleStorage(key: "firstTimeSetup", defaultValue: false)
+    @CompanionSimpleStorage(key: "firstTimeSetup", defaultValue: false)
     static var firstTimeSetup: Bool
 
     // Check frequency
-    @SimpleStorage(key: "enabledWallpaperScreenUuids", defaultValue: [])
+    @CompanionSimpleStorage(key: "enabledWallpaperScreenUuids", defaultValue: [])
     static var enabledWallpaperScreenUuids: [String]
     
-    @SimpleStorage(key: "restartBackground", defaultValue: true)
+    @CompanionSimpleStorage(key: "restartBackground", defaultValue: true)
     static var restartBackground: Bool
     
-    @SimpleStorage(key: "wasRunningBackground", defaultValue: false)
+    @CompanionSimpleStorage(key: "wasRunningBackground", defaultValue: false)
     static var wasRunningBackground: Bool
     
-    @SimpleStorage(key: "globalSpeed", defaultValue: 100)
+    @CompanionSimpleStorage(key: "globalSpeed", defaultValue: 100)
     static var globalSpeed: Int
 }
 
 
 // This retrieves/store any type of property in our plist
-@propertyWrapper struct Storage<T: Codable> {
+@propertyWrapper struct CompanionStorage<T: Codable> {
     private let key: String
     private let defaultValue: T
 
@@ -152,7 +152,7 @@ struct Preferences {
 }
 
 // This retrieves store "simple" types that are natively storable on plists
-@propertyWrapper struct SimpleStorage<T> {
+@propertyWrapper struct CompanionSimpleStorage<T> {
     private let key: String
     private let defaultValue: T
 

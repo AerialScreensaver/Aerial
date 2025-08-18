@@ -5,11 +5,11 @@
 //  Created by Guillaume Louel on 02/12/2020.
 //
 
-import Foundation
+import AppKit
 
 class DesktopLauncher : NSObject, NSWindowDelegate {
     let targetScreen: NSScreen
-    let aerialDesktopController = AerialDesktop()
+    let aerialDesktopController = SwiftAerialDesktop()
     var isRunning = false
     
     init(screen: NSScreen = NSScreen.main!) {
@@ -22,7 +22,7 @@ class DesktopLauncher : NSObject, NSWindowDelegate {
             if !Bundle.main.loadNibNamed(NSNib.Name("AerialDesktop"),
                                          owner: aerialDesktopController,
                                          topLevelObjects: &topLevelObjects) {
-                errorLog("Could not load nib for AerialDesktop, please report")
+                CompanionLogging.errorLog("Could not load nib for AerialDesktop, please report")
             }
             
             // Must be called before windowDidLoad so the created window has the correct size
@@ -44,32 +44,32 @@ class DesktopLauncher : NSObject, NSWindowDelegate {
     }
     
     func windowWillClose(_ notification: Notification) {
-        debugLog("windowWillClose")
+        CompanionLogging.debugLog("windowWillClose")
         aerialDesktopController.stopScreensaver()
     }
     
     func openSettings() {
-        debugLog("open hosted settings DT")
+        CompanionLogging.debugLog("open hosted settings DT")
         aerialDesktopController.openPanel()
     }
     
     func togglePause() {
-        debugLog("toggle pause")
+        CompanionLogging.debugLog("toggle pause")
         aerialDesktopController.togglePause()
     }
     
     func nextVideo() {
-        debugLog("next video")
+        CompanionLogging.debugLog("next video")
         aerialDesktopController.nextVideo()
     }
     
     func skipAndHide() {
-        debugLog("skip and hide")
+        CompanionLogging.debugLog("skip and hide")
         aerialDesktopController.skipAndHide()
     }
     
     func changeSpeed(_ speed: Int) {
-        debugLog("Change speed")
+        CompanionLogging.debugLog("Change speed")
         var fSpeed: Float  = 1.0
         if speed == 80 {
             fSpeed = 2/3

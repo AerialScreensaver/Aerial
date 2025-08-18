@@ -38,7 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - Lifecycle
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        debugLog("Version \(Helpers.version) launched on  \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        CompanionLogging.debugLog("Version \(Helpers.version) launched on  \(ProcessInfo.processInfo.operatingSystemVersionString)")
         //Preferences.firstTimeSetup = false
         
         let arguments = ProcessInfo.processInfo.arguments
@@ -58,16 +58,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         if arguments.contains("--silent") {
-            debugLog("Background mode")
+            CompanionLogging.debugLog("Background mode")
 
             // Returns true if we need to stay around
             if !silentModeCheck() {
                 return
             }
             // We're staying then !
-            debugLog("Falling back to menu for a notification")
+            CompanionLogging.debugLog("Falling back to menu for a notification")
         } else if !Preferences.firstTimeSetup {
-            debugLog("Do First Time Setup")
+            CompanionLogging.debugLog("Do First Time Setup")
             doFirstTimeSetup()
         }
         
@@ -182,7 +182,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     
     @objc func test2(_ aNotification: Notification) {
-        debugLog("############ test2")
+        CompanionLogging.debugLog("############ test2")
         print("receiveed")
         print(aNotification.debugDescription)
     }
@@ -212,13 +212,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func removeOldAerialApp() {
         if FileManager.default.fileExists(atPath: "/Applications/Aerial.app") {
-            debugLog("Removing old version of Aerial.app")
+            CompanionLogging.debugLog("Removing old version of Aerial.app")
             
             do {
                 try FileManager().removeItem(at: URL(fileURLWithPath: "/Applications/Aerial.app"))
             } catch {
                 // ERROR
-                errorLog("Cannot delete old Aerial.app in /Applications directory")
+                CompanionLogging.errorLog("Cannot delete old Aerial.app in /Applications directory")
             }
         }
     }
@@ -234,7 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         } catch {
-            errorLog("Ensure bundle error")
+            CompanionLogging.errorLog("Ensure bundle error")
         }
     }
     
@@ -243,7 +243,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !Bundle.main.loadNibNamed(NSNib.Name("FirstTimeSetupWindowController"),
                             owner: firstTimeSetupWindowController,
                             topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for FirstTimeSetup, please report")
+            CompanionLogging.errorLog("Could not load nib for FirstTimeSetup, please report")
         }
         firstTimeSetupWindowController.windowDidLoad()
         firstTimeSetupWindowController.showWindow(self)
@@ -266,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let (stringVersion, shouldInstall) = Update.instance.check()
 
         if shouldInstall {
-            debugLog(stringVersion)
+            CompanionLogging.debugLog(stringVersion)
             if Preferences.updateMode == .automatic {
                 Update.instance.unattendedPerform()
                 return false    // We are done
@@ -276,7 +276,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             // We need to stay around for a bit, because if not
             // launchd will think we are crashing...
-            debugLog("No new version, quitting in 20sec.")
+            CompanionLogging.debugLog("No new version, quitting in 20sec.")
             RunLoop.main.run(until: Date() + 0x14)
             NSApplication.shared.terminate(self)
 

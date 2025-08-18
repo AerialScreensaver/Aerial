@@ -5,7 +5,7 @@
 //  Created by Guillaume Louel on 07/07/2023.
 //
 
-import Foundation
+import AppKit
 
 @IBDesignable class NSButtonWithImageSpacing: NSButton {
     @IBInspectable var verticalImagePadding: CGFloat = 0
