@@ -208,7 +208,7 @@ struct OpenWeather {
                             }
                             completion(.failure(.cityNotFound))
                         }
-                    case .failure(let error):
+                    case .failure(_):
                         completion(.failure(.unknown))
                     }
                 }

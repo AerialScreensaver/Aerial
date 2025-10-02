@@ -152,7 +152,7 @@ class CustomVideoController: NSWindowController, NSWindowDelegate, NSDraggingDes
             addFolderPanel.title = "Select a folder containing videos"
 
             addFolderPanel.begin { (response) in
-                if response.rawValue == NSFileHandlingPanelOKButton {
+                if response == NSApplication.ModalResponse.OK {
                     self.processPathForVideos(url: addFolderPanel.url!)
                 }
                 addFolderPanel.close()
@@ -363,7 +363,7 @@ extension CustomVideoController: NSOutlineViewDataSource {
     // Find and return the child of an item. If item == nil, we need to return a child of the
     // root node otherwise we find and return the child of the parent node indicated by 'item'
     func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
-        let manifestInstance = ManifestLoader.instance
+        _ = ManifestLoader.instance
 
         if let source = item as? Source {
             return VideoList.instance.videos.filter({ $0.source.name == source.name })[index]
@@ -387,7 +387,7 @@ extension CustomVideoController: NSOutlineViewDataSource {
 
     // Tell the view how many children an item has
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
-        let manifestInstance = ManifestLoader.instance
+        _ = ManifestLoader.instance
 
         // A folder may have childs
         if let source = item as? Source {

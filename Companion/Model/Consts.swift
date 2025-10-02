@@ -8,8 +8,7 @@
 import Foundation
 
 struct Consts {
-    static var bundledVersion = "2.1.0"
-    static var zipName = "Aerial.saver.zip"
+    static var bundledVersion = "3.9.9a1"
     static var saverName = "Aerial.saver"
     static var productName = "Aerial Companion"
 }

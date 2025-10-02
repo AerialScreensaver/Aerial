@@ -1,5 +1,15 @@
 {
+  "originHash" : "160bf5bec5e6eff8ae10c55d3a8efbcf6f8d2a54bf158f18b789979d9b55de00",
   "pins" : [
+    {
+      "identity" : "papersaver",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AerialScreensaver/PaperSaver.git",
+      "state" : {
+        "revision" : "4c65a226d671eb7c4bedb51e62b02f752d216ad8",
+        "version" : "0.1.0"
+      }
+    },
     {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",
@@ -10,5 +20,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

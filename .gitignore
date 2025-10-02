@@ -88,3 +88,6 @@ tmp/
 
 # Logs
 *.log
+
+# Bundled screensaver (built by Scripts/build.sh)
+Companion/Resources/Aerial.saver

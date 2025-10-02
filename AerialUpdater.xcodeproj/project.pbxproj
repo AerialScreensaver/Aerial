@@ -12,7 +12,6 @@
 		0316C21F2577EBF6007BAF70 /* DesktopLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */; };
 		0319375527B06FB40089A063 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0319375327B06FB40089A063 /* SettingsWindowController.swift */; };
 		0319375627B06FB40089A063 /* SettingsWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0319375427B06FB40089A063 /* SettingsWindowController.xib */; };
-		0319460624CDBD2600F37B35 /* BackgroundCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0319460524CDBD2600F37B35 /* BackgroundCheck.swift */; };
 		031954C0256409EC0058467C /* SaverLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031954BF256409EC0058467C /* SaverLauncher.swift */; };
 		031A3A6724D835B10011E738 /* InfoWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031A3A6524D835B10011E738 /* InfoWindowController.swift */; };
 		031A3A6824D835B10011E738 /* InfoWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 031A3A6624D835B10011E738 /* InfoWindowController.xib */; };
@@ -21,7 +20,6 @@
 		0333115224D8369700E4622D /* btn_donate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0333115124D8369700E4622D /* btn_donate.png */; };
 		0333115624D8448E00E4622D /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333115424D8448E00E4622D /* MenuViewController.swift */; };
 		0333115924D85CCA00E4622D /* String+version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333115824D85CCA00E4622D /* String+version.swift */; };
-		0333115B24D85D4600E4622D /* UpdaterVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333115A24D85D4600E4622D /* UpdaterVersion.swift */; };
 		0333115E24D8796F00E4622D /* UpdateCheckWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333115C24D8796F00E4622D /* UpdateCheckWindowController.swift */; };
 		0333115F24D8796F00E4622D /* UpdateCheckWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0333115D24D8796F00E4622D /* UpdateCheckWindowController.xib */; };
 		033B0B5424E95DDD00622CA7 /* FirstTimeSetupWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033B0B5224E95DDD00622CA7 /* FirstTimeSetupWindowController.swift */; };
@@ -46,7 +44,6 @@
 		03592AB524CC809F00C1AE52 /* LocalVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592AB424CC809F00C1AE52 /* LocalVersion.swift */; };
 		03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592AB724CC80FD00C1AE52 /* Helpers.swift */; };
 		03592ABC24CC821500C1AE52 /* Update.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592ABB24CC821500C1AE52 /* Update.swift */; };
-		03592ABE24CC86E900C1AE52 /* CachedManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592ABD24CC86E900C1AE52 /* CachedManifest.swift */; };
 		035F6F1C24CC8D97002E4EEE /* CompanionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */; };
 		036899942522608200136AE5 /* MenuView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 036899962522608200136AE5 /* MenuView.xib */; };
 		036899A925235C5A00136AE5 /* Consts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036899A825235C5A00136AE5 /* Consts.swift */; };
@@ -57,8 +54,8 @@
 		03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F5824CB0CA700494D32 /* AppDelegate.swift */; };
 		03CE4F5D24CB0CA900494D32 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5C24CB0CA900494D32 /* Assets.xcassets */; };
 		03CE4F6024CB0CA900494D32 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5E24CB0CA900494D32 /* Main.storyboard */; };
-		03CE4F7E24CB43FE00494D32 /* CompanionManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */; };
 		03CE4F8024CB4CFB00494D32 /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */; };
+		03CE4F9A24CB0CA700494D32 /* AerialCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */; };
 		03F5E1472575360600BF4F45 /* icon-512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1462575360600BF4F45 /* icon-512@2x.png */; };
 		03F5E14A2575369200BF4F45 /* LogoIcon-128px@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */; };
 		11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371B8 /* CompanionAerialView.swift */; };
@@ -205,6 +202,24 @@
 		F072218C2AD437BA001F5452 /* PluginBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F072218B2AD437BA001F5452 /* PluginBridge.swift */; };
 		F072218E2AD43D91001F5452 /* NightShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = F072218D2AD43D91001F5452 /* NightShift.swift */; };
 		F07221902AD45039001F5452 /* Locations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F072218F2AD45039001F5452 /* Locations.swift */; };
+		F0982C0C2E5392B600069F3C /* HelpViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE92E4F70580066F2C4 /* HelpViewController.xib */; };
+		F0982C0D2E5392B600069F3C /* InfoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FEB2E4F70580066F2C4 /* InfoViewController.xib */; };
+		F0982C0E2E5392B600069F3C /* SidebarViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060082E4F70580066F2C4 /* SidebarViewController.xib */; };
+		F0982C0F2E5392B600069F3C /* FiltersViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FFB2E4F70580066F2C4 /* FiltersViewController.xib */; };
+		F0982C102E5392B600069F3C /* TimeViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060032E4F70580066F2C4 /* TimeViewController.xib */; };
+		F0982C112E5392B600069F3C /* CacheViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF52E4F70580066F2C4 /* CacheViewController.xib */; };
+		F0982C122E5392B600069F3C /* OverlaysViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FFF2E4F70580066F2C4 /* OverlaysViewController.xib */; };
+		F0982C132E5392B600069F3C /* PlayingCollectionViewItem.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FEE2E4F70580066F2C4 /* PlayingCollectionViewItem.xib */; };
+		F0982C142E5392B600069F3C /* CompanionCacheViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF72E4F70580066F2C4 /* CompanionCacheViewController.xib */; };
+		F0982C152E5392B600069F3C /* AdvancedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF12E4F70580066F2C4 /* AdvancedViewController.xib */; };
+		F0982C162E5392B600069F3C /* NowPlayingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FFD2E4F70580066F2C4 /* NowPlayingViewController.xib */; };
+		F0982C172E5392B600069F3C /* BrightnessViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF32E4F70580066F2C4 /* BrightnessViewController.xib */; };
+		F0982C182E5392B600069F3C /* CustomVideos.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600D2E4F70580066F2C4 /* CustomVideos.xib */; };
+		F0982C192E5392B600069F3C /* SourcesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060012E4F70580066F2C4 /* SourcesViewController.xib */; };
+		F0982C1A2E5392B600069F3C /* VideosViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C0600A2E4F70580066F2C4 /* VideosViewController.xib */; };
+		F0982C1B2E5392B600069F3C /* PanelWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C060062E4F70580066F2C4 /* PanelWindowController.xib */; };
+		F0982C1C2E5392B600069F3C /* CreditsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FE72E4F70580066F2C4 /* CreditsViewController.xib */; };
+		F0982C1D2E5392B600069F3C /* DisplaysViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF92E4F70580066F2C4 /* DisplaysViewController.xib */; };
 		F0A3E09928845B8D005E8D8D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A3E09828845B8D005E8D8D /* main.swift */; };
 		F0A3E0A028845C1D005E8D8D /* MusicKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0A3E09F28845C1D005E8D8D /* MusicKit.framework */; };
 		F0C05FBD2E4F6A700066F2C4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FBB2E4F6A700066F2C4 /* AppDelegate.swift */; };
@@ -738,6 +753,10 @@
 		F0C063262E4F70580066F2C4 /* ja.json in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FC92E4F70580066F2C4 /* ja.json */; };
 		F0C063272E4F70580066F2C4 /* DisplaysViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FF92E4F70580066F2C4 /* DisplaysViewController.xib */; };
 		F0C227872A12A5410053D5DA /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0C227862A12A5410053D5DA /* Sparkle */; };
+		F0C5B4292E8EBFFF00AEC15C /* PaperSaverKit in Frameworks */ = {isa = PBXBuildFile; productRef = F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */; };
+		F0C5B42C2E8ECB6700AEC15C /* Aerial.saver in Resources */ = {isa = PBXBuildFile; fileRef = F0C5B42A2E8ECB6700AEC15C /* Aerial.saver */; };
+		F0C5B42F2E8EDA9F00AEC15C /* BundledVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C5B42D2E8EDA9F00AEC15C /* BundledVersion.swift */; };
+		F0C5B4302E8EDA9F00AEC15C /* ScreensaverManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */; };
 		F0D333CF2E4F742C0048A86B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FB72E4F6A700066F2C4 /* Info.plist */; };
 		F0D333D12E4F776D0048A86B /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D02E4F776D0048A86B /* CoreLocation.framework */; };
 		F0D333D32E4F77750048A86B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D22E4F77750048A86B /* IOKit.framework */; };
@@ -762,7 +781,6 @@
 		0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLauncher.swift; sourceTree = "<group>"; };
 		0319375327B06FB40089A063 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		0319375427B06FB40089A063 /* SettingsWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SettingsWindowController.xib; sourceTree = "<group>"; };
-		0319460524CDBD2600F37B35 /* BackgroundCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundCheck.swift; sourceTree = "<group>"; };
 		031954BF256409EC0058467C /* SaverLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverLauncher.swift; sourceTree = "<group>"; };
 		031A3A6524D835B10011E738 /* InfoWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoWindowController.swift; sourceTree = "<group>"; };
 		031A3A6624D835B10011E738 /* InfoWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = InfoWindowController.xib; sourceTree = "<group>"; };
@@ -771,7 +789,6 @@
 		0333115124D8369700E4622D /* btn_donate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = btn_donate.png; sourceTree = "<group>"; };
 		0333115424D8448E00E4622D /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
 		0333115824D85CCA00E4622D /* String+version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+version.swift"; sourceTree = "<group>"; };
-		0333115A24D85D4600E4622D /* UpdaterVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterVersion.swift; sourceTree = "<group>"; };
 		0333115C24D8796F00E4622D /* UpdateCheckWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckWindowController.swift; sourceTree = "<group>"; };
 		0333115D24D8796F00E4622D /* UpdateCheckWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = UpdateCheckWindowController.xib; sourceTree = "<group>"; };
 		033B0B5224E95DDD00622CA7 /* FirstTimeSetupWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstTimeSetupWindowController.swift; sourceTree = "<group>"; };
@@ -796,7 +813,6 @@
 		03592AB424CC809F00C1AE52 /* LocalVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalVersion.swift; sourceTree = "<group>"; };
 		03592AB724CC80FD00C1AE52 /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		03592ABB24CC821500C1AE52 /* Update.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Update.swift; sourceTree = "<group>"; };
-		03592ABD24CC86E900C1AE52 /* CachedManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedManifest.swift; sourceTree = "<group>"; };
 		035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionLog.swift; sourceTree = "<group>"; };
 		036899952522608200136AE5 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MenuView.xib; sourceTree = "<group>"; };
 		036899982522608900136AE5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MenuView.xib; sourceTree = "<group>"; };
@@ -812,8 +828,8 @@
 		03CE4F5F24CB0CA900494D32 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		03CE4F6124CB0CA900494D32 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03CE4F6224CB0CA900494D32 /* AerialUpdater.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AerialUpdater.entitlements; sourceTree = "<group>"; };
-		03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionManifest.swift; sourceTree = "<group>"; };
 		03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloader.swift; sourceTree = "<group>"; };
+		03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialCompanionApp.swift; sourceTree = "<group>"; };
 		03F5E1462575360600BF4F45 /* icon-512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512@2x.png"; sourceTree = "<group>"; };
 		03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoIcon-128px@2x.png"; sourceTree = "<group>"; };
 		11374231735C4A908F3371B8 /* CompanionAerialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionAerialView.swift; sourceTree = "<group>"; };
@@ -1123,6 +1139,9 @@
 		F0C060F52E4F70580066F2C4 /* AerialView+Brightness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AerialView+Brightness.swift"; sourceTree = "<group>"; };
 		F0C060F62E4F70580066F2C4 /* AerialView+Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AerialView+Player.swift"; sourceTree = "<group>"; };
 		F0C060F82E4F70580066F2C4 /* Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Header.h; sourceTree = "<group>"; };
+		F0C5B42A2E8ECB6700AEC15C /* Aerial.saver */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Aerial.saver; sourceTree = "<group>"; };
+		F0C5B42D2E8EDA9F00AEC15C /* BundledVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledVersion.swift; sourceTree = "<group>"; };
+		F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverManager.swift; sourceTree = "<group>"; };
 		F0D333D02E4F776D0048A86B /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		F0D333D22E4F77750048A86B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		F0EB5B062A58412200910682 /* NSButton+Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSButton+Image.swift"; sourceTree = "<group>"; };
@@ -1133,6 +1152,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0C5B4292E8EBFFF00AEC15C /* PaperSaverKit in Frameworks */,
 				F0C227872A12A5410053D5DA /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1233,29 +1253,19 @@
 			children = (
 				F072218A2AD437AB001F5452 /* Bridge */,
 				036899A825235C5A00136AE5 /* Consts.swift */,
-				035F6F1924CC8774002E4EEE /* Manifest */,
 				035F6F1A24CC8842002E4EEE /* Helpers */,
 				03592AB124CC765500C1AE52 /* Preferences.swift */,
 				03592AB424CC809F00C1AE52 /* LocalVersion.swift */,
-				0333115A24D85D4600E4622D /* UpdaterVersion.swift */,
 				03592ABB24CC821500C1AE52 /* Update.swift */,
-				0319460524CDBD2600F37B35 /* BackgroundCheck.swift */,
 				03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */,
 				031954BF256409EC0058467C /* SaverLauncher.swift */,
 				0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */,
 				F05C63B628F326300068B545 /* SystemPrefs.swift */,
 				F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */,
+				F0C5B42D2E8EDA9F00AEC15C /* BundledVersion.swift */,
+				F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */,
 			);
 			path = Model;
-			sourceTree = "<group>";
-		};
-		035F6F1924CC8774002E4EEE /* Manifest */ = {
-			isa = PBXGroup;
-			children = (
-				03CE4F7D24CB43FE00494D32 /* CompanionManifest.swift */,
-				03592ABD24CC86E900C1AE52 /* CachedManifest.swift */,
-			);
-			path = Manifest;
 			sourceTree = "<group>";
 		};
 		035F6F1A24CC8842002E4EEE /* Helpers */ = {
@@ -1313,11 +1323,13 @@
 				033B0B5624E9641A00622CA7 /* First Time setup */,
 				0333115024D8360A00E4622D /* UI */,
 				03CE4F5824CB0CA700494D32 /* AppDelegate.swift */,
+				03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */,
 				03CE4F5C24CB0CA900494D32 /* Assets.xcassets */,
 				03CE4F5E24CB0CA900494D32 /* Main.storyboard */,
 				03CE4F6124CB0CA900494D32 /* Info.plist */,
 				03CE4F6224CB0CA900494D32 /* AerialUpdater.entitlements */,
 				03592AB624CC80A600C1AE52 /* Model */,
+				F0C5B42B2E8ECB6700AEC15C /* Resources */,
 			);
 			path = Companion;
 			sourceTree = "<group>";
@@ -1962,6 +1974,14 @@
 			path = Source;
 			sourceTree = "<group>";
 		};
+		F0C5B42B2E8ECB6700AEC15C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F0C5B42A2E8ECB6700AEC15C /* Aerial.saver */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1980,6 +2000,7 @@
 			name = "Aerial Companion";
 			packageProductDependencies = (
 				F0C227862A12A5410053D5DA /* Sparkle */,
+				F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */,
 			);
 			productName = AerialUpdater;
 			productReference = 03CE4F5524CB0CA700494D32 /* Aerial Companion.app */;
@@ -2075,6 +2096,7 @@
 			mainGroup = 03CE4F4C24CB0CA700494D32;
 			packageReferences = (
 				F0C227852A12A5410053D5DA /* XCRemoteSwiftPackageReference "Sparkle" */,
+				F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */,
 			);
 			productRefGroup = 03CE4F5624CB0CA700494D32 /* Products */;
 			projectDirPath = "";
@@ -2116,6 +2138,7 @@
 				F05C63B528F21A390068B545 /* menubar.dock.rectangle.svg in Resources */,
 				0316C21B2577DD6B007BAF70 /* AerialDesktop.xib in Resources */,
 				033B0B5524E95DDD00622CA7 /* FirstTimeSetupWindowController.xib in Resources */,
+				F0C5B42C2E8ECB6700AEC15C /* Aerial.saver in Resources */,
 				F03F59FA2AC3182800DB6B77 /* settings_numbered.png in Resources */,
 				033B0B6924E96CE200622CA7 /* ant.pdf in Resources */,
 				03076A072505EF8E00CDF16C /* kofi1@2x.png in Resources */,
@@ -2160,7 +2183,7 @@
 				F0C0618B2E4F70580066F2C4 /* textformat.alt.pdf in Resources */,
 				F0C0618C2E4F70580066F2C4 /* cloud.rain.pdf in Resources */,
 				F0C0618D2E4F70580066F2C4 /* eye.slash.pdf in Resources */,
-				F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */,
+				F0982C0C2E5392B600069F3C /* HelpViewController.xib in Resources */,
 				F0C0618F2E4F70580066F2C4 /* moon.stars.pdf in Resources */,
 				F0C061912E4F70580066F2C4 /* mappin.and.ellipse.pdf in Resources */,
 				F0C061922E4F70580066F2C4 /* person.3.pdf in Resources */,
@@ -2169,8 +2192,8 @@
 				F0C061952E4F70580066F2C4 /* zh_TW.json in Resources */,
 				F0C061962E4F70580066F2C4 /* folder.pdf in Resources */,
 				F0C061972E4F70580066F2C4 /* thermometer.sun.pdf in Resources */,
-				F0C061982E4F70580066F2C4 /* InfoViewController.xib in Resources */,
-				F0C061992E4F70580066F2C4 /* SidebarViewController.xib in Resources */,
+				F0982C0D2E5392B600069F3C /* InfoViewController.xib in Resources */,
+				F0982C0E2E5392B600069F3C /* SidebarViewController.xib in Resources */,
 				F0C0619A2E4F70580066F2C4 /* star.pdf in Resources */,
 				F0C0619B2E4F70580066F2C4 /* screen2.jpg in Resources */,
 				F0C0619C2E4F70580066F2C4 /* pt_BR.json in Resources */,
@@ -2180,7 +2203,7 @@
 				F0C061A02E4F70580066F2C4 /* location.pdf in Resources */,
 				F0C061A12E4F70580066F2C4 /* helm.pdf in Resources */,
 				F0C061A22E4F70580066F2C4 /* aspectratio.pdf in Resources */,
-				F0C061A32E4F70580066F2C4 /* FiltersViewController.xib in Resources */,
+				F0982C0F2E5392B600069F3C /* FiltersViewController.xib in Resources */,
 				F0C061A42E4F70580066F2C4 /* thumbnail@2x.png in Resources */,
 				F0C061A52E4F70580066F2C4 /* tropicalstorm.pdf in Resources */,
 				F0C061A62E4F70580066F2C4 /* icon-320@2x.png in Resources */,
@@ -2188,13 +2211,13 @@
 				F0C061A82E4F70580066F2C4 /* btn_donate.png in Resources */,
 				F0C061A92E4F70580066F2C4 /* text.bubble.pdf in Resources */,
 				F0C061AA2E4F70580066F2C4 /* hand.raised.pdf in Resources */,
-				F0C061AB2E4F70580066F2C4 /* TimeViewController.xib in Resources */,
+				F0982C102E5392B600069F3C /* TimeViewController.xib in Resources */,
 				F0C061AC2E4F70580066F2C4 /* cloud.hail.pdf in Resources */,
 				F0C061AD2E4F70580066F2C4 /* wrench.pdf in Resources */,
 				F0C061AE2E4F70580066F2C4 /* de.json in Resources */,
 				F0C061AF2E4F70580066F2C4 /* tl.json in Resources */,
 				F0C061B02E4F70580066F2C4 /* battery.0.pdf in Resources */,
-				F0C061B12E4F70580066F2C4 /* CacheViewController.xib in Resources */,
+				F0982C112E5392B600069F3C /* CacheViewController.xib in Resources */,
 				F0C061B22E4F70580066F2C4 /* antenna.radiowaves.left.and.right.pdf in Resources */,
 				F0C061B32E4F70580066F2C4 /* sun.haze.pdf in Resources */,
 				F0C061B42E4F70580066F2C4 /* ar.json in Resources */,
@@ -2203,22 +2226,22 @@
 				F0C061B72E4F70580066F2C4 /* hu.json in Resources */,
 				F0C061B82E4F70580066F2C4 /* cloud.snow.pdf in Resources */,
 				F0C061B92E4F70580066F2C4 /* sparkles.pdf in Resources */,
-				F0C061BA2E4F70580066F2C4 /* OverlaysViewController.xib in Resources */,
+				F0982C122E5392B600069F3C /* OverlaysViewController.xib in Resources */,
 				F0C061BB2E4F70580066F2C4 /* purple_retina.png in Resources */,
 				F0C061BD2E4F70580066F2C4 /* bubble.left.and.bubble.right.pdf in Resources */,
 				F0C061BE2E4F70580066F2C4 /* film.pdf in Resources */,
 				F0C061BF2E4F70580066F2C4 /* cloud.sun.pdf in Resources */,
-				F0C061C02E4F70580066F2C4 /* PlayingCollectionViewItem.xib in Resources */,
+				F0982C132E5392B600069F3C /* PlayingCollectionViewItem.xib in Resources */,
 				F0C061C12E4F70580066F2C4 /* en.json in Resources */,
 				F0C061C22E4F70580066F2C4 /* sun.min.pdf in Resources */,
 				F0C061C32E4F70580066F2C4 /* eye.pdf in Resources */,
-				F0C061C52E4F70580066F2C4 /* CompanionCacheViewController.xib in Resources */,
+				F0982C142E5392B600069F3C /* CompanionCacheViewController.xib in Resources */,
 				F0C061C62E4F70580066F2C4 /* LogoIcon-128px@2x.png in Resources */,
 				F0C061C72E4F70580066F2C4 /* wand.and.rays.pdf in Resources */,
 				F0C061C82E4F70580066F2C4 /* Readme.md in Resources */,
 				F0C061C92E4F70580066F2C4 /* info.circle.pdf in Resources */,
 				F0C061CA2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png in Resources */,
-				F0C061CC2E4F70580066F2C4 /* AdvancedViewController.xib in Resources */,
+				F0982C152E5392B600069F3C /* AdvancedViewController.xib in Resources */,
 				F0C061CD2E4F70580066F2C4 /* flame.pdf in Resources */,
 				F0C061CE2E4F70580066F2C4 /* arrow.down.circle.fill.pdf in Resources */,
 				F0C061CF2E4F70580066F2C4 /* cloud.moon.rain.pdf in Resources */,
@@ -2237,9 +2260,9 @@
 				F0C061DC2E4F70580066F2C4 /* regular.sun.max.pdf in Resources */,
 				F0C061DD2E4F70580066F2C4 /* cloud.bolt.rain.pdf in Resources */,
 				F0C061DE2E4F70580066F2C4 /* bolt.fill.pdf in Resources */,
-				F0C061DF2E4F70580066F2C4 /* NowPlayingViewController.xib in Resources */,
+				F0982C162E5392B600069F3C /* NowPlayingViewController.xib in Resources */,
 				F0C061E02E4F70580066F2C4 /* thumbnail.png in Resources */,
-				F0C061E12E4F70580066F2C4 /* BrightnessViewController.xib in Resources */,
+				F0982C172E5392B600069F3C /* BrightnessViewController.xib in Resources */,
 				F0C061E22E4F70580066F2C4 /* white_retina.png in Resources */,
 				F0C061E32E4F70580066F2C4 /* tram.fill.pdf in Resources */,
 				F0C061E42E4F70580066F2C4 /* snow.pdf in Resources */,
@@ -2250,13 +2273,13 @@
 				F0C061E92E4F70580066F2C4 /* wind.snow.pdf in Resources */,
 				F0C061EA2E4F70580066F2C4 /* xmark.circle.pdf in Resources */,
 				F0C061EB2E4F70580066F2C4 /* icon-512@2x.png in Resources */,
-				F0C061ED2E4F70580066F2C4 /* CustomVideos.xib in Resources */,
+				F0982C182E5392B600069F3C /* CustomVideos.xib in Resources */,
 				F0C061EE2E4F70580066F2C4 /* checkmark.circle.fill.pdf in Resources */,
 				F0C061EF2E4F70580066F2C4 /* cloud.moon.bolt.pdf in Resources */,
 				F0C061F02E4F70580066F2C4 /* he.json in Resources */,
 				F0C061F12E4F70580066F2C4 /* clock.pdf in Resources */,
 				F0C061F22E4F70580066F2C4 /* video_inspire_california_vineyard_sierra-mar_sunrise_110.png in Resources */,
-				F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
+				F0982C192E5392B600069F3C /* SourcesViewController.xib in Resources */,
 				F0C061F42E4F70580066F2C4 /* star.fill.pdf in Resources */,
 				F0C061F52E4F70580066F2C4 /* cloud.sun.bolt.pdf in Resources */,
 				F0C061F72E4F70580066F2C4 /* cloud.sun.rain.pdf in Resources */,
@@ -2264,7 +2287,7 @@
 				F0C061F92E4F70580066F2C4 /* pl.json in Resources */,
 				F0C061FA2E4F70580066F2C4 /* hurricane.pdf in Resources */,
 				F0C061FB2E4F70580066F2C4 /* nl.json in Resources */,
-				F0C061FD2E4F70580066F2C4 /* VideosViewController.xib in Resources */,
+				F0982C1A2E5392B600069F3C /* VideosViewController.xib in Resources */,
 				F0C061FE2E4F70580066F2C4 /* missingvideos.json in Resources */,
 				F0C061FF2E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png in Resources */,
 				F0C062002E4F70580066F2C4 /* openweather_logo.png in Resources */,
@@ -2277,12 +2300,12 @@
 				F0C062082E4F70580066F2C4 /* cloud.sleet.pdf in Resources */,
 				F0C062092E4F70580066F2C4 /* screen0.jpg in Resources */,
 				F0C0620A2E4F70580066F2C4 /* gear.pdf in Resources */,
-				F0C0620B2E4F70580066F2C4 /* PanelWindowController.xib in Resources */,
+				F0982C1B2E5392B600069F3C /* PanelWindowController.xib in Resources */,
 				F0C0620C2E4F70580066F2C4 /* cloud.fog.pdf in Resources */,
 				F0C0620D2E4F70580066F2C4 /* trash.pdf in Resources */,
-				F0C0620E2E4F70580066F2C4 /* CreditsViewController.xib in Resources */,
+				F0982C1C2E5392B600069F3C /* CreditsViewController.xib in Resources */,
 				F0C0620F2E4F70580066F2C4 /* ja.json in Resources */,
-				F0C062102E4F70580066F2C4 /* DisplaysViewController.xib in Resources */,
+				F0982C1D2E5392B600069F3C /* DisplaysViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2437,18 +2460,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0333115B24D85D4600E4622D /* UpdaterVersion.swift in Sources */,
 				033B0B6524E967C600622CA7 /* NextViewController.swift in Sources */,
 				F0EB5B072A58412200910682 /* NSButton+Image.swift in Sources */,
 				73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */,
-				03CE4F7E24CB43FE00494D32 /* CompanionManifest.swift in Sources */,
 				031A3A6724D835B10011E738 /* InfoWindowController.swift in Sources */,
-				0319460624CDBD2600F37B35 /* BackgroundCheck.swift in Sources */,
 				0333115924D85CCA00E4622D /* String+version.swift in Sources */,
 				036899A925235C5A00136AE5 /* Consts.swift in Sources */,
 				03592AB524CC809F00C1AE52 /* LocalVersion.swift in Sources */,
 				F003C15429116AE1003FCB17 /* HostedSettingsWindowController.swift in Sources */,
-				03592ABE24CC86E900C1AE52 /* CachedManifest.swift in Sources */,
 				03592ABC24CC821500C1AE52 /* Update.swift in Sources */,
 				031954C0256409EC0058467C /* SaverLauncher.swift in Sources */,
 				033B0B7624E9767700622CA7 /* ThanksViewController.swift in Sources */,
@@ -2460,12 +2479,15 @@
 				033B0B5924E9644D00622CA7 /* WelcomeViewController.swift in Sources */,
 				033B0B5D24E9655E00622CA7 /* ReleaseViewController.swift in Sources */,
 				0333115624D8448E00E4622D /* MenuViewController.swift in Sources */,
+				F0C5B42F2E8EDA9F00AEC15C /* BundledVersion.swift in Sources */,
+				F0C5B4302E8EDA9F00AEC15C /* ScreensaverManager.swift in Sources */,
 				03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */,
 				0333115E24D8796F00E4622D /* UpdateCheckWindowController.swift in Sources */,
 				03592AB224CC765500C1AE52 /* Preferences.swift in Sources */,
 				03C491B624FBBDA00041D71C /* ExperimentalReadmeWindowController.swift in Sources */,
 				F07221902AD45039001F5452 /* Locations.swift in Sources */,
 				03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */,
+				03CE4F9A24CB0CA700494D32 /* AerialCompanionApp.swift in Sources */,
 				03ADA8EC24E034A40093D0A2 /* LaunchAgent.swift in Sources */,
 				F05C63B228F1D9D50068B545 /* CompanionPopoverViewController.swift in Sources */,
 				11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */,
@@ -3056,8 +3078,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 4.0.0a1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 3.9.9a1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.glouel.AerialUpdater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3087,8 +3109,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 4.0.0a1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 3.9.9a1;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
 				PRODUCT_BUNDLE_IDENTIFIER = com.glouel.AerialUpdater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3160,7 +3182,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 4.0.0pa1;
+				MARKETING_VERSION = 3.9.9a1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver";
 				PRODUCT_NAME = Aerial;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3201,7 +3223,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 4.0.0pa1;
+				MARKETING_VERSION = 3.9.9a1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver";
 				PRODUCT_NAME = Aerial;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3241,7 +3263,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 3.9.9a1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver-TestApp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -3282,7 +3304,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 3.9.9a1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver-TestApp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -3355,6 +3377,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AerialScreensaver/PaperSaver.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -3362,6 +3392,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F0C227852A12A5410053D5DA /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */;
+			productName = PaperSaverKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

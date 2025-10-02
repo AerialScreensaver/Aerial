@@ -16,7 +16,6 @@ struct PrefTest: Decodable {
     let title: String
 }
 
-@NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
@@ -51,12 +50,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // This will go away at some point
         removeOldAerialApp()
-        
+
+        // Check if we need to install/update from bundled screensaver
+        checkBundledScreensaver()
+
         if !Preferences.restartBackground {
             Preferences.enabledWallpaperScreenUuids = []
 
         }
-        
+
         if arguments.contains("--silent") {
             CompanionLogging.debugLog("Background mode")
 
@@ -255,24 +257,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func silentModeCheck() -> Bool {
         Update.instance.commandLine = true
 
-        // Force a cache update
-        CachedManifest.instance.updateNow()
-
-        // Make sure we don't need to update, or redirect you there
-        if UpdaterVersion.needsUpdating() {
-            return true         // Then stay around !
-        }
-        
+        // Check bundled version
         let (stringVersion, shouldInstall) = Update.instance.check()
 
         if shouldInstall {
             CompanionLogging.debugLog(stringVersion)
-            if Preferences.updateMode == .automatic {
-                Update.instance.unattendedPerform()
-                return false    // We are done
-            } else {
-                return true     // Stay around !
-            }
+            // Always install automatically in silent mode
+            Update.instance.unattendedPerform()
+            return false    // We are done
         } else {
             // We need to stay around for a bit, because if not
             // launchd will think we are crashing...
@@ -281,6 +273,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSApplication.shared.terminate(self)
 
             return false
+        }
+    }
+
+    // Check and install bundled screensaver if needed
+    func checkBundledScreensaver() {
+        guard BundledVersion.exists() else {
+            CompanionLogging.errorLog("No bundled screensaver found")
+            return
+        }
+
+        if !LocalVersion.isInstalled() {
+            CompanionLogging.debugLog("Screensaver not installed, will install from bundle")
+            // First-time setup will handle this
+            return
+        }
+
+        if BundledVersion.isNewerThanInstalled() {
+            CompanionLogging.debugLog("Bundled version is newer, updating silently...")
+            Update.instance.unattendedPerform()
         }
     }
     

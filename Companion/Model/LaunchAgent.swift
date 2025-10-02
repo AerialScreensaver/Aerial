@@ -173,7 +173,9 @@ struct LaunchAgent {
 </dict>
 </plist>
 """
-        return top + bundleLine + bottom + String(BackgroundCheck.instance.getTimer()) + bottom2
+        // Use daily check interval (86400 seconds = 24 hours)
+        let dailyInterval = 86400
+        return top + bundleLine + bottom + String(dailyInterval) + bottom2
     }
 
 }

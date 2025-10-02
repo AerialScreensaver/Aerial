@@ -60,14 +60,8 @@ class MenuViewController: NSViewController, UpdateCallback {
         // Let's make sure our delegate is set
         Update.instance.setCallback(self)
 
-        // Let's check right now the manifest status
-        CachedManifest.instance.updateNow()
-
         updateMenuSettings()
         updateMenuContent()
-        
-        // Then set the callback
-        BackgroundCheck.instance.set()
     }
     
     func setDelegate(_ delegate: AppDelegate) {
@@ -127,24 +121,6 @@ class MenuViewController: NSViewController, UpdateCallback {
     func updateMenuContent() {
         CompanionLogging.debugLog("umc")
         DispatchQueue.main.async {
-            // If we have fetched the versions, put them in the UI
-            if let manifest = CachedManifest.instance.manifest {
-                self.menuBeta.title = "Beta (\(manifest.betaVersion))"
-                self.menuRelease.title = "Release (\(manifest.releaseVersion))"
-                
-                // We may need to update AerialUpdater. This will be done as infrequently as possible, only in case of a security issue (not for features)
-                if UpdaterVersion.needsUpdating() {
-                    self.setIcon(mode: .notification)
-                    print(manifest.updaterVersion)
-                    print(Helpers.version)
-                    self.versionLabel.stringValue = "New updater version"
-                    self.versionImageView.isHidden = true
-                    self.versionInstallNow.isHidden = false
-                    self.goodTrick.isHidden = true
-                    return
-                }
-            }
-            
             let (statusString, shouldInstall) = Update.instance.check()
             CompanionLogging.debugLog("\(statusString) \(shouldInstall)")
             
@@ -250,20 +226,13 @@ class MenuViewController: NSViewController, UpdateCallback {
     
     // Installation Button
     @IBAction func versionInstallNowClick(_ sender: Any) {
-        if UpdaterVersion.needsUpdating() {
-            let workspace = NSWorkspace.shared
-            let url = URL(string: "https://github.com/glouel/AerialCompanion/releases")!
-            workspace.open(url)
-            return
-        }
-        
         versionInstallNow.isHidden = true
         versionLabel.stringValue = "Hold on..."
 
         // Start spinning
         goodTrick.isHidden = false
         goodTrick.startAnimation(self)
-        
+
         // Launch the update
         Update.instance.perform(self)
     }

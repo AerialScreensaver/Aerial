@@ -63,30 +63,18 @@ class UpdateCheckWindowController:
         setProgress(to: .working)
         progressLabel.stringValue = "Looking for new version..."
 
-        // Force a cache update
-        CachedManifest.instance.updateNow()
+        let (statusString, shouldInstall) = Update.instance.check()
 
-        // Make sure we don't need to update, or redirect you there
-        if UpdaterVersion.needsUpdating() {
+        if shouldInstall {
             setProgress(to: .warning)
-            progressLabel.stringValue = "A new version of Aerial Companion is required"
-            actionButton.title = "Show me"
+            progressLabel.stringValue = "New version : \(statusString)"
+            actionButton.title = "Install"
             actionButton.isHidden = false
         } else {
-            let (statusString, shouldInstall) = Update.instance.check()
-
-            if shouldInstall {
-                setProgress(to: .warning)
-                progressLabel.stringValue = "New version : \(statusString)"
-                actionButton.title = "Install"
-                actionButton.isHidden = false
-
-            } else {
-                setProgress(to: .done)
-                progressLabel.stringValue = "No new version available"
-                actionButton.title = "Close"
-                actionButton.isHidden = false
-            }
+            setProgress(to: .done)
+            progressLabel.stringValue = "No new version available"
+            actionButton.title = "Close"
+            actionButton.isHidden = false
         }
 
         // Then the Menu UI
@@ -94,13 +82,9 @@ class UpdateCheckWindowController:
     }
     
     @IBAction func actionButtonClick(_ sender: NSButton) {
-        if UpdaterVersion.needsUpdating() {
-            let workspace = NSWorkspace.shared
-            let url = URL(string: "https://github.com/glouel/AerialUpdater/releases")!
-            workspace.open(url)
-            return
-        } else if sender.title == "Close" || sender.title == "Show me" {
+        if sender.title == "Close" {
             close()
+            return
         }
         
         let (_, shouldInstall) = Update.instance.check()

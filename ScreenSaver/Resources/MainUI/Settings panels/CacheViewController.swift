@@ -300,7 +300,7 @@ class CacheViewController: NSViewController {
         }
 
         openPanel.begin { result in
-            guard result.rawValue == NSFileHandlingPanelOKButton, !openPanel.urls.isEmpty else {
+            guard result == NSApplication.ModalResponse.OK, !openPanel.urls.isEmpty else {
                 return
             }
 

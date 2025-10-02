@@ -22,7 +22,7 @@ import Foundation
 ///   override `cancel` method, calling `super.cancel()` and then cleaning-up
 ///   and ensuring `finish()` is called.
 
-class AsynchronousOperation: Operation {
+class AsynchronousOperation: Operation, @unchecked Sendable {
 
     /// State for this operation.
 

@@ -47,9 +47,13 @@ class SwiftAerialDesktop: NSWindowController {
         // Configure window behavior for desktop wallpaper
         window.collectionBehavior = [
             .canJoinAllSpaces,
-            .stationary,
+            //.stationary,
+            .transient,
             .ignoresCycle
         ]
+        window.canHide = false
+        window.isOpaque = true
+        window.isReleasedWhenClosed = false
         
         // Ensure window content resizes with window
         window.contentView?.autoresizesSubviews = true

@@ -97,7 +97,7 @@ extension DownloadManager: URLSessionTaskDelegate {
 
 /// Asynchronous Operation subclass for downloading
 
-final class DownloadOperation: AsynchronousOperation {
+final class DownloadOperation: AsynchronousOperation, @unchecked Sendable {
     let task: URLSessionTask
     let folder: String
 

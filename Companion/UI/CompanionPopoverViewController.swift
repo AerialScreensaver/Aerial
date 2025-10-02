@@ -98,9 +98,6 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         // Let's make sure our delegate is set
         Update.instance.setCallback(self)
 
-        // Let's check right now the manifest status
-        CachedManifest.instance.updateNow()
-
         // Create our menu & relaunch if needed
         for screen in NSScreen.screens {
             let screenItem = NSMenuItem()
@@ -139,9 +136,6 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         // This will start the update process
         updateMenuContent()
 
-        // Then set the callback
-        BackgroundCheck.instance.set()
-        
         versionLabel.stringValue = Consts.productName + " " + Helpers.version
     }
 
@@ -286,7 +280,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
             NSApp.activate(ignoringOtherApps: true)
             appDelegate?.closePopover(sender: nil)
         } else {
-            Update.instance.setAsDefault()
+            //Update.instance.setAsDefault()
             notDefaultBox.isHidden = true
         }
     }
@@ -489,13 +483,6 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     
     // Update bar
     @IBAction func updateNowClick(_ sender: Any) {
-        if UpdaterVersion.needsUpdating() {
-            let workspace = NSWorkspace.shared
-            let url = URL(string: "https://github.com/glouel/AerialCompanion/releases")!
-            workspace.open(url)
-            return
-        }
-        
         updateLabel.stringValue = "Hold on..."
         updateButton.isEnabled = false
         
