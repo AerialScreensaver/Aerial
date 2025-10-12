@@ -1,4 +1,4 @@
 // Version configuration for Aerial Companion and Screensaver
 // Run `/Scripts/bump-version.sh 1.2.3beta4` to update version everywhere
 
-MARKETING_VERSION = 3.9.9a1
+MARKETING_VERSION = 3.9.9a2

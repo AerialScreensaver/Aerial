@@ -682,26 +682,44 @@ final class AerialView: ScreenSaverView, CAAnimationDelegate {
     }
     
     @objc func onSleepNote(note: Notification) {
+        // Simply pause the player when system goes to sleep
+        debugLog("🖼️ 📢📢📢 onSleepNote - pausing player")
+        if let player = player {
+            player.pause()
+        }
+
+        // Previous implementation (commented out for reference):
+        /*
         debugLog("🖼️ 📢📢📢 onSleepNote")
         if !Aerial.helper.underCompanion {
             if #available(macOS 14.0, *) {
                 exit(0)
             }
         }
+        */
     }
     
     @objc func willStop(_ aNotification: Notification) {
+        // Simply pause the player when screensaver stops
+        debugLog("🖼️ 📢📢📢 willStop - pausing player")
+        if let player = player {
+            player.pause()
+        }
+
+        // Previous implementation (commented out for reference):
+        /*
         DisplayDetection.sharedInstance.resetUnusedScreens()
 
-/*        if #available(macOS 14.0, *) {
+        if #available(macOS 14.0, *) {
             debugLog("🖼️ 📢📢📢 🖼️ 📢📢📢 ☢️sonoma☢️ workaround IGNORING willStop")
-        } else {*/
+        } else {
+
         debugLog("🖼️ 📢📢📢 willStop")
         if !Aerial.helper.underCompanion {
             if let player = player {
                 player.pause()
             }
-            
+
             if #available(macOS 14.0, *) {
                 debugLog("🖼️ ⏱️ Setting up 2-second delayed exit")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -717,7 +735,8 @@ final class AerialView: ScreenSaverView, CAAnimationDelegate {
                 player?.rate = globalSpeed
             }
         }
-        //}
+        }
+        */
     }
 
     // Tentative integration with companion of extra features
