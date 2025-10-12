@@ -56,7 +56,9 @@ struct BundledVersion {
     static func getInfo() -> (bundled: String, installed: String, needsUpdate: Bool) {
         let bundledVer = get()
         let installedVer = LocalVersion.isInstalled() ? LocalVersion.get() : "Not installed"
-        let needsUpdate = isNewerThanInstalled()
+
+        // Simple string comparison: update if versions don't match
+        let needsUpdate = bundledVer != installedVer
 
         return (bundled: bundledVer, installed: installedVer, needsUpdate: needsUpdate)
     }
