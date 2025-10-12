@@ -12,7 +12,6 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     lazy var infoWindowController = InfoWindowController()
     lazy var settingsWindowController = SettingsWindowController()
     lazy var updateCheckWindowController = UpdateCheckWindowController()
-    lazy var setDefaultWindowController = SetDefaultWindowController()
 
     var desktopLauncherInstances: [String: DesktopLauncher] = [:]
     
@@ -136,7 +135,7 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         // This will start the update process
         updateMenuContent()
 
-        versionLabel.stringValue = Consts.productName + " " + Helpers.version
+        versionLabel.stringValue = "AerialU " + Helpers.version
     }
 
     
@@ -267,21 +266,23 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     }
     
     @IBAction func setAsDefaultButton(_ sender: NSButton) {
-        if #available(macOS 14, *) {
-            var topLevelObjects: NSArray? = NSArray()
-            if !Bundle.main.loadNibNamed(NSNib.Name("SetDefaultWindowController"),
-                                         owner: setDefaultWindowController,
-                                         topLevelObjects: &topLevelObjects) {
-                CompanionLogging.errorLog("Could not load nib for SettingsWindow, please report")
+        CompanionLogging.infoLog("→ Setting Aerial as default screensaver...")
+
+        Task {
+            do {
+                try await ScreensaverManager.shared.enableAerial()
+
+                CompanionLogging.infoLog("✓ Aerial set as default screensaver")
+
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.notDefaultBox.isHidden = true
+                    self.update()
+                    self.appDelegate?.closePopover(sender: nil)
+                }
+            } catch {
+                CompanionLogging.errorLog("✗ Failed to set Aerial as default: \(error.localizedDescription)")
             }
-            setDefaultWindowController.windowDidLoad()
-            setDefaultWindowController.showWindow(self)
-            setDefaultWindowController.window!.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            appDelegate?.closePopover(sender: nil)
-        } else {
-            //Update.instance.setAsDefault()
-            notDefaultBox.isHidden = true
         }
     }
     
@@ -314,10 +315,10 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
-            let isDefault = SystemPrefs.getSaverSelectedStatus()
-            
+            let isActive = ScreensaverManager.shared.isAerialActive()
+
             DispatchQueue.main.async { [self] in
-                notDefaultBox.isHidden = isDefault
+                notDefaultBox.isHidden = isActive
             }
         }
         
@@ -526,6 +527,11 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     
     
     // Bottom bar action
+    
+    
+    @IBAction func forceKillLegacy(_ sender: Any) {
+        appDelegate?.screensaverWatchdog.manualCheck()
+    }
     
     @IBAction func openInfoClick(_ sender: Any) {
         var topLevelObjects: NSArray? = NSArray()

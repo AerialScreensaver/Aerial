@@ -2,7 +2,24 @@
 set -e
 
 # Aerial Unified Build Script
-# Version: 4.0.0-alpha1
+
+# Extract version from xcconfig file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+VERSION_FILE="${PROJECT_ROOT}/Config/Version.xcconfig"
+
+if [ ! -f "$VERSION_FILE" ]; then
+    echo "Error: Version file not found at $VERSION_FILE"
+    exit 1
+fi
+
+# Extract MARKETING_VERSION from xcconfig
+VERSION=$(grep "MARKETING_VERSION" "$VERSION_FILE" | awk '{print $3}')
+
+if [ -z "$VERSION" ]; then
+    echo "Error: Could not extract version from $VERSION_FILE"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -49,7 +66,7 @@ done
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Aerial Unified Build${NC}"
 echo -e "${BLUE}========================================${NC}"
-echo -e "Version: 4.0.0-alpha1"
+echo -e "Version: ${VERSION}"
 echo -e "Configuration: ${BUILD_CONFIG}"
 echo -e "Screensaver Scheme: ${SCREENSAVER_SCHEME}"
 echo -e "App Scheme: ${APP_SCHEME}"
@@ -472,7 +489,7 @@ echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Build Complete! 🎉${NC}"
 echo -e "${GREEN}========================================${NC}"
-echo "Version: 4.0.0-alpha1"
+echo "Version: ${VERSION}"
 echo "Configuration: ${BUILD_CONFIG}"
 echo ""
 echo "Build artifacts:"

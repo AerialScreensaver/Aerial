@@ -10,15 +10,17 @@ import Foundation
 struct SystemPrefs {
     
     /// Returns information if our screensaver is defaulted or not
+    /// - Warning: Deprecated. Use ScreensaverManager.shared.isAerialActive() instead for better performance
+    @available(*, deprecated, message: "Use ScreensaverManager.shared.isAerialActive() instead")
     static func getSaverSelectedStatus() -> Bool {
         let result = Helpers.shell(launchPath: "/usr/bin/defaults",
                                    arguments: ["-currentHost",
                                                "read",
                                                "com.apple.screensaver",
                                                "moduleDict"]) ?? ""
-        
+
         let lines = result.split(whereSeparator: \.isNewline)
-        
+
         for line in lines {
             if line.contains("Aerial") {
                 return true

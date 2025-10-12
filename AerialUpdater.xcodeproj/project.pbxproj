@@ -63,6 +63,10 @@
 		11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BB /* SwiftAerialWindow.swift */; };
 		73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */; };
 		F003C15429116AE1003FCB17 /* HostedSettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */; };
+		F01C6D602E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
+		F01C6D612E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
+		F01C6D622E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
+		F01C6D642E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01C6D632E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift */; };
 		F02C822E2E4F971500D48D4B /* AerialPlayerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060F32E4F70580066F2C4 /* AerialPlayerItem.swift */; };
 		F02C822F2E4F971500D48D4B /* FiltersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FFA2E4F70580066F2C4 /* FiltersViewController.swift */; };
 		F02C82302E4F971500D48D4B /* HelpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05FE82E4F70580066F2C4 /* HelpViewController.swift */; };
@@ -192,8 +196,9 @@
 		F02C82B12E4F971500D48D4B /* VideoLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060822E4F70580066F2C4 /* VideoLoader.swift */; };
 		F02C82B22E4F971500D48D4B /* ConditionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060C02E4F70580066F2C4 /* ConditionLayer.swift */; };
 		F02C82BE2E4FAAB500D48D4B /* ErrorLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B72E4F70580066F2C4 /* ErrorLog.swift */; };
-		F03F59F32AC312B000DB6B77 /* SetDefaultWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */; };
-		F03F59F42AC312B000DB6B77 /* SetDefaultWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F03F59F22AC312B000DB6B77 /* SetDefaultWindowController.xib */; };
+		F0326B382E9BDF3300582FED /* AerialLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0326B372E9BDF3300582FED /* AerialLogger.swift */; };
+		F0326B392E9BDF3300582FED /* AerialLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0326B372E9BDF3300582FED /* AerialLogger.swift */; };
+		F0326B3A2E9BDF3300582FED /* AerialLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0326B372E9BDF3300582FED /* AerialLogger.swift */; };
 		F03F59FA2AC3182800DB6B77 /* settings_numbered.png in Resources */ = {isa = PBXBuildFile; fileRef = F03F59F92AC3182800DB6B77 /* settings_numbered.png */; };
 		F05C63B228F1D9D50068B545 /* CompanionPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05C63B028F1D9D50068B545 /* CompanionPopoverViewController.swift */; };
 		F05C63B328F1D9D50068B545 /* CompanionPopoverViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F05C63B128F1D9D50068B545 /* CompanionPopoverViewController.xib */; };
@@ -837,8 +842,9 @@
 		11374231735C4A908F3371BB /* SwiftAerialWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialWindow.swift; sourceTree = "<group>"; };
 		73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSScreen+Id.swift"; sourceTree = "<group>"; };
 		F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostedSettingsWindowController.swift; sourceTree = "<group>"; };
-		F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDefaultWindowController.swift; sourceTree = "<group>"; };
-		F03F59F22AC312B000DB6B77 /* SetDefaultWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SetDefaultWindowController.xib; sourceTree = "<group>"; };
+		F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		F01C6D632E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverWatchdog.swift; sourceTree = "<group>"; };
+		F0326B372E9BDF3300582FED /* AerialLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialLogger.swift; sourceTree = "<group>"; };
 		F03F59F92AC3182800DB6B77 /* settings_numbered.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = settings_numbered.png; sourceTree = "<group>"; };
 		F05C63B028F1D9D50068B545 /* CompanionPopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionPopoverViewController.swift; sourceTree = "<group>"; };
 		F05C63B128F1D9D50068B545 /* CompanionPopoverViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CompanionPopoverViewController.xib; sourceTree = "<group>"; };
@@ -1204,8 +1210,6 @@
 				03C491B424FBBDA00041D71C /* ExperimentalReadmeWindowController.swift */,
 				F05C63B128F1D9D50068B545 /* CompanionPopoverViewController.xib */,
 				F05C63B028F1D9D50068B545 /* CompanionPopoverViewController.swift */,
-				F03F59F12AC312B000DB6B77 /* SetDefaultWindowController.swift */,
-				F03F59F22AC312B000DB6B77 /* SetDefaultWindowController.xib */,
 				11374231735C4A908F3371B8 /* CompanionAerialView.swift */,
 				11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */,
 				11374231735C4A908F3371BB /* SwiftAerialWindow.swift */,
@@ -1264,6 +1268,7 @@
 				F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */,
 				F0C5B42D2E8EDA9F00AEC15C /* BundledVersion.swift */,
 				F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */,
+				F01C6D632E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -1294,6 +1299,7 @@
 		03CE4F4C24CB0CA700494D32 = {
 			isa = PBXGroup;
 			children = (
+				F01C6D5F2E9ABAB600C1CB73 /* Config */,
 				F0C05E872E4E2BF30066F2C4 /* ScreenSaver */,
 				03CE4F5724CB0CA700494D32 /* Companion */,
 				F0C05FA52E4E2C060066F2C4 /* Shared */,
@@ -1332,6 +1338,14 @@
 				F0C5B42B2E8ECB6700AEC15C /* Resources */,
 			);
 			path = Companion;
+			sourceTree = "<group>";
+		};
+		F01C6D5F2E9ABAB600C1CB73 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		F072218A2AD437AB001F5452 /* Bridge */ = {
@@ -1390,6 +1404,7 @@
 		F0C05FA22E4E2C060066F2C4 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F0326B372E9BDF3300582FED /* AerialLogger.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2143,7 +2158,6 @@
 				033B0B6924E96CE200622CA7 /* ant.pdf in Resources */,
 				03076A072505EF8E00CDF16C /* kofi1@2x.png in Resources */,
 				033B0B6D24E96D4C00622CA7 /* cloud.sun.rain.pdf in Resources */,
-				F03F59F42AC312B000DB6B77 /* SetDefaultWindowController.xib in Resources */,
 				0333115F24D8796F00E4622D /* UpdateCheckWindowController.xib in Resources */,
 				033B0B6C24E96D4C00622CA7 /* sun.max.pdf in Resources */,
 				03C491B724FBBDA00041D71C /* ExperimentalReadmeWindowController.xib in Resources */,
@@ -2156,6 +2170,7 @@
 				F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */,
 				F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
 				F0C061AB2E4F70580066F2C4 /* TimeViewController.xib in Resources */,
+				F01C6D612E9ABAB600C1CB73 /* Version.xcconfig in Resources */,
 				F0C062102E4F70580066F2C4 /* DisplaysViewController.xib in Resources */,
 				F0C061E12E4F70580066F2C4 /* BrightnessViewController.xib in Resources */,
 				F0C061B12E4F70580066F2C4 /* CacheViewController.xib in Resources */,
@@ -2294,6 +2309,7 @@
 				F0C062012E4F70580066F2C4 /* sunset.pdf in Resources */,
 				F0C062032E4F70580066F2C4 /* circle.pdf in Resources */,
 				F0C062042E4F70580066F2C4 /* cloud.bolt.pdf in Resources */,
+				F01C6D602E9ABAB600C1CB73 /* Version.xcconfig in Resources */,
 				F0C062052E4F70580066F2C4 /* location.north.pdf in Resources */,
 				F0C062062E4F70580066F2C4 /* cloud.pdf in Resources */,
 				F0C062072E4F70580066F2C4 /* text.cursor.pdf in Resources */,
@@ -2336,6 +2352,7 @@
 				F0C062AC2E4F70580066F2C4 /* zh_TW.json in Resources */,
 				F0C062AD2E4F70580066F2C4 /* folder.pdf in Resources */,
 				F0C062AE2E4F70580066F2C4 /* thermometer.sun.pdf in Resources */,
+				F01C6D622E9ABAB600C1CB73 /* Version.xcconfig in Resources */,
 				F0C062AF2E4F70580066F2C4 /* InfoViewController.xib in Resources */,
 				F0C062B02E4F70580066F2C4 /* SidebarViewController.xib in Resources */,
 				F0C062B12E4F70580066F2C4 /* star.pdf in Resources */,
@@ -2479,6 +2496,7 @@
 				033B0B5924E9644D00622CA7 /* WelcomeViewController.swift in Sources */,
 				033B0B5D24E9655E00622CA7 /* ReleaseViewController.swift in Sources */,
 				0333115624D8448E00E4622D /* MenuViewController.swift in Sources */,
+				F01C6D642E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift in Sources */,
 				F0C5B42F2E8EDA9F00AEC15C /* BundledVersion.swift in Sources */,
 				F0C5B4302E8EDA9F00AEC15C /* ScreensaverManager.swift in Sources */,
 				03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */,
@@ -2493,7 +2511,6 @@
 				11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */,
 				11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */,
 				11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */,
-				F03F59F32AC312B000DB6B77 /* SetDefaultWindowController.swift in Sources */,
 				03CE4F8024CB4CFB00494D32 /* FileDownloader.swift in Sources */,
 				035F6F1C24CC8D97002E4EEE /* CompanionLog.swift in Sources */,
 				F05C63B728F326300068B545 /* SystemPrefs.swift in Sources */,
@@ -2598,6 +2615,7 @@
 				F0C061602E4F70580066F2C4 /* CacheViewController.swift in Sources */,
 				F0C061612E4F70580066F2C4 /* VideoDownload.swift in Sources */,
 				F0C061622E4F70580066F2C4 /* ManifestLoader.swift in Sources */,
+				F0326B392E9BDF3300582FED /* AerialLogger.swift in Sources */,
 				F0C061632E4F70580066F2C4 /* NSImage+trim.swift in Sources */,
 				F0C061642E4F70580066F2C4 /* InfoMessageView.swift in Sources */,
 				F0C061652E4F70580066F2C4 /* AspectFillNSImageView.swift in Sources */,
@@ -2759,6 +2777,7 @@
 				F02C82A42E4F971500D48D4B /* PlaybackSpeed.swift in Sources */,
 				F02C82A52E4F971500D48D4B /* CustomVideoFolders+helpers.swift in Sources */,
 				F02C82A62E4F971500D48D4B /* InfoClockView.swift in Sources */,
+				F0326B3A2E9BDF3300582FED /* AerialLogger.swift in Sources */,
 				F02C82A72E4F971500D48D4B /* CompanionBridge.swift in Sources */,
 				F02C82A82E4F971500D48D4B /* ConditionSymbolLayer.swift in Sources */,
 				F02C82A92E4F971500D48D4B /* AnimationLayer.swift in Sources */,
@@ -2905,6 +2924,7 @@
 				F0C062932E4F70580066F2C4 /* AnimatableLayer.swift in Sources */,
 				F0C062942E4F70580066F2C4 /* Brightness.swift in Sources */,
 				F0C062952E4F70580066F2C4 /* DownloadIndicatorLayer.swift in Sources */,
+				F0326B382E9BDF3300582FED /* AerialLogger.swift in Sources */,
 				F0C062962E4F70580066F2C4 /* AVPlayerViewExtension.swift in Sources */,
 				F0C062972E4F70580066F2C4 /* PoiStringProvider.swift in Sources */,
 				F0C062982E4F70580066F2C4 /* VideoLoader.swift in Sources */,

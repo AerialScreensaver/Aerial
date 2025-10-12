@@ -103,6 +103,10 @@ struct Preferences {
     
     @CompanionSimpleStorage(key: "globalSpeed", defaultValue: 100)
     static var globalSpeed: Int
+
+    // Enable/disable the legacy screensaver watchdog
+    @CompanionSimpleStorage(key: "enableScreensaverWatchdog", defaultValue: true)
+    static var enableScreensaverWatchdog: Bool
 }
 
 

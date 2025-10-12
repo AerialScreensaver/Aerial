@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22154" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -278,7 +277,7 @@
                                 <rect key="frame" x="0.0" y="0.0" width="401" height="54"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="he5-wE-Bg5">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="he5-wE-Bg5">
                                         <rect key="frame" x="18" y="18" width="188" height="19"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="A new version is available!" id="MUu-J0-R3G">
                                             <font key="font" metaFont="systemMedium" size="15"/>
@@ -287,7 +286,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <button toolTip="Update now" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e8E-71-xHS">
-                                        <rect key="frame" x="250" y="7" width="137" height="40"/>
+                                        <rect key="frame" x="249" y="13" width="132" height="28"/>
                                         <buttonCell key="cell" type="push" title="Update now" bezelStyle="rounded" image="square.and.arrow.down" catalog="system" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="irt-mz-WnS">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="systemMedium" size="15"/>
@@ -319,7 +318,7 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <button toolTip="Update now" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="qgI-f1-FAT">
-                                        <rect key="frame" x="308" y="7" width="79" height="40"/>
+                                        <rect key="frame" x="306" y="13" width="75" height="28"/>
                                         <buttonCell key="cell" type="push" title="Set" bezelStyle="rounded" image="wrench" catalog="system" imagePosition="left" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="jsi-JF-0pf">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="systemMedium" size="15"/>
@@ -331,7 +330,7 @@
                                             <action selector="setAsDefaultButton:" target="-2" id="tKZ-Ul-907"/>
                                         </connections>
                                     </button>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5y5-o4-80n">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5y5-o4-80n">
                                         <rect key="frame" x="18" y="19" width="238" height="19"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Screen Saver is not set as default" id="JcB-hO-lzF">
@@ -366,7 +365,7 @@
                                             <nil key="locale"/>
                                         </symbolConfiguration>
                                     </imageView>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SMw-vK-C8g">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SMw-vK-C8g">
                                         <rect key="frame" x="46" y="15" width="331" height="19"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Screen saver is disabled, check settings below" id="ASR-us-Gz2">
@@ -412,7 +411,7 @@
                                             <action selector="activationTimeChange:" target="-2" id="3qs-Ln-BXJ"/>
                                         </connections>
                                     </popUpButton>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="333-oN-X74">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="333-oN-X74">
                                         <rect key="frame" x="133" y="64" width="70" height="17"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="clipping" alignment="right" title="Start after" id="iJg-NS-kR8">
@@ -421,7 +420,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZLM-BI-oPv">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZLM-BI-oPv">
                                         <rect key="frame" x="80" y="16" width="122" height="17"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="clipping" alignment="right" title="Sleep screen after" id="6lj-CK-AfE">
@@ -513,14 +512,29 @@
                                             <action selector="openSettingsClick:" target="-2" id="nFM-6X-R50"/>
                                         </connections>
                                     </button>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="06K-xe-End">
-                                        <rect key="frame" x="14" y="24" width="146" height="16"/>
-                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Aerial Companion 1.5" id="SGS-Qq-hij">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="06K-xe-End">
+                                        <rect key="frame" x="14" y="24" width="66" height="16"/>
+                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Aerial 1.5" id="SGS-Qq-hij">
                                             <font key="font" size="14" name="SFPro-Semibold"/>
                                             <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
+                                    <button toolTip="Force kill legacyScreenSaver" translatesAutoresizingMaskIntoConstraints="NO" id="tDI-JL-uyP">
+                                        <rect key="frame" x="141" y="11" width="36" height="42"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="hammer.circle" catalog="system" imagePosition="overlaps" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="TgU-Kq-s2g">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="36" id="jxG-co-w5i"/>
+                                            <constraint firstAttribute="width" constant="36" id="oh4-yX-FPh"/>
+                                        </constraints>
+                                        <connections>
+                                            <action selector="forceKillLegacy:" target="-2" id="HXz-AZ-2ho"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="06K-xe-End" firstAttribute="centerY" secondItem="N8U-UX-HMj" secondAttribute="centerY" id="1mx-BN-j0K"/>
@@ -528,9 +542,11 @@
                                     <constraint firstItem="boA-VY-7ai" firstAttribute="leading" secondItem="pmF-dd-0gf" secondAttribute="trailing" constant="16" id="AZa-Sw-DcV"/>
                                     <constraint firstItem="pmF-dd-0gf" firstAttribute="leading" secondItem="Jwi-Xt-9Fn" secondAttribute="trailing" constant="16" id="JMS-TN-MwU"/>
                                     <constraint firstItem="Jwi-Xt-9Fn" firstAttribute="leading" secondItem="J5x-eO-Her" secondAttribute="trailing" constant="16" id="K8S-WZ-6Y6"/>
+                                    <constraint firstItem="J5x-eO-Her" firstAttribute="leading" secondItem="tDI-JL-uyP" secondAttribute="trailing" constant="16" id="Kfh-qF-CFU"/>
                                     <constraint firstItem="06K-xe-End" firstAttribute="leading" secondItem="N8U-UX-HMj" secondAttribute="leading" constant="16" id="Lea-Zg-i2V"/>
                                     <constraint firstItem="boA-VY-7ai" firstAttribute="top" secondItem="N8U-UX-HMj" secondAttribute="top" constant="14" id="M0g-he-rOK"/>
                                     <constraint firstItem="pmF-dd-0gf" firstAttribute="centerY" secondItem="J5x-eO-Her" secondAttribute="centerY" id="N4H-lM-Rbj"/>
+                                    <constraint firstItem="J5x-eO-Her" firstAttribute="centerY" secondItem="tDI-JL-uyP" secondAttribute="centerY" id="YhS-5p-4R2"/>
                                     <constraint firstItem="boA-VY-7ai" firstAttribute="centerY" secondItem="J5x-eO-Her" secondAttribute="centerY" id="iz5-M4-ysd"/>
                                     <constraint firstItem="Jwi-Xt-9Fn" firstAttribute="centerY" secondItem="J5x-eO-Her" secondAttribute="centerY" id="vCc-0M-fNi"/>
                                 </constraints>
@@ -572,7 +588,7 @@
             <rect key="frame" x="0.0" y="0.0" width="177" height="114"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <view key="contentView" id="lvS-r4-pMv">
-                <rect key="frame" x="4" y="5" width="169" height="94"/>
+                <rect key="frame" x="0.0" y="0.0" width="177" height="102"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             </view>
             <point key="canvasLocation" x="584" y="212"/>
@@ -585,6 +601,7 @@
         <image name="eye.slash.fill" catalog="system" width="21" height="16"/>
         <image name="forward.circle" catalog="system" width="15" height="15"/>
         <image name="gear" catalog="system" width="17" height="16"/>
+        <image name="hammer.circle" catalog="system" width="15" height="15"/>
         <image name="hare" catalog="system" width="23" height="17"/>
         <image name="info.circle" catalog="system" width="15" height="15"/>
         <image name="list.bullet.circle" catalog="system" width="15" height="15"/>

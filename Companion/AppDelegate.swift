@@ -28,6 +28,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let popover = NSPopover()
 
+    // Watchdog for legacy screensaver cleanup
+    lazy var screensaverWatchdog = ScreensaverWatchdog()
+
     // Sparkle
     var sparkleController : SPUStandardUpdaterController
     
@@ -103,9 +106,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             selector: #selector(self.test2(_:)),
             name: Notification.Name("com.glouel.aerial.nextvideo"), object: nil)
 
-        
+
         PluginBridge.setNotifications()
-        
+
+        // Initialize the screensaver watchdog if enabled
+        if Preferences.enableScreensaverWatchdog {
+            _ = screensaverWatchdog
+        }
+
         /*// We may auto start the background based on user pref
         if Preferences.restartBackground {
             // Only if it was running previously
