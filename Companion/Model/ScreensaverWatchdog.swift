@@ -11,12 +11,11 @@ import Cocoa
 class ScreensaverWatchdog {
 
     private let targetProcessName = "legacyScreenSaver"
-    private let delayBeforeKill: TimeInterval = 5.0 // 5 seconds
+    private var delayBeforeKill: TimeInterval {
+        return TimeInterval(Preferences.watchdogTimerDelay)
+    }
     private var pendingCheckWorkItem: DispatchWorkItem?
-
-    // Termination retry delays
-    private let gracefulTerminationWait: TimeInterval = 2.0 // Wait 2s after SIGTERM
-    private let forceTerminationWait: TimeInterval = 1.0    // Wait 1s after SIGKILL
+    private let killVerificationWait: TimeInterval = 1.0 // Wait 1s after SIGKILL
 
     // MARK: - Initialization
 
@@ -33,23 +32,43 @@ class ScreensaverWatchdog {
     // MARK: - Notification Handling
 
     private func setupNotificationObserver() {
-        // Listen for screen unlock events
-        DistributedNotificationCenter.default().addObserver(
+        let center = DistributedNotificationCenter.default()
+
+        // Listen for screen unlock events (triggers kill timer)
+        center.addObserver(
             self,
             selector: #selector(handleScreenUnlock(_:)),
             name: NSNotification.Name("com.apple.screenIsUnlocked"),
             object: nil
         )
-        CompanionLogging.debugLog("ScreensaverWatchdog: Listening for screen unlock events")
+
+        // Listen for screen lock events (cancels kill timer)
+        center.addObserver(
+            self,
+            selector: #selector(handleScreenLock(_:)),
+            name: NSNotification.Name("com.apple.screenIsLocked"),
+            object: nil
+        )
+
+        // Listen for screensaver start events (cancels kill timer)
+        center.addObserver(
+            self,
+            selector: #selector(handleScreensaverStart(_:)),
+            name: NSNotification.Name("com.apple.screensaver.didstart"),
+            object: nil
+        )
+
+        CompanionLogging.debugLog("ScreensaverWatchdog: Listening for screen events")
     }
 
     private func removeNotificationObserver() {
-        DistributedNotificationCenter.default().removeObserver(
-            self,
-            name: NSNotification.Name("com.apple.screenIsUnlocked"),
-            object: nil
-        )
-        CompanionLogging.debugLog("ScreensaverWatchdog: Removed screen unlock observer")
+        let center = DistributedNotificationCenter.default()
+
+        center.removeObserver(self, name: NSNotification.Name("com.apple.screenIsUnlocked"), object: nil)
+        center.removeObserver(self, name: NSNotification.Name("com.apple.screenIsLocked"), object: nil)
+        center.removeObserver(self, name: NSNotification.Name("com.apple.screensaver.didstart"), object: nil)
+
+        CompanionLogging.debugLog("ScreensaverWatchdog: Removed screen event observers")
     }
 
     @objc private func handleScreenUnlock(_ notification: Notification) {
@@ -70,6 +89,18 @@ class ScreensaverWatchdog {
 
         // Schedule the check after the delay
         DispatchQueue.main.asyncAfter(deadline: .now() + delayBeforeKill, execute: workItem)
+    }
+
+    @objc private func handleScreenLock(_ notification: Notification) {
+        CompanionLogging.debugLog("ScreensaverWatchdog: Screen locked, cancelling pending termination")
+        pendingCheckWorkItem?.cancel()
+        pendingCheckWorkItem = nil
+    }
+
+    @objc private func handleScreensaverStart(_ notification: Notification) {
+        CompanionLogging.debugLog("ScreensaverWatchdog: Screensaver started, cancelling pending termination")
+        pendingCheckWorkItem?.cancel()
+        pendingCheckWorkItem = nil
     }
 
     // MARK: - Process Management
@@ -120,74 +151,31 @@ class ScreensaverWatchdog {
         return kill(pid, 0) == 0
     }
 
-    /// Force kill a process using SIGKILL (kill -9) as last resort
-    /// - Parameter pid: The process identifier to kill
-    /// - Returns: true if signal was sent successfully
-    private func forceKillProcess(pid: pid_t) -> Bool {
-        let result = kill(pid, SIGKILL)
-        return result == 0
-    }
-
-    /// Terminate a process with verification and escalation
+    /// Terminate a process using SIGKILL
     /// - Parameter process: The NSRunningApplication to terminate
-    ///
-    /// This method uses an escalating approach:
-    /// 1. Try graceful termination (SIGTERM)
-    /// 2. Wait and verify
-    /// 3. If still running, try force termination (SIGKILL)
-    /// 4. Wait and verify
-    /// 5. If still running, try system kill -9
-    /// 6. Final verification
     private func terminateProcess(_ process: NSRunningApplication) {
         let pid = process.processIdentifier
 
-        CompanionLogging.debugLog("ScreensaverWatchdog: Starting termination of \(targetProcessName) (PID: \(pid))")
+        CompanionLogging.debugLog("ScreensaverWatchdog: Terminating \(targetProcessName) (PID: \(pid)) with SIGKILL")
 
-        // Step 1: Try graceful termination (SIGTERM)
-        _ = process.terminate()
-        CompanionLogging.debugLog("ScreensaverWatchdog: Sent SIGTERM to \(targetProcessName) (PID: \(pid)), waiting \(gracefulTerminationWait)s...")
+        // Send SIGKILL directly (kill -9)
+        let result = kill(pid, SIGKILL)
 
-        // Step 2: Wait and check if graceful termination worked
-        DispatchQueue.main.asyncAfter(deadline: .now() + gracefulTerminationWait) { [weak self] in
-            guard let self = self else { return }
+        if result == 0 {
+            CompanionLogging.debugLog("ScreensaverWatchdog: Sent SIGKILL to PID \(pid), verifying...")
 
-            if !self.isProcessRunning(pid: pid) {
-                CompanionLogging.debugLog("ScreensaverWatchdog: ✓ Process \(self.targetProcessName) (PID: \(pid)) terminated gracefully")
-                return
-            }
-
-            // Step 3: Graceful termination failed, try force termination
-            CompanionLogging.debugLog("ScreensaverWatchdog: Process still running, sending SIGKILL via forceTerminate()")
-            _ = process.forceTerminate()
-
-            // Step 4: Wait and check if force termination worked
-            DispatchQueue.main.asyncAfter(deadline: .now() + self.forceTerminationWait) { [weak self] in
+            // Wait and verify termination
+            DispatchQueue.main.asyncAfter(deadline: .now() + killVerificationWait) { [weak self] in
                 guard let self = self else { return }
 
                 if !self.isProcessRunning(pid: pid) {
-                    CompanionLogging.debugLog("ScreensaverWatchdog: ✓ Process \(self.targetProcessName) (PID: \(pid)) force terminated")
-                    return
-                }
-
-                // Step 5: Force termination failed, try system kill -9
-                CompanionLogging.debugLog("ScreensaverWatchdog: Process still running, using kill -9 as last resort")
-                if self.forceKillProcess(pid: pid) {
-                    CompanionLogging.debugLog("ScreensaverWatchdog: Sent kill -9 to PID \(pid)")
-
-                    // Step 6: Final verification
-                    DispatchQueue.main.asyncAfter(deadline: .now() + self.forceTerminationWait) { [weak self] in
-                        guard let self = self else { return }
-
-                        if !self.isProcessRunning(pid: pid) {
-                            CompanionLogging.debugLog("ScreensaverWatchdog: ✓ Process \(self.targetProcessName) (PID: \(pid)) killed via kill -9")
-                        } else {
-                            CompanionLogging.errorLog("ScreensaverWatchdog: ✗ Failed to terminate \(self.targetProcessName) (PID: \(pid)) - process is still running after all attempts")
-                        }
-                    }
+                    CompanionLogging.debugLog("ScreensaverWatchdog: ✓ Process \(self.targetProcessName) (PID: \(pid)) terminated successfully")
                 } else {
-                    CompanionLogging.errorLog("ScreensaverWatchdog: ✗ Failed to send kill -9 to PID \(pid)")
+                    CompanionLogging.errorLog("ScreensaverWatchdog: ✗ Process \(self.targetProcessName) (PID: \(pid)) still running after SIGKILL")
                 }
             }
+        } else {
+            CompanionLogging.errorLog("ScreensaverWatchdog: ✗ Failed to send SIGKILL to PID \(pid)")
         }
     }
 

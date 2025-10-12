@@ -14,6 +14,10 @@ class SettingsWindowController: NSWindowController {
     @IBOutlet var checkEveryPopup: NSPopUpButton!
     @IBOutlet var launchCompanionPopup: NSPopUpButton!
 
+    @IBOutlet weak var enableWatchdog: NSButton!
+    
+    @IBOutlet weak var watchdogTimer: NSSlider!
+    
     @IBOutlet weak var restartAtLaunchCheckbox: NSButton!
     
     lazy var updateCheckWindowController = UpdateCheckWindowController()
@@ -27,8 +31,10 @@ class SettingsWindowController: NSWindowController {
         updateModePopup.selectItem(at: Preferences.updateMode.rawValue)
         checkEveryPopup.selectItem(at: Preferences.checkEvery.rawValue)
         launchCompanionPopup.selectItem(at: Preferences.launchMode.rawValue)
-        
+
         restartAtLaunchCheckbox.state = Preferences.restartBackground ? .on : .off
+        enableWatchdog.state = Preferences.enableScreensaverWatchdog ? .on : .off
+        watchdogTimer.integerValue = Preferences.watchdogTimerDelay
     }
     
     public func setHostController(_controller: NSViewController) {
@@ -73,4 +79,14 @@ class SettingsWindowController: NSWindowController {
     @IBAction func restartAtLaunchChange(_ sender: NSButton) {
         Preferences.restartBackground = sender.state == .on ? true : false
     }
+    
+    
+    @IBAction func enableWatchdogChange(_ sender: NSButton) {
+        Preferences.enableScreensaverWatchdog = sender.state == .on
+    }
+
+    @IBAction func watchdogTimerChange(_ sender: NSSlider) {
+        Preferences.watchdogTimerDelay = sender.integerValue
+    }
+    
 }

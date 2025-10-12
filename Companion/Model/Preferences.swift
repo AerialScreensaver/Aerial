@@ -107,6 +107,10 @@ struct Preferences {
     // Enable/disable the legacy screensaver watchdog
     @CompanionSimpleStorage(key: "enableScreensaverWatchdog", defaultValue: true)
     static var enableScreensaverWatchdog: Bool
+
+    // Watchdog delay in seconds before killing legacyScreenSaver
+    @CompanionSimpleStorage(key: "watchdogTimerDelay", defaultValue: 5)
+    static var watchdogTimerDelay: Int
 }
 
 

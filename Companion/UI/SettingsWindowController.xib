@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22154" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -10,9 +9,11 @@
             <connections>
                 <outlet property="betaPopup" destination="ZOl-Zu-Z62" id="kAb-HF-MWm"/>
                 <outlet property="checkEveryPopup" destination="bfH-PH-VUR" id="00h-Cc-DXz"/>
+                <outlet property="enableWatchdog" destination="DGc-3H-am3" id="0Y3-zb-eK6"/>
                 <outlet property="launchCompanionPopup" destination="wef-Nq-FWG" id="T4s-2W-7tv"/>
                 <outlet property="restartAtLaunchCheckbox" destination="OM2-1u-a6E" id="phJ-0W-Sqc"/>
                 <outlet property="updateModePopup" destination="Zkg-Q7-6IE" id="x7A-Im-wpc"/>
+                <outlet property="watchdogTimer" destination="bF1-UN-EcZ" id="nWc-6C-naE"/>
                 <outlet property="window" destination="F0z-JX-Cv5" id="gIp-Ho-8D9"/>
             </connections>
         </customObject>
@@ -21,23 +22,23 @@
         <window title="Aerial Companion Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="F0z-JX-Cv5">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="196" y="240" width="480" height="362"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="contentRect" x="196" y="240" width="481" height="556"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1409"/>
             <view key="contentView" id="se5-gp-TjO">
-                <rect key="frame" x="0.0" y="0.0" width="480" height="359"/>
+                <rect key="frame" x="0.0" y="0.0" width="481" height="556"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <box title="Screen saver updates" translatesAutoresizingMaskIntoConstraints="NO" id="f9Y-ap-aHf">
-                        <rect key="frame" x="7" y="180" width="466" height="171"/>
+                        <rect key="frame" x="10" y="177" width="461" height="163"/>
                         <view key="contentView" id="zL9-0U-l13">
-                            <rect key="frame" x="4" y="5" width="458" height="148"/>
+                            <rect key="frame" x="0.0" y="0.0" width="461" height="148"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZOl-Zu-Z62">
-                                    <rect key="frame" x="205" y="98" width="72" height="40"/>
+                                    <rect key="frame" x="210" y="104" width="76" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Yes" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="9j6-Tr-2Mi" id="2tW-FL-6eY">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="h1k-lz-gYa">
                                             <items>
                                                 <menuItem title="Yes" state="on" id="9j6-Tr-2Mi"/>
@@ -49,8 +50,8 @@
                                         <action selector="betaPopupChange:" target="-2" id="ueW-ZV-Muk"/>
                                     </connections>
                                 </popUpButton>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lxo-xj-Glp">
-                                    <rect key="frame" x="21" y="111" width="175" height="17"/>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lxo-xj-Glp">
+                                    <rect key="frame" x="21" y="110" width="175" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Get beta releases of Aerial" id="zcW-gA-98C">
                                         <font key="font" metaFont="system" size="14"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -58,10 +59,10 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Zkg-Q7-6IE">
-                                    <rect key="frame" x="205" y="54" width="112" height="40"/>
+                                    <rect key="frame" x="210" y="60" width="116" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Automatic" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="NPg-9t-yrz" id="mdn-Oh-OHp">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="hp8-e0-kEv">
                                             <items>
                                                 <menuItem title="Automatic" state="on" id="NPg-9t-yrz"/>
@@ -73,8 +74,8 @@
                                         <action selector="updateModePopupChange:" target="-2" id="t2v-Ma-SFk"/>
                                     </connections>
                                 </popUpButton>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bXs-FV-IGt">
-                                    <rect key="frame" x="104" y="67" width="92" height="17"/>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bXs-FV-IGt">
+                                    <rect key="frame" x="104" y="66" width="92" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Update mode" id="ffk-Va-Ibl">
                                         <font key="font" metaFont="system" size="14"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -82,10 +83,10 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bfH-PH-VUR">
-                                    <rect key="frame" x="205" y="10" width="84" height="40"/>
+                                    <rect key="frame" x="210" y="16" width="88" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Hour" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="9LZ-6U-eth" id="85D-OA-OEN">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="Ksb-T7-vUu">
                                             <items>
                                                 <menuItem title="Hour" state="on" id="9LZ-6U-eth"/>
@@ -100,8 +101,8 @@
                                         <action selector="checkEveryPopupChange:" target="-2" id="Vor-wm-nvh"/>
                                     </connections>
                                 </popUpButton>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nHV-7K-y5b">
-                                    <rect key="frame" x="111" y="23" width="85" height="17"/>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nHV-7K-y5b">
+                                    <rect key="frame" x="111" y="22" width="85" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Check every" id="ahH-k5-nNe">
                                         <font key="font" metaFont="system" size="14"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -109,7 +110,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="C5g-L7-uLl">
-                                    <rect key="frame" x="294" y="10" width="116" height="40"/>
+                                    <rect key="frame" x="314" y="16" width="112" height="28"/>
                                     <buttonCell key="cell" type="push" title="Check now" bezelStyle="rounded" image="arrow.down.circle" catalog="system" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="HDu-qT-BLT">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -140,16 +141,16 @@
                         <font key="titleFont" metaFont="system" size="14"/>
                     </box>
                     <box title="Companion" translatesAutoresizingMaskIntoConstraints="NO" id="pgi-8z-Aaq">
-                        <rect key="frame" x="7" y="91" width="466" height="83"/>
+                        <rect key="frame" x="10" y="92" width="461" height="75"/>
                         <view key="contentView" id="J6k-D5-jad">
-                            <rect key="frame" x="4" y="5" width="458" height="60"/>
+                            <rect key="frame" x="0.0" y="0.0" width="461" height="60"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wef-Nq-FWG">
-                                    <rect key="frame" x="205" y="10" width="160" height="40"/>
+                                    <rect key="frame" x="210" y="16" width="164" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Manually" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="MSj-n2-kc1" id="kXY-3u-UCQ">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="KAd-vw-bQf">
                                             <items>
                                                 <menuItem title="Manually" state="on" id="MSj-n2-kc1"/>
@@ -164,8 +165,8 @@
                                         <action selector="launchCompanionPopupChange:" target="-2" id="vui-3S-1fc"/>
                                     </connections>
                                 </popUpButton>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QYZ-Ua-n9O">
-                                    <rect key="frame" x="69" y="23" width="127" height="17"/>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QYZ-Ua-n9O">
+                                    <rect key="frame" x="69" y="22" width="127" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Launch companion" id="Gb5-tL-q4w">
                                         <font key="font" metaFont="system" size="14"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -184,16 +185,16 @@
                         <font key="titleFont" metaFont="system" size="14"/>
                     </box>
                     <box title="Desktop Background" translatesAutoresizingMaskIntoConstraints="NO" id="ljW-my-Rep">
-                        <rect key="frame" x="7" y="6" width="466" height="79"/>
+                        <rect key="frame" x="10" y="10" width="461" height="72"/>
                         <view key="contentView" id="Qb2-Dc-yGL">
-                            <rect key="frame" x="4" y="5" width="458" height="56"/>
+                            <rect key="frame" x="0.0" y="0.0" width="461" height="57"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OM2-1u-a6E">
-                                    <rect key="frame" x="208" y="19" width="129" height="18"/>
+                                    <rect key="frame" x="210" y="20" width="132" height="17"/>
                                     <buttonCell key="cell" type="check" title="Restart at launch" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="VgO-8n-igS">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                        <font key="font" metaFont="system"/>
+                                        <font key="font" metaFont="system" size="14"/>
                                     </buttonCell>
                                     <connections>
                                         <action selector="restartAtLaunchChange:" target="-2" id="HV5-41-YbY"/>
@@ -208,15 +209,68 @@
                         </view>
                         <font key="titleFont" metaFont="system" size="14"/>
                     </box>
+                    <box title="Experimental legacyScreenSaver Watchdog" translatesAutoresizingMaskIntoConstraints="NO" id="xUv-lh-mKc">
+                        <rect key="frame" x="10" y="350" width="461" height="196"/>
+                        <view key="contentView" id="5Of-JB-awb">
+                            <rect key="frame" x="0.0" y="0.0" width="461" height="181"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DGc-3H-am3">
+                                    <rect key="frame" x="210" y="144" width="133" height="17"/>
+                                    <buttonCell key="cell" type="check" title="Enable watchdog" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="nbE-jK-pip">
+                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                        <font key="font" metaFont="system" size="14"/>
+                                    </buttonCell>
+                                    <connections>
+                                        <action selector="enableWatchdogChange:" target="-2" id="AHx-IH-sBP"/>
+                                    </connections>
+                                </button>
+                                <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bF1-UN-EcZ">
+                                    <rect key="frame" x="20" y="94" width="421" height="20"/>
+                                    <sliderCell key="cell" controlSize="large" state="on" alignment="left" minValue="1" maxValue="15" doubleValue="7" tickMarkPosition="above" numberOfTickMarks="15" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fMd-r7-h3O"/>
+                                    <connections>
+                                        <action selector="watchdogTimerChange:" target="-2" id="NUo-f4-VCm"/>
+                                    </connections>
+                                </slider>
+                                <textField horizontalHuggingPriority="249" verticalHuggingPriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="lN3-Oz-yN9">
+                                    <rect key="frame" x="18" y="20" width="425" height="54"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="421" id="nnq-H5-vpC"/>
+                                    </constraints>
+                                    <textFieldCell key="cell" alignment="left" id="Pk9-aD-uVd">
+                                        <font key="font" metaFont="system" size="14"/>
+                                        <string key="title">Time delay in seconds (1-15s). After the screen is unlocked, it waits for that duration before killing legacyScreenSaver. 5s is the default, if things get stuck you can try changing it.</string>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                            </subviews>
+                            <constraints>
+                                <constraint firstItem="bF1-UN-EcZ" firstAttribute="top" secondItem="DGc-3H-am3" secondAttribute="bottom" constant="30" id="BPH-jq-OCw"/>
+                                <constraint firstAttribute="trailing" secondItem="bF1-UN-EcZ" secondAttribute="trailing" constant="20" symbolic="YES" id="EYv-lh-6VH"/>
+                                <constraint firstItem="lN3-Oz-yN9" firstAttribute="top" secondItem="bF1-UN-EcZ" secondAttribute="bottom" constant="20" id="K4f-BS-a0T"/>
+                                <constraint firstAttribute="trailing" secondItem="lN3-Oz-yN9" secondAttribute="trailing" constant="20" symbolic="YES" id="Png-Tc-0tF"/>
+                                <constraint firstItem="DGc-3H-am3" firstAttribute="leading" secondItem="5Of-JB-awb" secondAttribute="leading" constant="210" id="g8q-fB-4Wo"/>
+                                <constraint firstItem="lN3-Oz-yN9" firstAttribute="leading" secondItem="5Of-JB-awb" secondAttribute="leading" constant="20" symbolic="YES" id="hb6-Nl-ccJ"/>
+                                <constraint firstAttribute="bottom" secondItem="lN3-Oz-yN9" secondAttribute="bottom" constant="20" symbolic="YES" id="kTl-F5-Rf9"/>
+                                <constraint firstItem="DGc-3H-am3" firstAttribute="top" secondItem="5Of-JB-awb" secondAttribute="top" constant="20" symbolic="YES" id="saq-oJ-7xC"/>
+                                <constraint firstItem="bF1-UN-EcZ" firstAttribute="leading" secondItem="5Of-JB-awb" secondAttribute="leading" constant="20" symbolic="YES" id="v7s-DL-4cP"/>
+                            </constraints>
+                        </view>
+                        <font key="titleFont" metaFont="system" size="14"/>
+                    </box>
                 </subviews>
                 <constraints>
                     <constraint firstAttribute="trailing" secondItem="pgi-8z-Aaq" secondAttribute="trailing" constant="10" id="40E-o7-zdT"/>
                     <constraint firstItem="f9Y-ap-aHf" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" constant="10" id="4vI-n7-dac"/>
                     <constraint firstAttribute="bottom" secondItem="ljW-my-Rep" secondAttribute="bottom" constant="10" id="74E-bO-ckp"/>
                     <constraint firstAttribute="trailing" secondItem="f9Y-ap-aHf" secondAttribute="trailing" constant="10" id="7O4-3Z-c4k"/>
-                    <constraint firstItem="f9Y-ap-aHf" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="8" id="922-dD-cam"/>
+                    <constraint firstAttribute="trailing" secondItem="xUv-lh-mKc" secondAttribute="trailing" constant="10" id="Dro-bY-E4v"/>
+                    <constraint firstItem="f9Y-ap-aHf" firstAttribute="top" secondItem="xUv-lh-mKc" secondAttribute="bottom" constant="10" id="NFZ-wv-ART"/>
                     <constraint firstItem="pgi-8z-Aaq" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" constant="10" id="OCE-1e-fuE"/>
+                    <constraint firstItem="xUv-lh-mKc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="10" id="UX2-lU-npR"/>
                     <constraint firstItem="ljW-my-Rep" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" constant="10" id="c9z-y7-9GG"/>
+                    <constraint firstItem="xUv-lh-mKc" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" constant="10" id="eag-aL-U4Q"/>
                     <constraint firstItem="pgi-8z-Aaq" firstAttribute="top" secondItem="f9Y-ap-aHf" secondAttribute="bottom" constant="10" id="tQX-SQ-78y"/>
                     <constraint firstItem="ljW-my-Rep" firstAttribute="top" secondItem="pgi-8z-Aaq" secondAttribute="bottom" constant="10" id="w0D-A7-RK8"/>
                     <constraint firstAttribute="trailing" secondItem="ljW-my-Rep" secondAttribute="trailing" constant="10" id="yMS-b9-DDx"/>
@@ -225,7 +279,7 @@
             <connections>
                 <outlet property="delegate" destination="-2" id="0bl-1N-AYu"/>
             </connections>
-            <point key="canvasLocation" x="139" y="226"/>
+            <point key="canvasLocation" x="-25.5" y="437"/>
         </window>
     </objects>
     <resources>
