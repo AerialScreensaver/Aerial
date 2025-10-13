@@ -40,13 +40,13 @@ struct Source: Codable {
     }
 
     func diskUsage() -> Double {
-        let path = Cache.supportPath.appending("/" + name)
+        let path = Cache.supportPath.appending("/Sources/" + name)
 
         return Cache.getDirectorySize(directory: path)
     }
 
     func wipeFromDisk() {
-        let path = Cache.supportPath.appending("/" + name)
+        let path = Cache.supportPath.appending("/Sources/" + name)
 
         if FileManager.default.fileExists(atPath: path) {
             try? FileManager.default.removeItem(atPath: path)
@@ -61,7 +61,7 @@ struct Source: Codable {
     // Is the source already cached or not ?
     func isCached() -> Bool {
         let fileManager = FileManager.default
-        return fileManager.fileExists(atPath: Cache.supportPath.appending("/" + name + "/entries.json"))
+        return fileManager.fileExists(atPath: Cache.supportPath.appending("/Sources/" + name + "/entries.json"))
     }
 
     func lastUpdated() -> String {
@@ -69,10 +69,10 @@ struct Source: Codable {
             var date: Date?
             if !isCachable && type == .local {
                 date = (try? FileManager.default.attributesOfItem(atPath:
-                Cache.supportPath.appending("/" + name + "/entries.json")))?[.modificationDate] as? Date
+                Cache.supportPath.appending("/Sources/" + name + "/entries.json")))?[.modificationDate] as? Date
             } else {
                 date = (try? FileManager.default.attributesOfItem(atPath:
-                Cache.supportPath.appending("/" + name + "/entries.json")))?[.creationDate] as? Date
+                Cache.supportPath.appending("/Sources/" + name + "/entries.json")))?[.creationDate] as? Date
             }
 
             if date != nil {
@@ -91,7 +91,7 @@ struct Source: Codable {
     func getUnprocessedAssets() -> [VideoAsset] {
         if isCached() {
             do {
-                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/" + name + "/entries.json"))
+                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/Sources/" + name + "/entries.json"))
                 let jsondata = try Data(contentsOf: cacheFileUrl)
 
                 if let videoManifest = try? newJSONDecoder().decode(VideoManifest.self, from: jsondata) {
@@ -113,7 +113,7 @@ struct Source: Codable {
     func getUnprocessedVideos() -> [AerialVideo] {
         if isCached() {
             do {
-                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/" + name + "/entries.json"))
+                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/Sources/" + name + "/entries.json"))
                 let jsondata = try Data(contentsOf: cacheFileUrl)
 
                 return readVideoManifest(jsondata)
@@ -130,7 +130,7 @@ struct Source: Codable {
     func getVideos() -> [AerialVideo] {
         if isCached() {
             do {
-                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/" + name + "/entries.json"))
+                let cacheFileUrl = URL(fileURLWithPath: Cache.supportPath.appending("/Sources/" + name + "/entries.json"))
                 let jsondata = try Data(contentsOf: cacheFileUrl)
 
                 if name == "tvOS 10" {

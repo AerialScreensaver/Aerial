@@ -13,8 +13,8 @@ import os.log
 
 // Configure shared logger for Companion app
 private let companionLogger = AerialLogger(config: LoggerConfiguration(
-    logFileName: "CompanionLog.txt",
-    supportPath: { Helpers.supportPath },
+    logFileName: "app.txt",
+    supportPath: { UnifiedPaths.logsPath() },
     addTimestamps: true,
     enableLogRolling: true,
     category: "Companion",

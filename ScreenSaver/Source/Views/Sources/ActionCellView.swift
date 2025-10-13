@@ -15,7 +15,7 @@ class ActionCellView: NSTableCellView {
     @IBAction func actionButton(_ sender: NSButton) {
         if let source = source {
             if source.type == .local {
-                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Cache.supportPath.appending("/"+source.name))
+                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Cache.supportPath.appending("/Sources/"+source.name))
             } else {
                 if source.isCachable {
                     Cache.ensureDownload {

@@ -124,11 +124,12 @@ extension DownloadOperation: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         do {
             // We may need to create our destination
-            let destinationDirectory = Cache.supportPath.appending("/" + folder)
+            // Use Sources/ subdirectory for source downloads, root for empty folder (manifests)
+            let destinationDirectory = folder.isEmpty ? Cache.supportPath : Cache.supportPath.appending("/Sources/" + folder)
             FileHelpers.createDirectory(atPath: destinationDirectory)
 
             let manager = FileManager.default
-            let supportURL = URL(fileURLWithPath: Cache.supportPath.appending("/" + folder))
+            let supportURL = URL(fileURLWithPath: folder.isEmpty ? Cache.supportPath : Cache.supportPath.appending("/Sources/" + folder))
 
             debugLog("Caching \(downloadTask.originalRequest!.url!.lastPathComponent) at \(folder)")
 
@@ -168,7 +169,8 @@ extension DownloadOperation: URLSessionTaskDelegate {
             return
         }
 
-        let destinationDirectory = Cache.supportPath.appending("/" + folder)
+        // Use Sources/ subdirectory for source downloads, root for empty folder (manifests)
+        let destinationDirectory = folder.isEmpty ? Cache.supportPath : Cache.supportPath.appending("/Sources/" + folder)
 
         // Some manifests come in tar form, in that case untar them here
         if folder == "tvOS 13" {

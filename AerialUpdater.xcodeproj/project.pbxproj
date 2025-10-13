@@ -765,6 +765,7 @@
 		F0D333CF2E4F742C0048A86B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FB72E4F6A700066F2C4 /* Info.plist */; };
 		F0D333D12E4F776D0048A86B /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D02E4F776D0048A86B /* CoreLocation.framework */; };
 		F0D333D32E4F77750048A86B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D22E4F77750048A86B /* IOKit.framework */; };
+		F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */; };
 		F0EB5B072A58412200910682 /* NSButton+Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EB5B062A58412200910682 /* NSButton+Image.swift */; };
 /* End PBXBuildFile section */
 
@@ -1150,6 +1151,7 @@
 		F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverManager.swift; sourceTree = "<group>"; };
 		F0D333D02E4F776D0048A86B /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		F0D333D22E4F77750048A86B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPaths.swift; sourceTree = "<group>"; };
 		F0EB5B062A58412200910682 /* NSButton+Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSButton+Image.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1282,6 +1284,7 @@
 				0333115824D85CCA00E4622D /* String+version.swift */,
 				73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */,
 				F0EB5B062A58412200910682 /* NSButton+Image.swift */,
+				F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -2582,6 +2585,7 @@
 				F0C0613F2E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */,
 				F0C061402E4F70580066F2C4 /* PrefsInfo.swift in Sources */,
 				F0C061412E4F70580066F2C4 /* VideoViewItem.swift in Sources */,
+				F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */,
 				F0C061422E4F70580066F2C4 /* InfoTimerView.swift in Sources */,
 				F0C061432E4F70580066F2C4 /* IOBridge.m in Sources */,
 				F0C061442E4F70580066F2C4 /* HardwareDetection.swift in Sources */,

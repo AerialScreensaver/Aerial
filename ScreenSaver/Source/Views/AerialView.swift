@@ -270,7 +270,7 @@ final class AerialView: ScreenSaverView, CAAnimationDelegate {
         }
 
         // First thing, we may need to migrate the cache !
-        Cache.migrate()
+        //Cache.migrate()
 
         // Now we need to check if we should remove lingering stuff from the cache !
         if Cache.canNetwork() {

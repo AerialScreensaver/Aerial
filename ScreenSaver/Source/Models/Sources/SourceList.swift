@@ -99,22 +99,24 @@ struct SourceList {
         var sources: [Source] = []
         var foundCommunity = false
 
-        for folder in URL(fileURLWithPath: Cache.supportPath).subDirectories {
-            if !folder.lastPathComponent.starts(with: "tvOS")
-                && !folder.lastPathComponent.starts(with: "macOS")
-                && !folder.lastPathComponent.starts(with: "backups")
-                && !folder.lastPathComponent.starts(with: "Thumbnails")
-                && !folder.lastPathComponent.starts(with: "Cache") {
+        // Look in the Sources subdirectory
+        let sourcesPath = Cache.supportPath.appending("/Sources")
+        if FileManager.default.fileExists(atPath: sourcesPath) {
+            for folder in URL(fileURLWithPath: sourcesPath).subDirectories {
+                if !folder.lastPathComponent.starts(with: "tvOS")
+                    && !folder.lastPathComponent.starts(with: "macOS")
+                    && !folder.lastPathComponent.starts(with: "backups") {
 
-                if folder.lastPathComponent.starts(with: "Community") || folder.lastPathComponent.starts(with: "From") {
-                    foundCommunity = true
-                }
+                    if folder.lastPathComponent.starts(with: "Community") || folder.lastPathComponent.starts(with: "From") {
+                        foundCommunity = true
+                    }
 
-                // If it's valid, let's add !
-                if let source = loadManifest(url: folder) {
-                    sources.append(source)
-                } else if let newsources = loadMetaManifest(url: folder) {
-                    sources.append(contentsOf: newsources)
+                    // If it's valid, let's add !
+                    if let source = loadManifest(url: folder) {
+                        sources.append(source)
+                    } else if let newsources = loadMetaManifest(url: folder) {
+                        sources.append(contentsOf: newsources)
+                    }
                 }
             }
         }
@@ -403,13 +405,13 @@ struct SourceList {
                                      more: source.more)
 
         // First make the folder
-        FileHelpers.createDirectory(atPath: Cache.supportPath.appending("/"+source.name))
+        FileHelpers.createDirectory(atPath: Cache.supportPath.appending("/Sources/"+source.name))
 
         let json = try? JSONEncoder().encode(manifest)
 
         do {
             try json!.write(to: URL(fileURLWithPath:
-                                    Cache.supportPath.appending("/"+source.name+"/manifest.json")))
+                                    Cache.supportPath.appending("/Sources/"+source.name+"/manifest.json")))
         } catch {
             errorLog("Can't save local source : \(error.localizedDescription)")
         }
@@ -420,7 +422,7 @@ struct SourceList {
 
         do {
             try json!.write(to: URL(fileURLWithPath:
-                                    Cache.supportPath.appending("/"+source.name+"/entries.json")))
+                                    Cache.supportPath.appending("/Sources/"+source.name+"/entries.json")))
         } catch {
             errorLog("Can't save local entries : \(error.localizedDescription)")
         }

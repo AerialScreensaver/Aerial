@@ -13,14 +13,14 @@ import os.log
 
 // Configure shared logger for Screensaver
 private let aerialLogger = AerialLogger(config: LoggerConfiguration(
-    logFileName: "AerialLog.txt",
-    supportPath: { Cache.supportPath },
+    logFileName: "screensaver.txt",
+    supportPath: { "/Users/Shared/Aerial/Logs" },
     addTimestamps: true,
     enableLogRolling: true,
     category: "Screensaver",
     debugModeCheck: { PrefsAdvanced.debugMode },
     errorPrefix: "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨",
-    alternateLogFileName: "AerialUnderCompanionLog.txt",
+    alternateLogFileName: "desktop-mode.txt",
     useAlternateLogFile: { Aerial.helper.underCompanion }
 ))
 

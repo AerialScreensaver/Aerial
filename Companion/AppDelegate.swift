@@ -40,9 +40,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - Lifecycle
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // CRITICAL: Initialize unified path FIRST, before any file operations
+        guard UnifiedPaths.ensureBaseDirectory() else {
+            // Fatal error - cannot continue without proper directory structure
+            // Error dialog has already been shown by UnifiedPaths
+            NSApplication.shared.terminate(self)
+            return
+        }
+
         CompanionLogging.debugLog("Version \(Helpers.version) launched on  \(ProcessInfo.processInfo.operatingSystemVersionString)")
         //Preferences.firstTimeSetup = false
-        
+
         let arguments = ProcessInfo.processInfo.arguments
 
         // Ensure not in bundle

@@ -17,130 +17,21 @@ final class VideoCache {
     var loadedRanges: [NSRange] = []
     let URL: URL
 
-    static var computedCacheDirectory: String?
-    static var computedAppSupportDirectory: String?
+    // MARK: - Path Properties
 
-    // MARK: - Application Support directory
+    /// Returns the unified support path
     static var appSupportDirectory: String? {
-        // TODO : temporary for the migration
         return Cache.supportPath
-//
-//        // We only process this once if successful
-//        if computedAppSupportDirectory != nil {
-//            return computedAppSupportDirectory
-//        }
-//
-//        var foundDirectory: String?
-//
-//        let appSupportPaths = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory,
-//                                                                 .userDomainMask,
-//                                                                 true)
-//
-//        if appSupportPaths.isEmpty {
-//            errorLog("Couldn't find appSupport paths!")
-//            return nil
-//        }
-//        let appSupportDirectory = appSupportPaths[0] as NSString
-//        if aerialFolderExists(at: appSupportDirectory) {
-//            debugLog("app support exists")
-//            foundDirectory = appSupportDirectory.appendingPathComponent("Aerial")
-//        } else {
-//            debugLog("creating app support directory")
-//            // We create in user appSupport which may be containairized
-//            // so ~/Library/Application Support/ on pre 10.15
-//            // or ~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver
-//            //    /Data/Library/Application Support/
-//            foundDirectory = appSupportDirectory.appendingPathComponent("Aerial")
-//
-//            let fileManager = FileManager.default
-//            if fileManager.fileExists(atPath: foundDirectory!) == false {
-//                do {
-//                    try fileManager.createDirectory(atPath: foundDirectory!,
-//                                                    withIntermediateDirectories: false, attributes: nil)
-//                } catch let error {
-//                    errorLog("Couldn't create appSupport directory in User directory: \(error)")
-//                    errorLog("FATAL : There's nothing more we can do at this point")
-//                    return nil
-//                }
-//            }
-//        }
-//
-//        // Cache the computed value
-//        computedAppSupportDirectory = foundDirectory
-//        return computedAppSupportDirectory
     }
 
-    // MARK: - User Video cache directory
+    /// Returns the unified cache path
     static var cacheDirectory: String? {
-        // TODO : Until refactor is done
         return Cache.path
-
-//        // We only process this once if successful
-//        if computedCacheDirectory != nil {
-//            return computedCacheDirectory
-//        }
-//
-//        var cacheDirectory: String?
-//        let preferences = Preferences.sharedInstance
-//
-//        if let customCacheDirectory = preferences.customCacheDirectory {
-//            // We may have overriden the cache directory, but it may no longer exist !
-//            if FileManager.default.fileExists(atPath: customCacheDirectory as String) {
-//                debugLog("Using exiting customCacheDirectory : \(customCacheDirectory)")
-//                cacheDirectory = customCacheDirectory
-//            } /*else {
-//                // If it doesn't we need to reset that preference
-//                preferences.customCacheDirectory = nil
-//            }*/
-//        }
-//
-//        if cacheDirectory == nil {
-//            let userCachePaths = NSSearchPathForDirectoriesInDomains(.cachesDirectory,
-//                                                                 .userDomainMask,
-//                                                                 true)
-//            let localCachePaths = NSSearchPathForDirectoriesInDomains(.cachesDirectory,
-//                                                                      .localDomainMask,
-//                                                                      true)
-//
-//            if !localCachePaths.isEmpty {
-//                let localCacheDirectory = localCachePaths[0] as NSString
-//                if aerialFolderExists(at: localCacheDirectory) {
-//                    debugLog("Using existing local cache /Library/Caches/Aerial")
-//                    cacheDirectory = localCacheDirectory.appendingPathComponent("Aerial")
-//                }
-//            }
-//
-//            if !userCachePaths.isEmpty && cacheDirectory == nil {
-//                let userCacheDirectory = userCachePaths[0] as NSString
-//
-//                if aerialFolderExists(at: userCacheDirectory) {
-//                    debugLog("Using existing user cache ~/Library/Caches/Aerial")
-//                    cacheDirectory = userCacheDirectory.appendingPathComponent("Aerial")
-//                } else {
-//                    debugLog("No local or user cache exists, using ~/Library/Application Support/Aerial")
-//                    cacheDirectory = appSupportDirectory
-//                }
-//            }
-//        }
-//
-//        // Cache the computed value
-//        computedCacheDirectory = cacheDirectory
-//
-//        debugLog("cache to be used : \(String(describing: cacheDirectory))")
-//        return cacheDirectory
     }
 
-    // MARK: - Helpers
-    static func aerialFolderExists(at: NSString) -> Bool {
-        let aerialFolder = at.appendingPathComponent("Aerial")
-        if FileManager.default.fileExists(atPath: aerialFolder as String) {
-            return true
-        } else {
-            return false
-        }
-    }
+    // MARK: - Video Availability
 
-    // Is a video cached (in either appSupport or cache)
+    // Is a video cached
     static func isAvailableOffline(video: AerialVideo) -> Bool {
         let fileManager = FileManager.default
 
@@ -255,12 +146,12 @@ final class VideoCache {
         if video.url.isFileURL {
             return video.url.path
         } else {
-            return Cache.supportPath.appending("/" + video.source.name + "/" + video.url.lastPathComponent)
+            return Cache.supportPath.appending("/Sources/" + video.source.name + "/" + video.url.lastPathComponent)
         }
     }
 
     static func sourcePathFor(_ filename: String, video: AerialVideo) -> String {
-        return Cache.supportPath.appending("/" + video.source.name + "/" + filename)
+        return Cache.supportPath.appending("/Sources/" + video.source.name + "/" + filename)
     }
 
     init(URL: Foundation.URL) {

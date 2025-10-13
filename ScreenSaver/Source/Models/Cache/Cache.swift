@@ -11,22 +11,29 @@ import CoreWLAN
 import AVKit
 
 /**
- Aerial's new Cache management
- 
- Everything Cache related is moved here.
- 
- - Note: Where is our cache ?
- 
- Starting with 2.0, Aerial is putting its files in two locations :
- - `~/Library/Application Support/Aerial/` : Contains manifests files and strings bundles for each source, in their own directory
- - `~/Library/Application Support/Aerial/Cache/` : Contains (only) the cached videos
- 
- Users of version 1.x.x will automatically see their video files migrated to the correct location.
- 
- In Catalina, those paths live inside a user's container :
- `~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/`
- 
- - Attention: Shared by multiple users writable locations are no longer possible, because sandboxing is awesome !
+ Aerial's unified Cache management
+
+ Everything Cache related is managed here.
+
+ - Note: Where is our data?
+
+ **Unified Path System (3.3.0+):**
+
+ All Aerial data is now stored in `/Users/Shared/Aerial/` across all macOS versions:
+ - `/Users/Shared/Aerial/` : Base directory for all Aerial data
+ - `/Users/Shared/Aerial/Cache/` : Video cache
+ - `/Users/Shared/Aerial/Thumbnails/` : Thumbnail cache
+ - `/Users/Shared/Aerial/Sources/` : Per-source manifests and files
+ - `/Users/Shared/Aerial/Logs/` : Application and screensaver logs
+
+ **Benefits:**
+ - No more container issues
+ - Accessible to all users on the system
+ - Consistent across all macOS versions
+ - Simpler code and easier debugging
+
+ **Custom Paths:**
+ Users can still override the cache location via `PrefsCache.overrideCache` for advanced use cases.
  */
 
 // swiftlint:disable:next type_body_length
@@ -42,37 +49,35 @@ struct Cache {
     static var processedSupportPath = ""
 
     /**
-     Returns Aerial's Application Support path.
-     
-     + On macOS 10.14 and earlier : `~/Library/Application Support/Aerial/`
-     + Starting with 10.15 : `~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/Aerial/`
-     
-     - Note: Returns `/` on failure.
-     
-     In some rare instances those system folders may not exist in the container, in this case Aerial can't work.
+     Returns Aerial's unified path.
+
+     All data is now stored in `/Users/Shared/Aerial/` across all macOS versions.
+
+     - Note: Returns `/` on failure (extremely rare - would indicate permissions issue)
      */
     static var supportPath: String {
-        // Dont' redo the thing all the time
+        // Cache the computed value
         if processedSupportPath != "" {
             return processedSupportPath
         }
 
         var appPath = ""
 
+        // Check for user override (custom cache location)
         if PrefsCache.overrideCache {
-            debugLog("Cache Override")
+            debugLog("Cache Override detected")
             if !Aerial.helper.underCompanion, #available(macOS 12, *) {
+                // macOS 12+ with security-scoped bookmarks
                 if let bookmarkData = PrefsCache.supportBookmarkData {
                     do {
                         var isStale = false
                         let bookmarkUrl = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
 
-                        //debugLog("Bookmark is stale : \(isStale)")
                         appPath = bookmarkUrl.path
 
+                        // Start accessing the security-scoped resource
                         do {
                             let url = try NSURL.init(resolvingBookmarkData: bookmarkData, options: .withoutUI, relativeTo: nil, bookmarkDataIsStale: nil)
-
                             url.startAccessingSecurityScopedResource()
                         } catch let error as NSError {
                             errorLog("Bookmark Access Failed: \(error.description)")
@@ -81,97 +86,55 @@ struct Cache {
                         errorLog("Can't process bookmark \(error)")
                     }
                 } else {
-                    errorLog("Can't find supportBookmarkData on macOS 12")
+                    errorLog("Can't find supportBookmarkData on macOS 12+")
                 }
             } else {
+                // Older macOS or running under Companion - use simple path
                 if let customPath = PrefsCache.supportPath {
-                    debugLog("Trying \(customPath)")
+                    debugLog("Using custom path: \(customPath)")
                     if FileManager.default.fileExists(atPath: customPath) {
                         appPath = customPath
                     } else {
-                        errorLog("Could not find your custom Caches path, reverting to default settings")
+                        errorLog("Custom cache path not found, reverting to default")
                     }
                 } else {
-                    errorLog("Empty path, reverting to default settings")
+                    errorLog("Empty custom path, reverting to default")
                 }
             }
         }
 
-        // This is the normal(ish) path
+        // Default to unified path if no override
         if appPath == "" {
-            // This is the normal path via screensaver
-            if !Aerial.helper.underCompanion {
-                // Grab an array of Application Support paths
-                let appSupportPaths = NSSearchPathForDirectoriesInDomains(
-                    .applicationSupportDirectory,
-                    .userDomainMask,
-                    true)
-
-                if appSupportPaths.isEmpty {
-                    errorLog("FATAL : app support does not exist!")
-                    return "/"
-                }
-
-                appPath = appSupportPaths[0]
-            } else {
-                // If we are underCompanion, we need to add the container on 10.15+
-                // Grab an array of Application Support paths
-                if #available(OSX 10.15, *) {
-                    let libPaths = NSSearchPathForDirectoriesInDomains(
-                        .libraryDirectory,
-                        .userDomainMask,
-                        true)
-                    appPath = libPaths.first! + "/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/"
-
-                } else {
-                    let appSupportPaths = NSSearchPathForDirectoriesInDomains(
-                        .applicationSupportDirectory,
-                        .userDomainMask,
-                        true)
-
-                    if appSupportPaths.isEmpty {
-                        errorLog("FATAL : app support does not exist!")
-                        return "/"
-                    }
-                    appPath = appSupportPaths[0]
-                }
-            }
+            appPath = "/Users/Shared/Aerial"
         }
 
-        let appSupportDirectory = appPath as NSString
-
-        if aerialFolderExists(at: appSupportDirectory) {
-            processedSupportPath = appSupportDirectory.appendingPathComponent("Aerial")
+        // Ensure directory exists
+        if FileManager.default.fileExists(atPath: appPath) {
+            processedSupportPath = appPath
             return processedSupportPath
         } else {
-            debugLog("Creating app support directory...")
-            let asPath = appSupportDirectory.appendingPathComponent("Aerial")
-
-            let fileManager = FileManager.default
+            debugLog("Creating support directory at \(appPath)")
             do {
-                try fileManager.createDirectory(atPath: asPath,
-                                                withIntermediateDirectories: true, attributes: nil)
-
-                processedSupportPath = asPath
-                return asPath
+                try FileManager.default.createDirectory(
+                    atPath: appPath,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+                processedSupportPath = appPath
+                return appPath
             } catch let error {
-                errorLog("FATAL : Couldn't create app support directory in User directory: \(error)")
+                errorLog("FATAL: Couldn't create directory at \(appPath): \(error)")
                 return "/"
             }
         }
     }
 
     /**
-     Returns Aerial's Caches path.
-     
-     + On macOS 10.14 and earlier : `~/Library/Application Support/Aerial/Cache/`
-     + Starting with 10.15 : `~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/Aerial/Cache/`
-     
-     - Note: Returns `/` on failure.
-     
-     In some rare instances those system folders may not exist in the container, in this case Aerial can't work.
-     
-     Also note that the shared `Caches` folder, `/Library/Caches/Aerial/`, is no longer user writable in Catalina and will be ignored.
+     Returns Aerial's video cache path.
+
+     Always returns `/Users/Shared/Aerial/Cache/` across all macOS versions.
+
+     - Note: Returns `/` on failure (extremely rare).
      */
     static var path: String = {
         var path = ""
@@ -273,106 +236,7 @@ struct Cache {
         }
     }()
 
-    /**
-     Returns Aerial's former cache path, if it exists.
-     
-     + On macOS 10.14 and earlier : `~/Library/Caches/Aerial/`
-     + Starting with 10.15 : `~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Caches/Aerial/`
-     
-     - Note: Returns `nil` on failure.
-    */
-    static private var formerCachePath: String? = {
-        // Grab an array of Cache paths
-        let cacheSupportPaths = NSSearchPathForDirectoriesInDomains(
-            .cachesDirectory,
-            .userDomainMask,
-            true)
-
-        if cacheSupportPaths.isEmpty {
-            errorLog("Couldn't find Caches paths!")
-            return nil
-        }
-
-        let cacheSupportDirectory = cacheSupportPaths[0] as NSString
-        if aerialFolderExists(at: cacheSupportDirectory) {
-            return cacheSupportDirectory.appendingPathComponent("Aerial")
-        } else {
-            do {
-                debugLog("trying to create \(cacheSupportDirectory.appendingPathComponent("Aerial"))")
-                try FileManager.default.createDirectory(atPath: cacheSupportDirectory.appendingPathComponent("Aerial"),
-                                                withIntermediateDirectories: true, attributes: nil)
-                return path
-            } catch {
-                errorLog("Could not create Aerial's Caches path")
-            }
-            return nil
-        }
-    }()
-
-    // MARK: - Migration from Aerial 1.x.x to 2.x.x
-    /**
-     Migrate files from previous versions of Aerial to the 2.x.x structure.
-     
-     - Moves the video files from Application Support to the `Application Support/Aerial/Cache` sub directory.
-     - Moves the video files from Caches to the `Application Support/Aerial/Cache` sub directory
-     */
-    static func migrate() {
-        if !PrefsCache.overrideCache {
-            migrateAppSupport()
-            migrateOldCache()
-        }
-    }
-
-    /**
-     Migrate video that may be at the root of /Application Support/Aerial/
-     */
-    static private func migrateAppSupport() {
-        let supportURL = URL(fileURLWithPath: supportPath as String)
-        do {
-            let directoryContent = try FileManager.default.contentsOfDirectory(at: supportURL, includingPropertiesForKeys: nil)
-            let videoURLs = directoryContent.filter { $0.pathExtension == "mov" }
-
-            if !videoURLs.isEmpty {
-                debugLog("Starting migration of your video files from Application Support to the /Cache subfolder")
-                for videoURL in videoURLs {
-                    debugLog("moving \(videoURL.lastPathComponent)")
-                    let newURL = URL(fileURLWithPath: path.appending("/\(videoURL.lastPathComponent)"))
-                    try FileManager.default.moveItem(at: videoURL, to: newURL)
-                }
-                debugLog("Migration done.")
-            }
-        } catch {
-            errorLog("Error during migration, please report")
-            errorLog(error.localizedDescription)
-        }
-    }
-
-    /**
-     Migrate video that may be at the root of a user's /Caches/Aerial/
-     */
-    static private func migrateOldCache() {
-        if let formerCachePath = formerCachePath {
-            do {
-                let formerCacheURL = URL(fileURLWithPath: formerCachePath as String)
-
-                let directoryContent = try FileManager.default.contentsOfDirectory(at: formerCacheURL, includingPropertiesForKeys: nil)
-                let videoURLs = directoryContent.filter { $0.pathExtension == "mov" }
-
-                if !videoURLs.isEmpty {
-                    debugLog("Starting migration of your video files from Caches to the /Cache subfolder of Application Support")
-                    for videoURL in videoURLs {
-                        debugLog("moving \(videoURL.lastPathComponent)")
-                        let newURL = URL(fileURLWithPath: path.appending("/\(videoURL.lastPathComponent)"))
-                        try FileManager.default.moveItem(at: videoURL, to: newURL)
-                    }
-                    debugLog("Migration done.")
-                }
-            } catch {
-                errorLog("Error during migration, please report")
-                errorLog(error.localizedDescription)
-            }
-        }
-    }
+    // MARK: - Cache Maintenance
 
     // Remove files in bad format or outdated
     static func removeCruft() {
@@ -424,7 +288,7 @@ struct Cache {
         for source in SourceList.foundSources where !source.isCachable && source.type != .local {
             debugLog("Checking cruft in \(source.name)")
 
-            let pathURL = URL(fileURLWithPath: supportPath.appending("/" + source.name))
+            let pathURL = URL(fileURLWithPath: supportPath.appending("/Sources/" + source.name))
 
             let unprocessed = source.getUnprocessedVideos()
             debugLog(pathURL.absoluteString)
@@ -478,7 +342,7 @@ struct Cache {
         // let onlineVideos = VideoList.instance.videos.filter({ !$0.source.isCachable })
 
         for source in SourceList.foundSources.filter({!$0.isCachable}) {
-            let pathSource = URL(fileURLWithPath: supportPath).appendingPathComponent(source.name)
+            let pathSource = URL(fileURLWithPath: supportPath).appendingPathComponent("Sources").appendingPathComponent(source.name)
             if FileManager.default.fileExists(atPath: pathSource.path) {
                 do {
                     let directoryContent = try FileManager.default.contentsOfDirectory(at: pathSource, includingPropertiesForKeys: nil)
@@ -538,15 +402,6 @@ struct Cache {
     }
 
     // MARK: - Helpers
-    /**
-     Does an `/Aerial/` subfolder exist inside the given path
-     - parameter at: Source path
-     - returns: Path existance as a Bool.
-     */
-    private static func aerialFolderExists(at: NSString) -> Bool {
-        let aerialFolder = at.appendingPathComponent("Aerial")
-        return FileManager.default.fileExists(atPath: aerialFolder as String)
-    }
 
     /**
      Returns cache size in GB
@@ -590,7 +445,7 @@ struct Cache {
     static func packsSize() -> Double {
         var totalSize: Double = 0
         for source in SourceList.foundSources where !source.isCachable {
-            let sourcePath = supportPath.appending("/" + source.name)
+            let sourcePath = supportPath.appending("/Sources/" + source.name)
             totalSize += getDirectorySize(directory: sourcePath)
         }
 
