@@ -766,6 +766,9 @@
 		F0D333D12E4F776D0048A86B /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D02E4F776D0048A86B /* CoreLocation.framework */; };
 		F0D333D32E4F77750048A86B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D22E4F77750048A86B /* IOKit.framework */; };
 		F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */; };
+		F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060152E4F70580066F2C4 /* screen1.jpg */; };
+		F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060162E4F70580066F2C4 /* screen2.jpg */; };
+		F0E51E612E9D7299002BBAD6 /* screen0.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060142E4F70580066F2C4 /* screen0.jpg */; };
 		F0EB5B072A58412200910682 /* NSButton+Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EB5B062A58412200910682 /* NSButton+Image.swift */; };
 /* End PBXBuildFile section */
 
@@ -2170,6 +2173,9 @@
 				F0C061DF2E4F70580066F2C4 /* NowPlayingViewController.xib in Resources */,
 				F0C061982E4F70580066F2C4 /* InfoViewController.xib in Resources */,
 				F0C0620E2E4F70580066F2C4 /* CreditsViewController.xib in Resources */,
+				F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */,
+				F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */,
+				F0E51E612E9D7299002BBAD6 /* screen0.jpg in Resources */,
 				F0C0618E2E4F70580066F2C4 /* HelpViewController.xib in Resources */,
 				F0C061F32E4F70580066F2C4 /* SourcesViewController.xib in Resources */,
 				F0C061AB2E4F70580066F2C4 /* TimeViewController.xib in Resources */,
@@ -3136,7 +3142,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 3.9.9a2;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
-				PRODUCT_BUNDLE_IDENTIFIER = com.glouel.AerialUpdater;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = COMPANION_APP;

@@ -264,7 +264,7 @@ final class AerialView: ScreenSaverView, CAAnimationDelegate {
         // This is to make sure we don't start in a format that's unsupported
         ensureCorrectFormat()
         
-        if let version = Bundle(identifier: "com.JohnCoates.Aerial")?.infoDictionary?["CFBundleShortVersionString"] as? String {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             debugLog("🖼️ \(self.description) AV setup init (V\(version)) preview: \(self.isPreview)")
             debugLog("🖼️ Running \(ProcessInfo.processInfo.operatingSystemVersionString)")
         }
