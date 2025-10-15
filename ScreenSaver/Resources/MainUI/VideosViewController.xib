@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22154" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.AVKitIBPlugin" version="22154"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
+        <plugIn identifier="com.apple.AVKitIBPlugin" version="24127"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -59,7 +58,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zPp-ce-Ue7">
-                                    <rect key="frame" x="117" y="6" width="142" height="40"/>
+                                    <rect key="frame" x="122" y="12" width="145" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Everything" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="jkn-QZ-30T" id="D8b-BN-FEa">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system" size="14"/>
@@ -105,7 +104,7 @@
                                     <color key="contentTintColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
                                 </imageView>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pot-N7-9D4">
-                                    <rect key="frame" x="265" y="6" width="50" height="40"/>
+                                    <rect key="frame" x="283" y="12" width="54" height="28"/>
                                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="1Qe-dD-9QB">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system" size="14"/>
@@ -116,7 +115,7 @@
                                     </connections>
                                 </popUpButton>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="maH-hx-nRE">
-                                    <rect key="frame" x="633" y="6" width="174" height="40"/>
+                                    <rect key="frame" x="628" y="13" width="173" height="28"/>
                                     <buttonCell key="cell" type="push" title="Download rotation" bezelStyle="rounded" image="arrow.down.circle" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="QFI-4w-0fn">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system" size="14"/>
@@ -268,15 +267,14 @@
                                     <rect key="frame" x="160" y="0.0" width="649" height="504"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
+                                        <imageView horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="dtD-fV-1tE" customClass="AspectFillNSImageView" customModule="Aerial" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="649" height="504"/>
+                                            <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" id="ajB-qa-0uN"/>
+                                        </imageView>
                                         <avPlayerView horizontalHuggingPriority="300" verticalHuggingPriority="300" horizontalCompressionResistancePriority="300" verticalCompressionResistancePriority="300" controlsStyle="inline" id="U7m-tf-k3c">
                                             <rect key="frame" x="0.0" y="0.0" width="649" height="504"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         </avPlayerView>
-                                        <imageView horizontalHuggingPriority="300" verticalHuggingPriority="10" horizontalCompressionResistancePriority="300" verticalCompressionResistancePriority="10" id="dtD-fV-1tE" customClass="AspectFillNSImageView" customModule="Aerial" customModuleProvider="target">
-                                            <rect key="frame" x="0.0" y="0.0" width="649" height="504"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                            <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" id="ajB-qa-0uN"/>
-                                        </imageView>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ewl-dK-yIY">
                                             <rect key="frame" x="18" y="451" width="76" height="33"/>
                                             <textFieldCell key="cell" lineBreakMode="clipping" title="Label" id="a8N-Pb-JjJ">
@@ -343,10 +341,10 @@
                                             </buttonCell>
                                         </button>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="95z-4q-gHF">
-                                            <rect key="frame" x="503" y="320" width="126" height="100"/>
+                                            <rect key="frame" x="496" y="320" width="133" height="100"/>
                                             <subviews>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="qbz-9R-ZKI">
-                                                    <rect key="frame" x="-6" y="66" width="138" height="40"/>
+                                                    <rect key="frame" x="0.0" y="72" width="133" height="28"/>
                                                     <buttonCell key="cell" type="push" title="Download now" bezelStyle="rounded" image="NSTouchBarDownloadTemplate" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="jHr-z3-qDy">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
@@ -356,7 +354,7 @@
                                                     </connections>
                                                 </button>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dZn-gm-IU9">
-                                                    <rect key="frame" x="-6" y="30" width="138" height="40"/>
+                                                    <rect key="frame" x="0.0" y="36" width="133" height="28"/>
                                                     <buttonCell key="cell" type="push" title="Hide" bezelStyle="rounded" image="eye.slash" catalog="system" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="EPG-QN-CFH">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
@@ -366,7 +364,7 @@
                                                     </connections>
                                                 </button>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uwv-U2-C85">
-                                                    <rect key="frame" x="-6" y="-6" width="138" height="40"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="133" height="28"/>
                                                     <buttonCell key="cell" type="push" title="Show" bezelStyle="rounded" image="eye" catalog="system" imagePosition="left" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Q7h-xo-ddL">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
@@ -392,7 +390,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9Um-fB-kbb">
-                                            <rect key="frame" x="462" y="48" width="169" height="28"/>
+                                            <rect key="frame" x="464" y="54" width="165" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="20" id="qUr-7F-H1p"/>
                                                 <constraint firstAttribute="width" constant="165" id="qxv-ww-jI5"/>
@@ -403,7 +401,7 @@
                                             </connections>
                                         </slider>
                                         <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6Ad-yU-hKx">
-                                            <rect key="frame" x="462" y="14" width="169" height="28"/>
+                                            <rect key="frame" x="464" y="20" width="165" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="165" id="KxC-0m-cdh"/>
                                                 <constraint firstAttribute="height" constant="20" id="ZSI-B7-UTY"/>
@@ -444,16 +442,20 @@
                                         <constraint firstItem="QbZ-qp-Ypz" firstAttribute="leading" secondItem="ewl-dK-yIY" secondAttribute="leading" id="0aW-N9-7XK"/>
                                         <constraint firstAttribute="trailing" secondItem="6Ad-yU-hKx" secondAttribute="trailing" priority="100" constant="20" symbolic="YES" id="5fj-Px-9X5"/>
                                         <constraint firstItem="Y3a-EY-5S3" firstAttribute="top" secondItem="FJa-0G-94n" secondAttribute="top" constant="20" symbolic="YES" id="Agw-zF-nfa"/>
+                                        <constraint firstItem="dtD-fV-1tE" firstAttribute="top" secondItem="FJa-0G-94n" secondAttribute="top" id="BUM-Xg-UCl"/>
                                         <constraint firstItem="A1l-aS-ndR" firstAttribute="top" secondItem="dMl-IM-mBU" secondAttribute="bottom" constant="8" symbolic="YES" id="BvK-8W-P2S"/>
                                         <constraint firstItem="dMl-IM-mBU" firstAttribute="leading" secondItem="ewl-dK-yIY" secondAttribute="leading" id="DJg-ke-ta0"/>
                                         <constraint firstItem="EdU-Jl-WkG" firstAttribute="leading" secondItem="lFd-fP-vmN" secondAttribute="trailing" constant="4" id="DfP-zH-5yp"/>
                                         <constraint firstItem="dMl-IM-mBU" firstAttribute="top" secondItem="ewl-dK-yIY" secondAttribute="bottom" constant="8" symbolic="YES" id="Dze-AI-cnq"/>
                                         <constraint firstItem="EdU-Jl-WkG" firstAttribute="top" secondItem="lFd-fP-vmN" secondAttribute="top" id="HMw-10-Joy"/>
                                         <constraint firstAttribute="bottom" secondItem="6Ad-yU-hKx" secondAttribute="bottom" constant="20" symbolic="YES" id="HOm-Y5-UjM"/>
+                                        <constraint firstAttribute="trailing" secondItem="dtD-fV-1tE" secondAttribute="trailing" id="K6m-8F-Fgk"/>
                                         <constraint firstItem="LOU-p1-jXB" firstAttribute="leading" secondItem="Y3a-EY-5S3" secondAttribute="trailing" constant="8" symbolic="YES" id="L63-x4-B2U"/>
                                         <constraint firstItem="9Um-fB-kbb" firstAttribute="leading" secondItem="Ikp-a0-d9g" secondAttribute="trailing" constant="16" id="Lxq-tu-gDS"/>
+                                        <constraint firstAttribute="bottom" secondItem="dtD-fV-1tE" secondAttribute="bottom" id="NzN-Ae-Rnc"/>
                                         <constraint firstItem="6Ad-yU-hKx" firstAttribute="top" secondItem="9Um-fB-kbb" secondAttribute="bottom" constant="14" id="Qen-OT-MpJ"/>
                                         <constraint firstItem="LOU-p1-jXB" firstAttribute="top" secondItem="FJa-0G-94n" secondAttribute="top" constant="20" symbolic="YES" id="RCb-cg-dTt"/>
+                                        <constraint firstItem="dtD-fV-1tE" firstAttribute="leading" secondItem="FJa-0G-94n" secondAttribute="leading" id="Tdv-BC-vpf"/>
                                         <constraint firstItem="A1l-aS-ndR" firstAttribute="leading" secondItem="ewl-dK-yIY" secondAttribute="leading" id="WIn-8v-0HC"/>
                                         <constraint firstItem="6Ad-yU-hKx" firstAttribute="trailing" secondItem="9Um-fB-kbb" secondAttribute="trailing" id="ZDJ-c2-jTQ"/>
                                         <constraint firstItem="lFd-fP-vmN" firstAttribute="leading" secondItem="A1l-aS-ndR" secondAttribute="trailing" constant="8" symbolic="YES" id="dh8-3c-vh9"/>
@@ -529,7 +531,7 @@
                     <rect key="frame" x="188" y="458" width="156" height="40"/>
                     <popUpButtonCell key="cell" type="push" title="Locations" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="aAq-NZ-YB8" id="QWj-F0-Vs1">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="J60-Ou-gg6">
                             <items>
                                 <menuItem title="Everything" image="film" catalog="system" id="hg4-C7-oRd"/>
@@ -558,7 +560,7 @@
                     </connections>
                 </popUpButton>
                 <imageView horizontalHuggingPriority="25" verticalHuggingPriority="25" horizontalCompressionResistancePriority="75" verticalCompressionResistancePriority="75" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r3Q-f4-uvO">
-                    <rect key="frame" x="20" y="464" width="24.5" height="28"/>
+                    <rect key="frame" x="20" y="464.5" width="24.5" height="28"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="24" id="5i5-sS-s5M"/>
                     </constraints>
@@ -1004,7 +1006,7 @@
         <image name="star" catalog="system" width="17" height="16"/>
         <image name="star" width="154" height="166"/>
         <image name="star.fill" width="154" height="166"/>
-        <image name="sun.max" width="147" height="168"/>
+        <image name="sun.max" width="146" height="164"/>
         <image name="video.badge.plus" catalog="system" width="21" height="16"/>
     </resources>
 </document>
