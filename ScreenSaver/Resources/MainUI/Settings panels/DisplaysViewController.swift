@@ -31,6 +31,10 @@ class DisplaysViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // Ensure view adapts to dark mode
+        view.wantsLayer = true
+        updateBackgroundColor()
+
         // This is the label in the large display view in the top
         if PrefsDisplays.displayMode == .selection {
             displayInstructionLabel.isHidden = false
@@ -58,6 +62,16 @@ class DisplaysViewController: NSViewController {
 
         horizontalMarginTextField.doubleValue = PrefsDisplays.horizontalMargin
         verticalMarginTextField.doubleValue = PrefsDisplays.verticalMargin
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        // Update background color each time view appears (handles appearance changes)
+        updateBackgroundColor()
+    }
+
+    private func updateBackgroundColor() {
+        view.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
     }
 
     @IBAction func displayPopupChange(_ sender: NSPopUpButton) {
