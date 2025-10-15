@@ -65,14 +65,7 @@ class SwiftAerialDesktop: NSWindowController {
     // MARK: - Control Methods
     
     func togglePause() {
-        // AerialView doesn't have a togglePause method, we need to stop/start
-        if let aerialView = aerialView {
-            if aerialView.isAnimating {
-                aerialView.stopAnimation()
-            } else {
-                aerialView.startAnimation()
-            }
-        }
+        aerialView?.togglePause()
     }
     
     func nextVideo() {
