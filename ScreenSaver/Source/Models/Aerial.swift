@@ -28,12 +28,11 @@ class Aerial: NSObject {
     
     // Track our version number for logs and stuff
     var version: String = {
-        if let version = Bundle(identifier: "com.johncoates.Aerial-Test")?.infoDictionary?["CFBundleShortVersionString"] as? String {
+        if let version = Bundle(identifier: "com.glouel.Aerial-Screensaver")?.infoDictionary?["CFBundleShortVersionString"] as? String {
             return "Version " + version
-        } else if let version = Bundle(identifier: "com.JohnCoates.Aerial")?.infoDictionary?["CFBundleShortVersionString"] as? String {
+        } else if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             return "Version " + version
         }
-
         return "Version ?"
     }()
 
