@@ -137,46 +137,7 @@ struct Cache {
      - Note: Returns `/` on failure (extremely rare).
      */
     static var path: String = {
-        var path = ""
-        /*if PrefsCache.overrideCache {
-            if #available(macOS 12, *) {
-                if let bookmarkData = PrefsCache.cacheBookmarkData {
-                    do {
-                        var isStale = false
-                        let bookmarkUrl = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
-
-                        debugLog("Bookmark is stale : \(isStale)")
-                        debugLog("\(bookmarkUrl)")
-                        path = bookmarkUrl.path
-                        debugLog("\(path)")
-                    } catch {
-                        errorLog("Can't process bookmark")
-                    }
-                } else {
-                    errorLog("Can't find cacheBookmarkData on macOS 12")
-                }
-            } else {
-                if let customPath = Preferences.sharedInstance.customCacheDirectory {
-                    debugLog("Trying \(customPath)")
-                    if FileManager.default.fileExists(atPath: customPath) {
-                        path = customPath
-                    } else {
-                        errorLog("Could not find your custom Caches path, reverting to default settings")
-                    }
-                } else {
-                    errorLog("Empty path, reverting to default settings")
-
-                }
-            }
-
-            if path == "" {
-                PrefsCache.overrideCache = false
-                path = Cache.supportPath.appending("/Cache")
-            }
-        } else {*/
-
-        path = Cache.supportPath.appending("/Cache")
-        // }
+        let path = Cache.supportPath.appending("/Cache")
 
         if FileManager.default.fileExists(atPath: path as String) {
             return path
@@ -213,11 +174,10 @@ struct Cache {
     }()
     /**
      Returns Aerial's thumbnail cache path, creating it if needed.
-     + On macOS 10.14 and earlier : `~/Library/Application Support/Aerial/Thumbnails/`
-     + Starting with 10.15 : `~/Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/Aerial/Thumbnails/`
 
-     - Note: Returns `/` on failure.
+     Always returns `/Users/Shared/Aerial/Thumbnails/` across all macOS versions.
 
+     - Note: Returns `/` on failure (extremely rare).
      */
     static var thumbnailsPath: String = {
         let path = Cache.supportPath.appending("/Thumbnails")
