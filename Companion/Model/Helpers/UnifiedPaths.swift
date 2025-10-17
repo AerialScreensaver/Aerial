@@ -38,70 +38,77 @@ struct UnifiedPaths {
         CompanionLogging.debugLog("🚀 UnifiedPaths: Starting initialization")
 
         // Step 1: Check if base directory exists
+        var alreadyInitialized = false
+
         if fileManager.fileExists(atPath: basePath) {
             CompanionLogging.debugLog("🚀 UnifiedPaths: Base directory exists, checking for companion.json")
 
             // Check for companion.json marker
             if fileManager.fileExists(atPath: markerPath) {
-                CompanionLogging.debugLog("🚀 UnifiedPaths: Already initialized (companion.json found)")
-                // Already initialized, we're done!
-                return true
+                CompanionLogging.debugLog("🚀 UnifiedPaths: Already initialized, ensuring subdirectories exist")
+                alreadyInitialized = true
+                // Don't return - continue to subdirectory creation below
+            } else {
+                // Directory exists but no companion.json - user might have created it
+                // Rename it to preserve any user data
+                CompanionLogging.debugLog("🚀 UnifiedPaths: Pre-existing folder found without companion.json, renaming")
+                let renamedPath = "/Users/Shared/Aerial-user"
+                var finalRenamedPath = renamedPath
+
+                do {
+                    // Check if Aerial-user already exists
+                    if fileManager.fileExists(atPath: renamedPath) {
+                        // Add timestamp to make it unique
+                        let timestamp = Int(Date().timeIntervalSince1970)
+                        finalRenamedPath = "/Users/Shared/Aerial-user-\(timestamp)"
+                        try fileManager.moveItem(atPath: basePath, toPath: finalRenamedPath)
+                        CompanionLogging.debugLog("🚀 UnifiedPaths: Renamed to \(finalRenamedPath)")
+                    } else {
+                        try fileManager.moveItem(atPath: basePath, toPath: renamedPath)
+                        CompanionLogging.debugLog("🚀 UnifiedPaths: Renamed to Aerial-user")
+                    }
+
+                    // Inform user about the rename
+                    showRenameNotification(newPath: finalRenamedPath)
+                } catch {
+                    CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to rename pre-existing folder: \(error.localizedDescription)")
+                    showPermissionError(details: "Could not rename existing /Users/Shared/Aerial/ folder.\n\nError: \(error.localizedDescription)")
+                    return false
+                }
+            }
+        }
+
+        // Step 2: Create base directory (skip if already initialized)
+        if !alreadyInitialized {
+            CompanionLogging.debugLog("🚀 UnifiedPaths: Creating base directory")
+            do {
+                try fileManager.createDirectory(
+                    atPath: basePath,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+            } catch {
+                CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create base directory: \(error.localizedDescription)")
+                showPermissionError(details: "Could not create /Users/Shared/Aerial/ directory.\n\nError: \(error.localizedDescription)")
+                return false
             }
 
-            // Directory exists but no companion.json - user might have created it
-            // Rename it to preserve any user data
-            CompanionLogging.debugLog("🚀 UnifiedPaths: Pre-existing folder found without companion.json, renaming")
-            let renamedPath = "/Users/Shared/Aerial-user"
-            var finalRenamedPath = renamedPath
-
+            // Step 3: Create companion.json marker (empty file)
+            CompanionLogging.debugLog("🚀 UnifiedPaths: Creating companion.json marker")
             do {
-                // Check if Aerial-user already exists
-                if fileManager.fileExists(atPath: renamedPath) {
-                    // Add timestamp to make it unique
-                    let timestamp = Int(Date().timeIntervalSince1970)
-                    finalRenamedPath = "/Users/Shared/Aerial-user-\(timestamp)"
-                    try fileManager.moveItem(atPath: basePath, toPath: finalRenamedPath)
-                    CompanionLogging.debugLog("🚀 UnifiedPaths: Renamed to \(finalRenamedPath)")
-                } else {
-                    try fileManager.moveItem(atPath: basePath, toPath: renamedPath)
-                    CompanionLogging.debugLog("🚀 UnifiedPaths: Renamed to Aerial-user")
-                }
-
-                // Inform user about the rename
-                showRenameNotification(newPath: finalRenamedPath)
+                try "".write(toFile: markerPath, atomically: true, encoding: .utf8)
             } catch {
-                CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to rename pre-existing folder: \(error.localizedDescription)")
-                showPermissionError(details: "Could not rename existing /Users/Shared/Aerial/ folder.\n\nError: \(error.localizedDescription)")
+                CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create companion.json: \(error.localizedDescription)")
+                showPermissionError(details: "Could not create companion.json marker file.\n\nError: \(error.localizedDescription)")
                 return false
             }
         }
 
-        // Step 2: Create base directory
-        CompanionLogging.debugLog("🚀 UnifiedPaths: Creating base directory")
-        do {
-            try fileManager.createDirectory(
-                atPath: basePath,
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-        } catch {
-            CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create base directory: \(error.localizedDescription)")
-            showPermissionError(details: "Could not create /Users/Shared/Aerial/ directory.\n\nError: \(error.localizedDescription)")
-            return false
-        }
+        // Step 4: ALWAYS ensure subdirectories exist (even if already initialized)
+        // This ensures Logs, My Videos, etc. exist regardless of init state
+        CompanionLogging.debugLog("🚀 UnifiedPaths: Ensuring subdirectories exist")
 
-        // Step 3: Create companion.json marker (empty file)
-        CompanionLogging.debugLog("🚀 UnifiedPaths: Creating companion.json marker")
-        do {
-            try "".write(toFile: markerPath, atomically: true, encoding: .utf8)
-        } catch {
-            CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create companion.json: \(error.localizedDescription)")
-            showPermissionError(details: "Could not create companion.json marker file.\n\nError: \(error.localizedDescription)")
-            return false
-        }
-
-        // Step 4: Create Logs subdirectory
-        CompanionLogging.debugLog("🚀 UnifiedPaths: Creating Logs subdirectory")
+        // Create Logs subdirectory
         let logsPath = basePath + "/" + logsDirectory
         do {
             try fileManager.createDirectory(
@@ -111,6 +118,19 @@ struct UnifiedPaths {
             )
         } catch {
             CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create Logs directory: \(error.localizedDescription)")
+            // Non-fatal, but log it
+        }
+
+        // Create "My Videos" directory for user's personal videos
+        let myVideosPath = basePath + "/My Videos"
+        do {
+            try fileManager.createDirectory(
+                atPath: myVideosPath,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        } catch {
+            CompanionLogging.errorLog("🚀 UnifiedPaths: Failed to create My Videos directory: \(error.localizedDescription)")
             // Non-fatal, but log it
         }
 

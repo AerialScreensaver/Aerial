@@ -129,16 +129,7 @@ final class VideoCache {
             return cacheVideoPath
         } else {
             // File doesn't have to exist, this is also used to compute the save location
-            // So now with Catalina, considering containerization we need to use appSupport
-            // Pre catalina we return cache folder instead (no change for users)
             return cacheVideoPath
-            /*
-            if #available(OSX 10.15, *) {
-                return appSupportVideoPath
-            } else {
-                return cacheVideoPath
-            }
-             */
         }
     }
 

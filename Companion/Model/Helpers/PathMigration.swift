@@ -107,6 +107,9 @@ struct PathMigration {
             try fileManager.createDirectory(atPath: targetPath + "/Logs", withIntermediateDirectories: true, attributes: nil)
             migrationLog.append("✓ Created Logs/ directory")
 
+            try fileManager.createDirectory(atPath: targetPath + "/My Videos", withIntermediateDirectories: true, attributes: nil)
+            migrationLog.append("✓ Created My Videos/ directory")
+
             // MOVE Cache/ directory
             let cachePath = containerPath + "/Cache"
             if fileManager.fileExists(atPath: cachePath) {
@@ -227,6 +230,9 @@ struct PathMigration {
         let companionJsonPath = targetPath + "/companion.json"
         try? "".write(toFile: companionJsonPath, atomically: true, encoding: .utf8)
 
+        // Create My Videos directory
+        try? fileManager.createDirectory(atPath: targetPath + "/My Videos", withIntermediateDirectories: true, attributes: nil)
+
         DispatchQueue.main.async {
             completion(.success(summary: "Starting fresh! Your old data has been left untouched in the container."))
         }
@@ -245,6 +251,9 @@ struct PathMigration {
         // Create companion.json marker
         let companionJsonPath = targetPath + "/companion.json"
         try? "".write(toFile: companionJsonPath, atomically: true, encoding: .utf8)
+
+        // Create My Videos directory
+        try? fileManager.createDirectory(atPath: targetPath + "/My Videos", withIntermediateDirectories: true, attributes: nil)
 
         DispatchQueue.main.async {
             completion(.success(summary: "Continuing with your custom cache location."))
@@ -293,7 +302,7 @@ struct PathMigration {
         """
     }
 
-    /// Open Finder at the old container location
+    /// Open Finder at the old My Videosntainer location
     static func showOldContainerInFinder() {
         let path = getContainerPath()
         if FileManager.default.fileExists(atPath: path) {

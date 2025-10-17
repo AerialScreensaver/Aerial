@@ -107,7 +107,7 @@ class CacheViewController: NSViewController {
             }*/
 
         } else {
-            manuallyPickLabel.stringValue = "Using your Application Support directory"
+            manuallyPickLabel.stringValue = "Using /Users/Shared/Aerial"
         }
     }
 

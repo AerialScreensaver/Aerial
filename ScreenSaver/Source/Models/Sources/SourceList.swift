@@ -141,6 +141,49 @@ struct SourceList {
         return false
     }
 
+    /// Ensures the default "My Videos" source exists and is enabled
+    /// This is called on every launch to auto-discover user videos
+    static func ensureDefaultLocalSource() {
+        let folderName = "My Videos"
+        let folderPath = "/Users/Shared/Aerial/\(folderName)"
+
+        // Check if the folder exists (should always exist after UnifiedPaths init)
+        guard FileManager.default.fileExists(atPath: folderPath) else {
+            debugLog("My Videos folder doesn't exist yet")
+            return
+        }
+
+        // Check if the source already exists
+        if let existingSource = list.first(where: { $0.name == folderName && $0.type == .local }) {
+            // Source exists - refresh it to pick up any new videos
+            debugLog("Refreshing My Videos source")
+            updateLocalSource(source: existingSource, reload: true)
+        } else {
+            // Source doesn't exist - create it
+            debugLog("Creating My Videos source")
+
+            let source = Source(name: folderName,
+                               description: "Your personal videos",
+                               manifestUrl: folderPath,
+                               type: .local,
+                               scenes: [.nature],
+                               isCachable: false,
+                               license: "",
+                               more: "")
+
+            saveSource(source)
+
+            // Scan for any existing videos
+            let url = URL(fileURLWithPath: folderPath)
+            processPathForVideos(url: url)
+
+            // Enable by default
+            source.setEnabled(true)
+
+            debugLog("My Videos source created and enabled")
+        }
+    }
+
     static func categorizedSourceList() -> [SourceHeader] {
         var communities: [Source] = []
         var online: [Source] = []

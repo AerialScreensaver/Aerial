@@ -70,6 +70,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // Ensure the default "My Videos" source is created and enabled
+        SourceList.ensureDefaultLocalSource()
+
         CompanionLogging.debugLog("Version \(Helpers.version) launched on  \(ProcessInfo.processInfo.operatingSystemVersionString)")
         //Preferences.firstTimeSetup = false
 
@@ -83,6 +86,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // This will go away at some point
         removeOldAerialApp()
+
+        // Clean up mistaken folder from 3.9.9alpha2
+        checkAndCleanupMistakenFolder()
 
         // Check if we need to install/update from bundled screensaver
         checkBundledScreensaver()
@@ -253,12 +259,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func removeOldAerialApp() {
         if FileManager.default.fileExists(atPath: "/Applications/Aerial.app") {
             CompanionLogging.debugLog("Removing old version of Aerial.app")
-            
+
             do {
                 try FileManager().removeItem(at: URL(fileURLWithPath: "/Applications/Aerial.app"))
             } catch {
                 // ERROR
                 CompanionLogging.errorLog("Cannot delete old Aerial.app in /Applications directory")
+            }
+        }
+    }
+
+    func checkAndCleanupMistakenFolder() {
+        let mistakenPath = NSHomeDirectory().appending("/Library/Application Support/Aerial")
+
+        if FileManager.default.fileExists(atPath: mistakenPath) {
+            CompanionLogging.debugLog("Found mistaken folder from 3.9.9alpha2 at \(mistakenPath)")
+
+            NSApp.activate(ignoringOtherApps: true)
+            let result = Helpers.showAlert(
+                question: "Oops",
+                text: "version 3.9.9alpha2 put some files in the wrong place in your Application Support directory, do you want me to remove them? You can also do that manually if you prefer.",
+                button1: "Yes, remove them",
+                button2: "No, I'll do it manually"
+            )
+
+            if result {
+                CompanionLogging.debugLog("User chose to remove mistaken folder")
+                do {
+                    try FileManager.default.removeItem(at: URL(fileURLWithPath: mistakenPath))
+                    CompanionLogging.debugLog("Successfully removed mistaken folder")
+                } catch {
+                    CompanionLogging.errorLog("Failed to remove mistaken folder: \(error)")
+                    Helpers.showErrorAlert(
+                        question: "Cleanup Failed",
+                        text: "Could not remove the folder at ~/Library/Application Support/Aerial. You may need to delete it manually.\n\nError: \(error.localizedDescription)"
+                    )
+                }
+            } else {
+                CompanionLogging.debugLog("User chose to manually remove mistaken folder")
             }
         }
     }
