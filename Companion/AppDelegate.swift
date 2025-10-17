@@ -40,6 +40,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - Lifecycle
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        let arguments = ProcessInfo.processInfo.arguments
+
+        // Check if container migration is needed BEFORE initializing unified path
+        // (migration check looks for companion.json, which ensureBaseDirectory creates)
+        if !arguments.contains("--silent") && PathMigration.needsMigration() {
+            CompanionLogging.debugLog("Container migration needed")
+            if #available(macOS 11.0, *) {
+                performContainerMigration {
+                    // After migration completes, continue with initialization
+                    self.continueStartup()
+                }
+                return  // Don't continue startup until migration completes
+            } else {
+                CompanionLogging.errorLog("Migration UI requires macOS 11.0+")
+            }
+        }
+
+        // No migration needed, continue with normal startup
+        continueStartup()
+    }
+
+    private func continueStartup() {
         // CRITICAL: Initialize unified path FIRST, before any file operations
         guard UnifiedPaths.ensureBaseDirectory() else {
             // Fatal error - cannot continue without proper directory structure
@@ -55,10 +77,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Ensure not in bundle
         ensureNotInBundle()
-        
+
         // This is imperative, breaks everything
         ensureNotInstalledForAllUsers()
-        
+
         // This will go away at some point
         removeOldAerialApp()
 
@@ -83,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             CompanionLogging.debugLog("Do First Time Setup")
             doFirstTimeSetup()
         }
-        
+
         // Menu mode, we may fall down here from silent mode too in notify mode,
         // or if we must update
         
@@ -267,6 +289,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         firstTimeSetupWindowController.showWindow(self)
         firstTimeSetupWindowController.window!.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @available(macOS 11.0, *)
+    func performContainerMigration(onComplete: @escaping () -> Void) {
+        let migrationController = PathMigrationWindowController()
+        migrationController.windowDidLoad()
+        migrationController.showModal {
+            CompanionLogging.debugLog("Migration complete, continuing startup")
+            onComplete()
+        }
     }
     
     // This returns true if we should stay around, and false if we can safely return

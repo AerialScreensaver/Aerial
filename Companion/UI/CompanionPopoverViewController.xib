@@ -277,7 +277,7 @@
                                 <rect key="frame" x="0.0" y="0.0" width="401" height="54"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="he5-wE-Bg5">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="he5-wE-Bg5">
                                         <rect key="frame" x="18" y="18" width="188" height="19"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="A new version is available!" id="MUu-J0-R3G">
                                             <font key="font" metaFont="systemMedium" size="15"/>
@@ -330,7 +330,7 @@
                                             <action selector="setAsDefaultButton:" target="-2" id="tKZ-Ul-907"/>
                                         </connections>
                                     </button>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5y5-o4-80n">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5y5-o4-80n">
                                         <rect key="frame" x="18" y="19" width="238" height="19"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Screen Saver is not set as default" id="JcB-hO-lzF">
@@ -365,7 +365,7 @@
                                             <nil key="locale"/>
                                         </symbolConfiguration>
                                     </imageView>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SMw-vK-C8g">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SMw-vK-C8g">
                                         <rect key="frame" x="46" y="15" width="331" height="19"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Screen saver is disabled, check settings below" id="ASR-us-Gz2">
@@ -411,7 +411,7 @@
                                             <action selector="activationTimeChange:" target="-2" id="3qs-Ln-BXJ"/>
                                         </connections>
                                     </popUpButton>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="333-oN-X74">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="333-oN-X74">
                                         <rect key="frame" x="133" y="64" width="70" height="17"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="clipping" alignment="right" title="Start after" id="iJg-NS-kR8">
@@ -420,7 +420,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZLM-BI-oPv">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZLM-BI-oPv">
                                         <rect key="frame" x="80" y="16" width="122" height="17"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="clipping" alignment="right" title="Sleep screen after" id="6lj-CK-AfE">
@@ -512,7 +512,7 @@
                                             <action selector="openSettingsClick:" target="-2" id="nFM-6X-R50"/>
                                         </connections>
                                     </button>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="06K-xe-End">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="06K-xe-End">
                                         <rect key="frame" x="14" y="24" width="66" height="16"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Aerial 1.5" id="SGS-Qq-hij">
                                             <font key="font" size="14" name="SFPro-Semibold"/>

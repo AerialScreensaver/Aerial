@@ -765,6 +765,9 @@
 		F0D333CF2E4F742C0048A86B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F0C05FB72E4F6A700066F2C4 /* Info.plist */; };
 		F0D333D12E4F776D0048A86B /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D02E4F776D0048A86B /* CoreLocation.framework */; };
 		F0D333D32E4F77750048A86B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0D333D22E4F77750048A86B /* IOKit.framework */; };
+		F0D637552EA0158B00366EAB /* PathMigrationWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637542EA0158B00366EAB /* PathMigrationWindowController.swift */; };
+		F0D637572EA0239900366EAB /* PathMigrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637562EA0239900366EAB /* PathMigrationView.swift */; };
+		F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637582EA023AD00366EAB /* PathMigration.swift */; };
 		F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */; };
 		F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060152E4F70580066F2C4 /* screen1.jpg */; };
 		F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060162E4F70580066F2C4 /* screen2.jpg */; };
@@ -1154,6 +1157,9 @@
 		F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverManager.swift; sourceTree = "<group>"; };
 		F0D333D02E4F776D0048A86B /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		F0D333D22E4F77750048A86B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		F0D637542EA0158B00366EAB /* PathMigrationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigrationWindowController.swift; sourceTree = "<group>"; };
+		F0D637562EA0239900366EAB /* PathMigrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigrationView.swift; sourceTree = "<group>"; };
+		F0D637582EA023AD00366EAB /* PathMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigration.swift; sourceTree = "<group>"; };
 		F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPaths.swift; sourceTree = "<group>"; };
 		F0EB5B062A58412200910682 /* NSButton+Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSButton+Image.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1218,6 +1224,8 @@
 				11374231735C4A908F3371B8 /* CompanionAerialView.swift */,
 				11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */,
 				11374231735C4A908F3371BB /* SwiftAerialWindow.swift */,
+				F0D637562EA0239900366EAB /* PathMigrationView.swift */,
+				F0D637542EA0158B00366EAB /* PathMigrationWindowController.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -1281,6 +1289,7 @@
 		035F6F1A24CC8842002E4EEE /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				F0D637582EA023AD00366EAB /* PathMigration.swift */,
 				03592AB724CC80FD00C1AE52 /* Helpers.swift */,
 				03CE4F7F24CB4CFB00494D32 /* FileDownloader.swift */,
 				035F6F1B24CC8D97002E4EEE /* CompanionLog.swift */,
@@ -2508,6 +2517,7 @@
 				F01C6D642E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift in Sources */,
 				F0C5B42F2E8EDA9F00AEC15C /* BundledVersion.swift in Sources */,
 				F0C5B4302E8EDA9F00AEC15C /* ScreensaverManager.swift in Sources */,
+				F0D637572EA0239900366EAB /* PathMigrationView.swift in Sources */,
 				03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */,
 				0333115E24D8796F00E4622D /* UpdateCheckWindowController.swift in Sources */,
 				03592AB224CC765500C1AE52 /* Preferences.swift in Sources */,
@@ -2567,6 +2577,7 @@
 				F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */,
 				F0C061272E4F70580066F2C4 /* AerialView+Player.swift in Sources */,
 				F0C061282E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */,
+				F0D637552EA0158B00366EAB /* PathMigrationWindowController.swift in Sources */,
 				F0C061292E4F70580066F2C4 /* Sound.swift in Sources */,
 				F0C0612A2E4F70580066F2C4 /* OneCall.swift in Sources */,
 				F0C0612B2E4F70580066F2C4 /* APISecrets.swift in Sources */,
@@ -2598,6 +2609,7 @@
 				F0C061452E4F70580066F2C4 /* Sidebar.swift in Sources */,
 				F0C061462E4F70580066F2C4 /* DownloadManager.swift in Sources */,
 				F0C061472E4F70580066F2C4 /* OverlaysViewController.swift in Sources */,
+				F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */,
 				F0C061482E4F70580066F2C4 /* NowPlayingCollectionView.swift in Sources */,
 				F0C061492E4F70580066F2C4 /* NSMenuItem+icons.swift in Sources */,
 				F0C0614A2E4F70580066F2C4 /* SoundOutputManager+Goodies.swift in Sources */,
