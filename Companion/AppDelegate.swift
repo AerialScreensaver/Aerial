@@ -73,6 +73,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Ensure the default "My Videos" source is created and enabled
         SourceList.ensureDefaultLocalSource()
 
+        // Check if we're running under Companion (affects logging paths for screensaver code)
+        Aerial.helper.checkCompanion()
+
         CompanionLogging.debugLog("Version \(Helpers.version) launched on  \(ProcessInfo.processInfo.operatingSystemVersionString)")
         //Preferences.firstTimeSetup = false
 

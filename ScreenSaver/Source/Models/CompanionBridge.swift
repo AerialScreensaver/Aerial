@@ -18,7 +18,7 @@ struct CompanionBridge {
     static var locationLong: Double?
     
     static func setNotifications() {
-        debugLog("🌉 seting up CompanionBridge")
+        debugLog("🌉 CompanionBridge set-up")
 
         // Get nightshift
         DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.glouel.aerial.nightshift"), object: nil, queue: nil) { notification in

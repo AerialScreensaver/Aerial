@@ -10,7 +10,7 @@ import Foundation
 struct PluginBridge {
     
     static func setNotifications() {
-        CompanionLogging.debugLog("🌉 seting up PluginBridge")
+        CompanionLogging.debugLog("🌉 PluginBridge set-up")
 
         // Get nightshift
         DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.glouel.aerial.getnightshift"), object: nil, queue: nil) { notification in
