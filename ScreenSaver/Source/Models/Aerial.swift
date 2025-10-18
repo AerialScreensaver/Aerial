@@ -59,7 +59,7 @@ class Aerial: NSObject {
         } else {
             for bundle in Bundle.allBundles {
                 if let bundleId = bundle.bundleIdentifier {
-                    if bundleId.contains("AerialUpdater") {
+                    if bundleId.contains("com.glouel.Aerial-App") {
                         underCompanion = true
                         logToConsole("> Running under Aerial Companion!")
                     }
