@@ -17,12 +17,18 @@ enum SolarMode: Int {
 }
 
 struct PrefsTime {
-    // Time Mode
-    @SimpleStorage(key: "timeMode", defaultValue: TimeMode.disabled.rawValue)
-    static var intTimeMode: Int
+    // MARK: - Settings Manager
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Time Settings
+
+    // Time Mode
+    static var intTimeMode: Int {
+        get { manager.getValue(forKeyPath: \.time.intTimeMode) }
+        set { manager.setValue(newValue, forKeyPath: \.time.intTimeMode) }
+    }
+
     static var timeMode: TimeMode {
         get {
             return TimeMode(rawValue: intTimeMode)!
@@ -33,29 +39,39 @@ struct PrefsTime {
     }
 
     // Manually specified sunrise/sunsets
-    @SimpleStorage(key: "manualSunrise", defaultValue: "09:00")
-    static var manualSunrise: String
+    static var manualSunrise: String {
+        get { manager.getValue(forKeyPath: \.time.manualSunrise) }
+        set { manager.setValue(newValue, forKeyPath: \.time.manualSunrise) }
+    }
 
-    @SimpleStorage(key: "manualSunset", defaultValue: "19:00")
-    static var manualSunset: String
+    static var manualSunset: String {
+        get { manager.getValue(forKeyPath: \.time.manualSunset) }
+        set { manager.setValue(newValue, forKeyPath: \.time.manualSunset) }
+    }
 
     // Manually specified latitude/longitude (strings)
-    @SimpleStorage(key: "latitude", defaultValue: "")
-    static var latitude: String
+    static var latitude: String {
+        get { manager.getValue(forKeyPath: \.time.latitude) }
+        set { manager.setValue(newValue, forKeyPath: \.time.latitude) }
+    }
 
-    @SimpleStorage(key: "longitude", defaultValue: "")
-    static var longitude: String
+    static var longitude: String {
+        get { manager.getValue(forKeyPath: \.time.longitude) }
+        set { manager.setValue(newValue, forKeyPath: \.time.longitude) }
+    }
 
     // Solar Mode
-    @SimpleStorage(key: "solarMode", defaultValue: SolarMode.official.rawValue)
-    static var intSolarMode: Int
+    static var intSolarMode: Int {
+        get { manager.getValue(forKeyPath: \.time.intSolarMode) }
+        set { manager.setValue(newValue, forKeyPath: \.time.intSolarMode) }
+    }
 
     // Prefs sunrise/sunset duration
-    @SimpleStorage(key: "sunEventWindow", defaultValue: 60*180)
-    static var sunEventWindow: Int
+    static var sunEventWindow: Int {
+        get { manager.getValue(forKeyPath: \.time.sunEventWindow) }
+        set { manager.setValue(newValue, forKeyPath: \.time.sunEventWindow) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var solarMode: SolarMode {
         get {
             return SolarMode(rawValue: intSolarMode)!
@@ -66,19 +82,25 @@ struct PrefsTime {
     }
 
     // Override on macOS dark mode
-    @SimpleStorage(key: "darkModeNightOverride", defaultValue: false)
-    static var darkModeNightOverride: Bool
+    static var darkModeNightOverride: Bool {
+        get { manager.getValue(forKeyPath: \.time.darkModeNightOverride) }
+        set { manager.setValue(newValue, forKeyPath: \.time.darkModeNightOverride) }
+    }
 
-    // Last successful coordinates, we're going to save those so we can reuse them if we can't get
-    // Anything from Location Services (laptop plugged on ethernet with wifi off is the scenario)
-    @SimpleStorage(key: "cachedLatitude", defaultValue: 0)
-    static var cachedLatitude: Double
+    // Last successful coordinates
+    static var cachedLatitude: Double {
+        get { manager.getValue(forKeyPath: \.time.cachedLatitude) }
+        set { manager.setValue(newValue, forKeyPath: \.time.cachedLatitude) }
+    }
 
-    @SimpleStorage(key: "cachedLongitude", defaultValue: 0)
-    static var cachedLongitude: Double
+    static var cachedLongitude: Double {
+        get { manager.getValue(forKeyPath: \.time.cachedLongitude) }
+        set { manager.setValue(newValue, forKeyPath: \.time.cachedLongitude) }
+    }
 
-    // Last geocoded string, the result is stored in cachedLatitude/cachedLongitude above
-    @SimpleStorage(key: "geocodedString", defaultValue: "")
-    static var geocodedString: String
-
+    // Last geocoded string
+    static var geocodedString: String {
+        get { manager.getValue(forKeyPath: \.time.geocodedString) }
+        set { manager.setValue(newValue, forKeyPath: \.time.geocodedString) }
+    }
 }

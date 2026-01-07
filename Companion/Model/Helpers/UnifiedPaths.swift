@@ -9,20 +9,10 @@
 import Foundation
 import AppKit
 
+/// Companion-specific path initialization and management
+/// Uses shared AerialPaths constants for path locations
+/// Contains UI and initialization logic specific to the Companion app
 struct UnifiedPaths {
-    // MARK: - Path Constants
-
-    /// The base directory for all Aerial data
-    static let baseDirectory = "/Users/Shared/Aerial"
-
-    /// Marker file that indicates this directory is managed by Companion
-    static let companionMarker = "companion.json"
-
-    /// Subdirectories
-    static let logsDirectory = "Logs"
-    static let cacheDirectory = "Cache"
-    static let thumbnailsDirectory = "Thumbnails"
-    static let sourcesDirectory = "Sources"
 
     // MARK: - Initialization
 
@@ -32,8 +22,8 @@ struct UnifiedPaths {
     /// - Returns: true if successful, false if there was an error
     static func ensureBaseDirectory() -> Bool {
         let fileManager = FileManager.default
-        let basePath = baseDirectory
-        let markerPath = basePath + "/" + companionMarker
+        let basePath = AerialPaths.baseDirectory
+        let markerPath = basePath + "/" + AerialPaths.companionMarker
 
         CompanionLogging.debugLog("🚀 UnifiedPaths: Starting initialization")
 
@@ -109,7 +99,7 @@ struct UnifiedPaths {
         CompanionLogging.debugLog("🚀 UnifiedPaths: Ensuring subdirectories exist")
 
         // Create Logs subdirectory
-        let logsPath = basePath + "/" + logsDirectory
+        let logsPath = AerialPaths.logsPath()
         do {
             try fileManager.createDirectory(
                 atPath: logsPath,
@@ -122,7 +112,7 @@ struct UnifiedPaths {
         }
 
         // Create "My Videos" directory for user's personal videos
-        let myVideosPath = basePath + "/My Videos"
+        let myVideosPath = AerialPaths.myVideosPath()
         do {
             try fileManager.createDirectory(
                 atPath: myVideosPath,
@@ -138,32 +128,31 @@ struct UnifiedPaths {
         return true
     }
 
-    // MARK: - Helper Methods
+    // MARK: - Helper Methods (Delegate to AerialPaths)
 
     /// Check if the base directory is already initialized
     static func isInitialized() -> Bool {
-        let markerPath = baseDirectory + "/" + companionMarker
-        return FileManager.default.fileExists(atPath: markerPath)
+        return AerialPaths.isInitialized()
     }
 
     /// Get the full path for the Logs directory
     static func logsPath() -> String {
-        return baseDirectory + "/" + logsDirectory
+        return AerialPaths.logsPath()
     }
 
     /// Get the full path for the Cache directory
     static func cachePath() -> String {
-        return baseDirectory + "/" + cacheDirectory
+        return AerialPaths.cachePath()
     }
 
     /// Get the full path for the Thumbnails directory
     static func thumbnailsPath() -> String {
-        return baseDirectory + "/" + thumbnailsDirectory
+        return AerialPaths.thumbnailsPath()
     }
 
     /// Get the full path for the Sources directory
     static func sourcesPath() -> String {
-        return baseDirectory + "/" + sourcesDirectory
+        return AerialPaths.sourcesPath()
     }
 
     // MARK: - User Notifications

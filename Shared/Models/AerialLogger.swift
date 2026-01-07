@@ -241,11 +241,23 @@ class AerialLogger {
                     NSLog("AerialError: Can't open handle for \(self.config.logFileName) - \(error.localizedDescription)")
                 }
             } else {
-                // Create new log
+                // Create new log (ensure directory exists first)
                 do {
+                    let parentDirectory = cacheFileUrl.deletingLastPathComponent()
+
+                    // Create parent directory if it doesn't exist
+                    if !FileManager.default.fileExists(atPath: parentDirectory.path) {
+                        try FileManager.default.createDirectory(
+                            at: parentDirectory,
+                            withIntermediateDirectories: true,
+                            attributes: nil
+                        )
+                    }
+
+                    // Now write the log file
                     try data.write(to: cacheFileUrl, options: .atomic)
                 } catch {
-                    NSLog("AerialError: Can't write to file \(self.config.logFileName)")
+                    NSLog("AerialError: Can't write to file \(self.config.logFileName) - \(error.localizedDescription)")
                 }
             }
         }

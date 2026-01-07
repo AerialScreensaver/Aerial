@@ -2,8 +2,6 @@
 //  BundledVersion.swift
 //  Aerial Companion
 //
-//  Created by Claude Code on 02/10/2024.
-//
 
 import Foundation
 

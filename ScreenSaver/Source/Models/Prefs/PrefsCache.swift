@@ -13,19 +13,29 @@ enum CachePeriodicity: Int, Codable {
 }
 
 struct PrefsCache {
-    @SimpleStorage(key: "enableManagement", defaultValue: true)
-    static var enableManagement: Bool
+    // MARK: - Settings Manager
+
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Cache Settings
+
+    static var enableManagement: Bool {
+        get { manager.getValue(forKeyPath: \.cache.enableManagement) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.enableManagement) }
+    }
 
     // Cache limit (in GiB)
-    @SimpleStorage(key: "cacheLimit", defaultValue: 5)
-    static var cacheLimit: Double
+    static var cacheLimit: Double {
+        get { manager.getValue(forKeyPath: \.cache.cacheLimit) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.cacheLimit) }
+    }
 
     // How often should cache gets refreshed
-    @SimpleStorage(key: "intCachePeriodicity", defaultValue: CachePeriodicity.never.rawValue)
-    static var intCachePeriodicity: Int
+    static var intCachePeriodicity: Int {
+        get { manager.getValue(forKeyPath: \.cache.intCachePeriodicity) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.intCachePeriodicity) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var cachePeriodicity: CachePeriodicity {
         get {
             return CachePeriodicity(rawValue: intCachePeriodicity)!
@@ -36,37 +46,50 @@ struct PrefsCache {
     }
 
     // Do we restrict network traffic on Wi-Fi
-    @SimpleStorage(key: "restrictOnWiFi", defaultValue: false)
-    static var restrictOnWiFi: Bool
+    static var restrictOnWiFi: Bool {
+        get { manager.getValue(forKeyPath: \.cache.restrictOnWiFi) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.restrictOnWiFi) }
+    }
 
     // List of allowed networks (using SSID)
-    @SimpleStorage(key: "allowedNetworks", defaultValue: [])
-    static var allowedNetworks: [String]
+    static var allowedNetworks: [String] {
+        get { manager.getValue(forKeyPath: \.cache.allowedNetworks) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.allowedNetworks) }
+    }
 
     // Should we show the download indicator or not
-    @SimpleStorage(key: "showBackgroundDownloads", defaultValue: false)
-    static var showBackgroundDownloads: Bool
+    static var showBackgroundDownloads: Bool {
+        get { manager.getValue(forKeyPath: \.cache.showBackgroundDownloads) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.showBackgroundDownloads) }
+    }
 
     // Should we override the cache
-    @SimpleStorage(key: "overrideCache", defaultValue: false)
-    static var overrideCache: Bool
+    static var overrideCache: Bool {
+        get { manager.getValue(forKeyPath: \.cache.overrideCache) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.overrideCache) }
+    }
 
     // App-scoped bookmark to cache, in NSData form
-    @SimpleStorage(key: "cacheBookmarkData", defaultValue: nil)
-    static var cacheBookmarkData: Data?
+    static var cacheBookmarkData: Data? {
+        get { manager.getValue(forKeyPath: \.cache.cacheBookmarkData) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.cacheBookmarkData) }
+    }
 
     // The raw path in string form
-    @SimpleStorage(key: "cachePath", defaultValue: nil)
-    static var cachePath: String?
-    
-    // App-scoped bookmark to cache, in NSData form
-    @SimpleStorage(key: "supportBookmarkData", defaultValue: nil)
-    static var supportBookmarkData: Data?
+    static var cachePath: String? {
+        get { manager.getValue(forKeyPath: \.cache.cachePath) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.cachePath) }
+    }
+
+    // App-scoped bookmark to support, in NSData form
+    static var supportBookmarkData: Data? {
+        get { manager.getValue(forKeyPath: \.cache.supportBookmarkData) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.supportBookmarkData) }
+    }
 
     // The raw path in string form
-    @SimpleStorage(key: "supportPath", defaultValue: nil)
-    static var supportPath: String?
-    
-  
-
+    static var supportPath: String? {
+        get { manager.getValue(forKeyPath: \.cache.supportPath) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.supportPath) }
+    }
 }

@@ -81,6 +81,12 @@ enum InfoWeatherWind: Int, Codable {
 
 // swiftlint:disable:next type_body_length
 struct PrefsInfo {
+    // MARK: - Settings Manager
+
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Info Layer Structures (Nested, for compatibility)
+
     struct Location: CommonInfo, Codable {
         var isEnabled: Bool
         var fontName: String
@@ -193,94 +199,210 @@ struct PrefsInfo {
         var displays: InfoDisplays
     }
 
+    // MARK: - Info Layer Settings
+
     // Our array of Info layers. User can reorder the array, and we may periodically add new Info types
-    @Storage(key: "layers", defaultValue: [ .message, .clock, .date, .location, .battery, .updates, .weather, .countdown, .timer])
-    static var layers: [InfoType]
+    static var layers: [InfoType] {
+        get {
+            let stringLayers = manager.getValue(forKeyPath: \.info.layers)
+            return stringLayers.compactMap { InfoType(rawValue: $0) }
+        }
+        set {
+            let stringLayers = newValue.map { $0.rawValue }
+            manager.setValue(stringLayers, forKeyPath: \.info.layers)
+        }
+    }
 
     // Location information
-    @Storage(key: "LayerLocation", defaultValue: Location(isEnabled: true,
-                                                           fontName: "Helvetica Neue Medium",
-                                                           fontSize: 28,
-                                                           corner: .random,
-                                                           displays: .allDisplays,
-                                                           time: .always))
-    static var location: Location
+    static var location: Location {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.location)
+            return Location(isEnabled: info.isEnabled,
+                          fontName: info.fontName,
+                          fontSize: info.fontSize,
+                          corner: InfoCorner(rawValue: info.corner)!,
+                          displays: InfoDisplays(rawValue: info.displays)!,
+                          time: InfoTime(rawValue: info.time)!)
+        }
+        set {
+            let info = InfoLocation(isEnabled: newValue.isEnabled,
+                                   fontName: newValue.fontName,
+                                   fontSize: newValue.fontSize,
+                                   corner: newValue.corner.rawValue,
+                                   displays: newValue.displays.rawValue,
+                                   time: newValue.time.rawValue)
+            manager.setValue(info, forKeyPath: \.info.location)
+        }
+    }
 
     // Custom string message
-    @Storage(key: "LayerMessage", defaultValue: Message(isEnabled: false,
-                                                         fontName: "Helvetica Neue Medium",
-                                                         fontSize: 20,
-                                                         corner: .topCenter,
-                                                         displays: .allDisplays,
-                                                         message: "Hello there!",
-                                                         shellScript: "",
-                                                         textFile: "",
-                                                         messageType: .text,
-                                                         refreshPeriodicity: .tenminutes))
-    static var message: Message
+    static var message: Message {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.message)
+            return Message(isEnabled: info.isEnabled,
+                          fontName: info.fontName,
+                          fontSize: info.fontSize,
+                          corner: InfoCorner(rawValue: info.corner)!,
+                          displays: InfoDisplays(rawValue: info.displays)!,
+                          message: info.message,
+                          shellScript: info.shellScript,
+                          textFile: info.textFile,
+                          messageType: InfoMessageType(rawValue: info.messageType)!,
+                          refreshPeriodicity: InfoRefreshPeriodicity(rawValue: info.refreshPeriodicity)!)
+        }
+        set {
+            let info = InfoMessage(isEnabled: newValue.isEnabled,
+                                  fontName: newValue.fontName,
+                                  fontSize: newValue.fontSize,
+                                  corner: newValue.corner.rawValue,
+                                  displays: newValue.displays.rawValue,
+                                  message: newValue.message,
+                                  shellScript: newValue.shellScript,
+                                  textFile: newValue.textFile,
+                                  messageType: newValue.messageType.rawValue,
+                                  refreshPeriodicity: newValue.refreshPeriodicity.rawValue)
+            manager.setValue(info, forKeyPath: \.info.message)
+        }
+    }
 
     // Clock
-    @Storage(key: "LayerClock", defaultValue: Clock(isEnabled: true,
-                                                     fontName: "Helvetica Neue Medium",
-                                                     fontSize: 50,
-                                                     corner: .bottomLeft,
-                                                     displays: .allDisplays,
-                                                     showSeconds: true,
-                                                     hideAmPm: false,
-                                                     clockFormat: .tdefault))
-    static var clock: Clock
+    static var clock: Clock {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.clock)
+            return Clock(isEnabled: info.isEnabled,
+                        fontName: info.fontName,
+                        fontSize: info.fontSize,
+                        corner: InfoCorner(rawValue: info.corner)!,
+                        displays: InfoDisplays(rawValue: info.displays)!,
+                        showSeconds: info.showSeconds,
+                        hideAmPm: info.hideAmPm,
+                        clockFormat: InfoClockFormat(rawValue: info.clockFormat)!)
+        }
+        set {
+            let info = InfoClock(isEnabled: newValue.isEnabled,
+                                fontName: newValue.fontName,
+                                fontSize: newValue.fontSize,
+                                corner: newValue.corner.rawValue,
+                                displays: newValue.displays.rawValue,
+                                showSeconds: newValue.showSeconds,
+                                hideAmPm: newValue.hideAmPm,
+                                clockFormat: newValue.clockFormat.rawValue)
+            manager.setValue(info, forKeyPath: \.info.clock)
+        }
+    }
 
     // Date
-    @Storage(key: "LayerDate", defaultValue: IDate(isEnabled: false,
-                                                     fontName: "Helvetica Neue Thin",
-                                                     fontSize: 25,
-                                                     corner: .bottomLeft,
-                                                     displays: .allDisplays,
-                                                     format: .textual,
-                                                     withYear: false))
-    static var date: IDate
+    static var date: IDate {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.date)
+            return IDate(isEnabled: info.isEnabled,
+                        fontName: info.fontName,
+                        fontSize: info.fontSize,
+                        corner: InfoCorner(rawValue: info.corner)!,
+                        displays: InfoDisplays(rawValue: info.displays)!,
+                        format: InfoDate(rawValue: info.format)!,
+                        withYear: info.withYear)
+        }
+        set {
+            let info = InfoDateLayer(isEnabled: newValue.isEnabled,
+                                    fontName: newValue.fontName,
+                                    fontSize: newValue.fontSize,
+                                    corner: newValue.corner.rawValue,
+                                    displays: newValue.displays.rawValue,
+                                    format: newValue.format.rawValue,
+                                    withYear: newValue.withYear)
+            manager.setValue(info, forKeyPath: \.info.date)
+        }
+    }
 
     // Battery
-    @Storage(key: "LayerBattery", defaultValue: Battery(isEnabled: false,
-                                                     fontName: "Helvetica Neue Medium",
-                                                     fontSize: 20,
-                                                     corner: .topRight,
-                                                     displays: .allDisplays,
-                                                     mode: .icon,
-                                                     disableWhenFull: false))
-    static var battery: Battery
+    static var battery: Battery {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.battery)
+            return Battery(isEnabled: info.isEnabled,
+                          fontName: info.fontName,
+                          fontSize: info.fontSize,
+                          corner: InfoCorner(rawValue: info.corner)!,
+                          displays: InfoDisplays(rawValue: info.displays)!,
+                          mode: InfoIconText(rawValue: info.mode)!,
+                          disableWhenFull: info.disableWhenFull)
+        }
+        set {
+            let info = InfoBattery(isEnabled: newValue.isEnabled,
+                                  fontName: newValue.fontName,
+                                  fontSize: newValue.fontSize,
+                                  corner: newValue.corner.rawValue,
+                                  displays: newValue.displays.rawValue,
+                                  mode: newValue.mode.rawValue,
+                                  disableWhenFull: newValue.disableWhenFull)
+            manager.setValue(info, forKeyPath: \.info.battery)
+        }
+    }
 
     // Updates
-    @Storage(key: "LayerUpdates", defaultValue: Updates(isEnabled: true,
-                                                     fontName: "Helvetica Neue Medium",
-                                                     fontSize: 20,
-                                                     corner: .topRight,
-                                                     displays: .allDisplays,
-                                                     betaReset: true))
-    static var updates: Updates
+    static var updates: Updates {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.updates)
+            return Updates(isEnabled: info.isEnabled,
+                          fontName: info.fontName,
+                          fontSize: info.fontSize,
+                          corner: InfoCorner(rawValue: info.corner)!,
+                          displays: InfoDisplays(rawValue: info.displays)!,
+                          betaReset: info.betaReset)
+        }
+        set {
+            let info = InfoUpdates(isEnabled: newValue.isEnabled,
+                                  fontName: newValue.fontName,
+                                  fontSize: newValue.fontSize,
+                                  corner: newValue.corner.rawValue,
+                                  displays: newValue.displays.rawValue,
+                                  betaReset: newValue.betaReset)
+            manager.setValue(info, forKeyPath: \.info.updates)
+        }
+    }
 
     // Weather
-    @Storage(key: "LayerWeather", defaultValue: Weather(isEnabled: false,
-                                                        fontName: "Helvetica Neue Medium",
-                                                        fontSize: 40,
-                                                        corner: .topRight,
-                                                        displays: .allDisplays,
-                                                        locationMode: .manuallySpecify,
-                                                        locationString: "",
-                                                        degree: .celsius,
-                                                        icons: isMacOS11() ? .colorflat : .flat,
-                                                        mode: .current,
-                                                        showHumidity: true,
-                                                        showWind: true,
-                                                        showCity: true))
-    static var weather: Weather
+    static var weather: Weather {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.weather)
+            return Weather(isEnabled: info.isEnabled,
+                          fontName: info.fontName,
+                          fontSize: info.fontSize,
+                          corner: InfoCorner(rawValue: info.corner)!,
+                          displays: InfoDisplays(rawValue: info.displays)!,
+                          locationMode: InfoLocationMode(rawValue: info.locationMode)!,
+                          locationString: info.locationString,
+                          degree: InfoDegree(rawValue: info.degree)!,
+                          icons: InfoIconsWeather(rawValue: info.icons)!,
+                          mode: InfoWeatherMode(rawValue: info.mode)!,
+                          showHumidity: info.showHumidity,
+                          showWind: info.showWind,
+                          showCity: info.showCity)
+        }
+        set {
+            let info = InfoWeather(isEnabled: newValue.isEnabled,
+                                  fontName: newValue.fontName,
+                                  fontSize: newValue.fontSize,
+                                  corner: newValue.corner.rawValue,
+                                  displays: newValue.displays.rawValue,
+                                  locationMode: newValue.locationMode.rawValue,
+                                  locationString: newValue.locationString,
+                                  degree: newValue.degree.rawValue,
+                                  icons: newValue.icons.rawValue,
+                                  mode: newValue.mode.rawValue,
+                                  showHumidity: newValue.showHumidity,
+                                  showWind: newValue.showWind,
+                                  showCity: newValue.showCity)
+            manager.setValue(info, forKeyPath: \.info.weather)
+        }
+    }
 
-    // Text fade in/out mode
-    @SimpleStorage(key: "weatherWindMode", defaultValue: InfoWeatherWind.kph.rawValue)
-    static var intWeatherWindMode: Int
+    // Weather wind mode
+    static var intWeatherWindMode: Int {
+        get { manager.getValue(forKeyPath: \.info.intWeatherWindMode) }
+        set { manager.setValue(newValue, forKeyPath: \.info.intWeatherWindMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var weatherWindMode: InfoWeatherWind {
         get {
             return InfoWeatherWind(rawValue: intWeatherWindMode)!
@@ -291,62 +413,115 @@ struct PrefsInfo {
     }
 
     // Music
-    @Storage(key: "LayerMusic", defaultValue: Music(isEnabled: true,
-                                                     fontName: "Helvetica Neue Medium",
-                                                     fontSize: 20,
-                                                     corner: .topRight,
-                                                     displays: .allDisplays))
-    static var music: Music
+    static var music: Music {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.music)
+            return Music(isEnabled: info.isEnabled,
+                        fontName: info.fontName,
+                        fontSize: info.fontSize,
+                        corner: InfoCorner(rawValue: info.corner)!,
+                        displays: InfoDisplays(rawValue: info.displays)!)
+        }
+        set {
+            let info = InfoMusic(isEnabled: newValue.isEnabled,
+                                fontName: newValue.fontName,
+                                fontSize: newValue.fontSize,
+                                corner: newValue.corner.rawValue,
+                                displays: newValue.displays.rawValue)
+            manager.setValue(info, forKeyPath: \.info.music)
+        }
+    }
 
     // Apple Music storefront to be used
-    @SimpleStorage(key: "appleMusicStoreFront", defaultValue: "United States")
-    static var appleMusicStoreFront: String
+    static var appleMusicStoreFront: String {
+        get { manager.getValue(forKeyPath: \.info.appleMusicStoreFront) }
+        set { manager.setValue(newValue, forKeyPath: \.info.appleMusicStoreFront) }
+    }
 
-    // Apple Music storefront to be used
-    @SimpleStorage(key: "musicProvider", defaultValue: "Apple Music")
-    static var musicProvider: String
+    // Music provider
+    static var musicProvider: String {
+        get { manager.getValue(forKeyPath: \.info.musicProvider) }
+        set { manager.setValue(newValue, forKeyPath: \.info.musicProvider) }
+    }
 
     // Countdown
-    @Storage(key: "LayerCountdown", defaultValue: Countdown(isEnabled: false,
-                                                     fontName: "Helvetica Neue Medium",
-                                                     fontSize: 100,
-                                                     corner: .screenCenter,
-                                                     displays: .allDisplays,
-                                                     mode: .timeOfDay,
-                                                     targetDate: Date(),
-                                                     enforceInterval: false,
-                                                     triggerDate: Date(),
-                                                     showSeconds: true))
-    static var countdown: Countdown
+    static var countdown: Countdown {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.countdown)
+            return Countdown(isEnabled: info.isEnabled,
+                            fontName: info.fontName,
+                            fontSize: info.fontSize,
+                            corner: InfoCorner(rawValue: info.corner)!,
+                            displays: InfoDisplays(rawValue: info.displays)!,
+                            mode: InfoCountdownMode(rawValue: info.mode)!,
+                            targetDate: info.targetDate,
+                            enforceInterval: info.enforceInterval,
+                            triggerDate: info.triggerDate,
+                            showSeconds: info.showSeconds)
+        }
+        set {
+            let info = InfoCountdown(isEnabled: newValue.isEnabled,
+                                    fontName: newValue.fontName,
+                                    fontSize: newValue.fontSize,
+                                    corner: newValue.corner.rawValue,
+                                    displays: newValue.displays.rawValue,
+                                    mode: newValue.mode.rawValue,
+                                    targetDate: newValue.targetDate,
+                                    enforceInterval: newValue.enforceInterval,
+                                    triggerDate: newValue.triggerDate,
+                                    showSeconds: newValue.showSeconds)
+            manager.setValue(info, forKeyPath: \.info.countdown)
+        }
+    }
 
     // Timer
-    @Storage(key: "LayerTimer", defaultValue: Timer(isEnabled: false,
-                                                    fontName: "Helvetica Neue Medium",
-                                                    fontSize: 100,
-                                                    corner: .screenCenter,
-                                                    displays: .allDisplays,
-                                                    duration: Date(timeIntervalSince1970: 300),
-                                                    showSeconds: true,
-                                                    disableWhenElapsed: true,
-                                                    replaceWithMessage: false,
-                                                    customMessage: ""))
+    static var timer: Timer {
+        get {
+            let info = manager.getValue(forKeyPath: \.info.timer)
+            return Timer(isEnabled: info.isEnabled,
+                        fontName: info.fontName,
+                        fontSize: info.fontSize,
+                        corner: InfoCorner(rawValue: info.corner)!,
+                        displays: InfoDisplays(rawValue: info.displays)!,
+                        duration: info.duration,
+                        showSeconds: info.showSeconds,
+                        disableWhenElapsed: info.disableWhenElapsed,
+                        replaceWithMessage: info.replaceWithMessage,
+                        customMessage: info.customMessage)
+        }
+        set {
+            let info = InfoTimer(isEnabled: newValue.isEnabled,
+                                fontName: newValue.fontName,
+                                fontSize: newValue.fontSize,
+                                corner: newValue.corner.rawValue,
+                                displays: newValue.displays.rawValue,
+                                duration: newValue.duration,
+                                showSeconds: newValue.showSeconds,
+                                disableWhenElapsed: newValue.disableWhenElapsed,
+                                replaceWithMessage: newValue.replaceWithMessage,
+                                customMessage: newValue.customMessage)
+            manager.setValue(info, forKeyPath: \.info.timer)
+        }
+    }
 
-    static var timer: Timer
+    static var customDateFormat: String {
+        get { manager.getValue(forKeyPath: \.info.customDateFormat) }
+        set { manager.setValue(newValue, forKeyPath: \.info.customDateFormat) }
+    }
 
-    @SimpleStorage(key: "customDateFormat", defaultValue: "")
-    static var customDateFormat: String
-
-    @SimpleStorage(key: "customTimeFormat", defaultValue: "")
-    static var customTimeFormat: String
+    static var customTimeFormat: String {
+        get { manager.getValue(forKeyPath: \.info.customTimeFormat) }
+        set { manager.setValue(newValue, forKeyPath: \.info.customTimeFormat) }
+    }
 
     // MARK: - Advanced text settings
 
     // Text fade in/out mode
-    @SimpleStorage(key: "fadeModeText", defaultValue: FadeMode.t1.rawValue)
-    static var intFadeModeText: Int
+    static var intFadeModeText: Int {
+        get { manager.getValue(forKeyPath: \.info.intFadeModeText) }
+        set { manager.setValue(newValue, forKeyPath: \.info.intFadeModeText) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var fadeModeText: FadeMode {
         get {
             return FadeMode(rawValue: intFadeModeText)!
@@ -355,6 +530,9 @@ struct PrefsInfo {
             intFadeModeText = value.rawValue
         }
     }
+
+    // Note: The following advanced settings are stored in separate keys, not in InfoSettings
+    // TODO: Consider moving these to InfoSettings in a future version for full consolidation
 
     // Fast rendering mode
     @SimpleStorage(key: "highQualityTextRendering", defaultValue: HardwareDetection.sharedInstance.isAppleSilicon())
@@ -368,7 +546,7 @@ struct PrefsInfo {
     @SimpleStorage(key: "hideUnderCompanion", defaultValue: true)
     static var hideUnderCompanion: Bool
 
-    
+
     @SimpleStorage(key: "marginX", defaultValue: 50)
     static var marginX: Int
     @SimpleStorage(key: "marginY", defaultValue: 50)

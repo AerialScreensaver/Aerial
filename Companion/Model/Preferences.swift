@@ -24,12 +24,18 @@ enum LaunchMode: Int, Codable {
 }
 
 struct Preferences {
+    // MARK: - Settings Manager
+
+    private static let manager = CompanionSettingsManager.shared
+
+    // MARK: - Update Settings
+
     // Which version are we looking for ? Defaults to release
-    @CompanionSimpleStorage(key: "intDesiredVersion", defaultValue: DesiredVersion.release.rawValue)
-    static var intDesiredVersion: Int
-    
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    static var intDesiredVersion: Int {
+        get { manager.getValue(forKeyPath: \.intDesiredVersion) }
+        set { manager.setValue(newValue, forKeyPath: \.intDesiredVersion) }
+    }
+
     static var desiredVersion: DesiredVersion {
         get {
             return DesiredVersion(rawValue: intDesiredVersion)!
@@ -38,13 +44,13 @@ struct Preferences {
             intDesiredVersion = value.rawValue
         }
     }
-    
+
     // Automatic or notifications ?
-    @CompanionSimpleStorage(key: "intUpdateMode", defaultValue: CompanionUpdateMode.notifyme.rawValue)
-    static var intUpdateMode: Int
-    
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    static var intUpdateMode: Int {
+        get { manager.getValue(forKeyPath: \.intUpdateMode) }
+        set { manager.setValue(newValue, forKeyPath: \.intUpdateMode) }
+    }
+
     static var updateMode: CompanionUpdateMode {
         get {
             return CompanionUpdateMode(rawValue: intUpdateMode)!
@@ -53,14 +59,13 @@ struct Preferences {
             intUpdateMode = value.rawValue
         }
     }
-    
-    
+
     // Check frequency
-    @CompanionSimpleStorage(key: "intCheckEvery", defaultValue: CheckEvery.day.rawValue)
-    static var intCheckEvery: Int
-    
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    static var intCheckEvery: Int {
+        get { manager.getValue(forKeyPath: \.intCheckEvery) }
+        set { manager.setValue(newValue, forKeyPath: \.intCheckEvery) }
+    }
+
     static var checkEvery: CheckEvery {
         get {
             return CheckEvery(rawValue: intCheckEvery)!
@@ -69,13 +74,15 @@ struct Preferences {
             intCheckEvery = value.rawValue
         }
     }
-    
+
+    // MARK: - Launch Settings
+
     // Automatic or notifications ?
-    @CompanionSimpleStorage(key: "intLaunchMode", defaultValue: LaunchMode.manual.rawValue)
-    static var intLaunchMode: Int
-    
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    static var intLaunchMode: Int {
+        get { manager.getValue(forKeyPath: \.intLaunchMode) }
+        set { manager.setValue(newValue, forKeyPath: \.intLaunchMode) }
+    }
+
     static var launchMode: LaunchMode {
         get {
             return LaunchMode(rawValue: intLaunchMode)!
@@ -84,37 +91,64 @@ struct Preferences {
             intLaunchMode = value.rawValue
         }
     }
-    
-    @CompanionSimpleStorage(key: "debugMode", defaultValue: false)
-    static var debugMode: Bool
-    
-    @CompanionSimpleStorage(key: "firstTimeSetup", defaultValue: false)
-    static var firstTimeSetup: Bool
 
-    // Check frequency
-    @CompanionSimpleStorage(key: "enabledWallpaperScreenUuids", defaultValue: [])
-    static var enabledWallpaperScreenUuids: [String]
-    
-    @CompanionSimpleStorage(key: "restartBackground", defaultValue: true)
-    static var restartBackground: Bool
-    
-    @CompanionSimpleStorage(key: "wasRunningBackground", defaultValue: false)
-    static var wasRunningBackground: Bool
-    
-    @CompanionSimpleStorage(key: "globalSpeed", defaultValue: 100)
-    static var globalSpeed: Int
+    // MARK: - Debug Settings
+
+    static var debugMode: Bool {
+        get { manager.getValue(forKeyPath: \.debugMode) }
+        set { manager.setValue(newValue, forKeyPath: \.debugMode) }
+    }
+
+    static var firstTimeSetup: Bool {
+        get { manager.getValue(forKeyPath: \.firstTimeSetup) }
+        set { manager.setValue(newValue, forKeyPath: \.firstTimeSetup) }
+    }
+
+    // MARK: - Wallpaper Settings
+
+    static var enabledWallpaperScreenUuids: [String] {
+        get { manager.getValue(forKeyPath: \.enabledWallpaperScreenUuids) }
+        set { manager.setValue(newValue, forKeyPath: \.enabledWallpaperScreenUuids) }
+    }
+
+    static var restartBackground: Bool {
+        get { manager.getValue(forKeyPath: \.restartBackground) }
+        set { manager.setValue(newValue, forKeyPath: \.restartBackground) }
+    }
+
+    static var wasRunningBackground: Bool {
+        get { manager.getValue(forKeyPath: \.wasRunningBackground) }
+        set { manager.setValue(newValue, forKeyPath: \.wasRunningBackground) }
+    }
+
+    // MARK: - Performance Settings
+
+    static var globalSpeed: Int {
+        get { manager.getValue(forKeyPath: \.globalSpeed) }
+        set { manager.setValue(newValue, forKeyPath: \.globalSpeed) }
+    }
+
+    // MARK: - Screensaver Watchdog Settings
 
     // Enable/disable the legacy screensaver watchdog
-    @CompanionSimpleStorage(key: "enableScreensaverWatchdog", defaultValue: true)
-    static var enableScreensaverWatchdog: Bool
+    static var enableScreensaverWatchdog: Bool {
+        get { manager.getValue(forKeyPath: \.enableScreensaverWatchdog) }
+        set { manager.setValue(newValue, forKeyPath: \.enableScreensaverWatchdog) }
+    }
 
     // Watchdog delay in seconds before killing legacyScreenSaver
-    @CompanionSimpleStorage(key: "watchdogTimerDelay", defaultValue: 5)
-    static var watchdogTimerDelay: Int
+    static var watchdogTimerDelay: Int {
+        get { manager.getValue(forKeyPath: \.watchdogTimerDelay) }
+        set { manager.setValue(newValue, forKeyPath: \.watchdogTimerDelay) }
+    }
 }
 
+// MARK: - Legacy Property Wrappers (Deprecated)
+// The following property wrappers are no longer used as of v3.x
+// Settings are now stored in /Users/Shared/Aerial/companion.json
+// Kept for reference during migration period
 
-// This retrieves/store any type of property in our plist
+/*
 @propertyWrapper struct CompanionStorage<T: Codable> {
     private let key: String
     private let defaultValue: T
@@ -126,7 +160,6 @@ struct Preferences {
 
     var wrappedValue: T {
         get {
-            // We shoot for a string in the new system
             if let jsonString = UserDefaults.standard.string(forKey: key) {
                 guard let jsonData = jsonString.data(using: .utf8) else {
                     return defaultValue
@@ -136,7 +169,6 @@ struct Preferences {
                 }
                 return value
             }
-
             return defaultValue
         }
         set {
@@ -146,20 +178,14 @@ struct Preferences {
             } else {
                 encoder.outputFormatting = [.prettyPrinted]
             }
-
             let jsonData = try? encoder.encode(newValue)
             let jsonString = String(bytes: jsonData!, encoding: .utf8)
-
-            // Set value to UserDefaults
             UserDefaults.standard.set(jsonString, forKey: key)
-
-            // This is probably not needed here but...
             UserDefaults.standard.synchronize()
         }
     }
 }
 
-// This retrieves store "simple" types that are natively storable on plists
 @propertyWrapper struct CompanionSimpleStorage<T> {
     private let key: String
     private let defaultValue: T
@@ -175,7 +201,8 @@ struct Preferences {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: key)
-            UserDefaults.standard.synchronize() // Again...
+            UserDefaults.standard.synchronize()
         }
     }
 }
+*/

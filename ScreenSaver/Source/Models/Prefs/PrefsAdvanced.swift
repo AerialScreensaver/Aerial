@@ -9,36 +9,54 @@
 import Foundation
 
 struct PrefsAdvanced {
-    // Display margins
-    @SimpleStorage(key: "muteSound", defaultValue: true)
-    static var muteSound: Bool
+    // MARK: - Settings Manager
 
-    @SimpleStorage(key: "muteGlobalSound", defaultValue: false)
-    static var muteGlobalSound: Bool
-    
-    @SimpleStorage(key: "autoPlayPreviews", defaultValue: true)
-    static var autoPlayPreviews: Bool
+    private static let manager = ScreensaverSettingsManager.shared
 
-    @SimpleStorage(key: "firstTimeSetup", defaultValue: false)
-    static var firstTimeSetup: Bool
+    // MARK: - Advanced Settings
 
-    @SimpleStorage(key: "favorOrientation", defaultValue: true)
-    static var favorOrientation: Bool
-    
-    // Invert colors
-    @SimpleStorage(key: "invertColors", defaultValue: false)
-    static var invertColors: Bool
-    
-    // Debug mode
-    @SimpleStorage(key: "debugMode", defaultValue: false)
-    static var debugMode: Bool
+    static var muteSound: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.muteSound) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.muteSound) }
+    }
 
-    // OVerride Language
-    @SimpleStorage(key: "ciOverrideLanguage", defaultValue: "")
-    static var ciOverrideLanguage: String
+    static var muteGlobalSound: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.muteGlobalSound) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.muteGlobalSound) }
+    }
 
-    @SimpleStorage(key: "newDisplayDict", defaultValue: [String: Bool]())
-    static var newDisplayDict: [String: Bool]
-    
-    
+    static var autoPlayPreviews: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.autoPlayPreviews) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.autoPlayPreviews) }
+    }
+
+    static var firstTimeSetup: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.firstTimeSetup) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.firstTimeSetup) }
+    }
+
+    static var favorOrientation: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.favorOrientation) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.favorOrientation) }
+    }
+
+    static var invertColors: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.invertColors) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.invertColors) }
+    }
+
+    static var debugMode: Bool {
+        get { manager.getValue(forKeyPath: \.advanced.debugMode) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.debugMode) }
+    }
+
+    static var ciOverrideLanguage: String {
+        get { manager.getValue(forKeyPath: \.advanced.ciOverrideLanguage) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.ciOverrideLanguage) }
+    }
+
+    static var newDisplayDict: [String: Bool] {
+        get { manager.getValue(forKeyPath: \.advanced.newDisplayDict) }
+        set { manager.setValue(newValue, forKeyPath: \.advanced.newDisplayDict) }
+    }
 }

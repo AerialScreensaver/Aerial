@@ -78,3 +78,24 @@ func warnLog(_ message: String) {
 func errorLog(_ message: String) {
     aerialLogger.error(message)
 }
+
+// MARK: - SharedLogger Conformance
+
+/// Wrapper that conforms to SharedLogger protocol for use by shared code
+enum ScreensaverLogging: SharedLogger {
+    static func debug(_ message: String) {
+        debugLog(message)
+    }
+
+    static func info(_ message: String) {
+        infoLog(message)
+    }
+
+    static func warn(_ message: String) {
+        warnLog(message)
+    }
+
+    static func error(_ message: String) {
+        errorLog(message)
+    }
+}

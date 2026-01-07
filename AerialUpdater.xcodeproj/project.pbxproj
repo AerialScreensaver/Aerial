@@ -63,6 +63,15 @@
 		11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BB /* SwiftAerialWindow.swift */; };
 		73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */; };
 		F003C15429116AE1003FCB17 /* HostedSettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */; };
+		F01240D32EA7F19900EE0FFC /* SharedLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D22EA7F19900EE0FFC /* SharedLogging.swift */; };
+		F01240D42EA7F19900EE0FFC /* AerialPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D02EA7F19900EE0FFC /* AerialPaths.swift */; };
+		F01240D52EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */; };
+		F01240D62EA7F19900EE0FFC /* SharedLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D22EA7F19900EE0FFC /* SharedLogging.swift */; };
+		F01240D72EA7F19900EE0FFC /* AerialPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D02EA7F19900EE0FFC /* AerialPaths.swift */; };
+		F01240D82EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */; };
+		F01240D92EA7F19900EE0FFC /* SharedLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D22EA7F19900EE0FFC /* SharedLogging.swift */; };
+		F01240DA2EA7F19900EE0FFC /* AerialPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D02EA7F19900EE0FFC /* AerialPaths.swift */; };
+		F01240DB2EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */; };
 		F01C6D602E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
 		F01C6D612E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
 		F01C6D622E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
@@ -768,6 +777,14 @@
 		F0D637552EA0158B00366EAB /* PathMigrationWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637542EA0158B00366EAB /* PathMigrationWindowController.swift */; };
 		F0D637572EA0239900366EAB /* PathMigrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637562EA0239900366EAB /* PathMigrationView.swift */; };
 		F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637582EA023AD00366EAB /* PathMigration.swift */; };
+		F0D6375E2EA6830100366EAB /* CompanionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D6375C2EA6830100366EAB /* CompanionSettings.swift */; };
+		F0D6375F2EA6830100366EAB /* CompanionSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */; };
+		F0D637622EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */; };
+		F0D637632EA6A62700366EAB /* ScreensaverSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */; };
+		F0D637642EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */; };
+		F0D637652EA6A62700366EAB /* ScreensaverSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */; };
+		F0D637662EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */; };
+		F0D637672EA6A62700366EAB /* ScreensaverSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */; };
 		F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */; };
 		F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060152E4F70580066F2C4 /* screen1.jpg */; };
 		F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060162E4F70580066F2C4 /* screen2.jpg */; };
@@ -849,6 +866,9 @@
 		11374231735C4A908F3371BB /* SwiftAerialWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialWindow.swift; sourceTree = "<group>"; };
 		73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSScreen+Id.swift"; sourceTree = "<group>"; };
 		F003C15329116AE1003FCB17 /* HostedSettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostedSettingsWindowController.swift; sourceTree = "<group>"; };
+		F01240D02EA7F19900EE0FFC /* AerialPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialPaths.swift; sourceTree = "<group>"; };
+		F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPreferencesStore.swift; sourceTree = "<group>"; };
+		F01240D22EA7F19900EE0FFC /* SharedLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedLogging.swift; sourceTree = "<group>"; };
 		F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		F01C6D632E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverWatchdog.swift; sourceTree = "<group>"; };
 		F0326B372E9BDF3300582FED /* AerialLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialLogger.swift; sourceTree = "<group>"; };
@@ -1160,6 +1180,10 @@
 		F0D637542EA0158B00366EAB /* PathMigrationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigrationWindowController.swift; sourceTree = "<group>"; };
 		F0D637562EA0239900366EAB /* PathMigrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigrationView.swift; sourceTree = "<group>"; };
 		F0D637582EA023AD00366EAB /* PathMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigration.swift; sourceTree = "<group>"; };
+		F0D6375C2EA6830100366EAB /* CompanionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettings.swift; sourceTree = "<group>"; };
+		F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettingsManager.swift; sourceTree = "<group>"; };
+		F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverSettings.swift; sourceTree = "<group>"; };
+		F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverSettingsManager.swift; sourceTree = "<group>"; };
 		F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPaths.swift; sourceTree = "<group>"; };
 		F0EB5B062A58412200910682 /* NSButton+Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSButton+Image.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1282,6 +1306,8 @@
 				F0C5B42D2E8EDA9F00AEC15C /* BundledVersion.swift */,
 				F0C5B42E2E8EDA9F00AEC15C /* ScreensaverManager.swift */,
 				F01C6D632E9AC3FF00C1CB73 /* ScreensaverWatchdog.swift */,
+				F0D6375C2EA6830100366EAB /* CompanionSettings.swift */,
+				F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -1420,6 +1446,9 @@
 			isa = PBXGroup;
 			children = (
 				F0326B372E9BDF3300582FED /* AerialLogger.swift */,
+				F01240D02EA7F19900EE0FFC /* AerialPaths.swift */,
+				F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */,
+				F01240D22EA7F19900EE0FFC /* SharedLogging.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1825,6 +1854,8 @@
 		F0C060A62E4F70580066F2C4 /* Prefs */ = {
 			isa = PBXGroup;
 			children = (
+				F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */,
+				F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */,
 				F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */,
 				F0C060A02E4F70580066F2C4 /* PrefsCache.swift */,
 				F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */,
@@ -2530,6 +2561,8 @@
 				11374231735C4A908F3371B9 /* CompanionAerialView.swift in Sources */,
 				11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */,
 				11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */,
+				F0D6375E2EA6830100366EAB /* CompanionSettings.swift in Sources */,
+				F0D6375F2EA6830100366EAB /* CompanionSettingsManager.swift in Sources */,
 				03CE4F8024CB4CFB00494D32 /* FileDownloader.swift in Sources */,
 				035F6F1C24CC8D97002E4EEE /* CompanionLog.swift in Sources */,
 				F05C63B728F326300068B545 /* SystemPrefs.swift in Sources */,
@@ -2593,6 +2626,9 @@
 				F0C061362E4F70580066F2C4 /* CountdownLayer.swift in Sources */,
 				F0C061372E4F70580066F2C4 /* AsynchronousOperation.swift in Sources */,
 				F0C061382E4F70580066F2C4 /* NowPlayingViewController.swift in Sources */,
+				F01240D92EA7F19900EE0FFC /* SharedLogging.swift in Sources */,
+				F01240DA2EA7F19900EE0FFC /* AerialPaths.swift in Sources */,
+				F01240DB2EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */,
 				F0C061392E4F70580066F2C4 /* VideoCellView.swift in Sources */,
 				F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */,
 				F0C0613B2E4F70580066F2C4 /* DispatchQueue+Extension.swift in Sources */,
@@ -2601,6 +2637,8 @@
 				F0C0613E2E4F70580066F2C4 /* CompanionCacheViewController.swift in Sources */,
 				F0C0613F2E4F70580066F2C4 /* SidebarOutlineView.swift in Sources */,
 				F0C061402E4F70580066F2C4 /* PrefsInfo.swift in Sources */,
+				F0D637642EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */,
+				F0D637652EA6A62700366EAB /* ScreensaverSettings.swift in Sources */,
 				F0C061412E4F70580066F2C4 /* VideoViewItem.swift in Sources */,
 				F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */,
 				F0C061422E4F70580066F2C4 /* InfoTimerView.swift in Sources */,
@@ -2699,6 +2737,9 @@
 				F02C823D2E4F971500D48D4B /* InfoSettingsTableSource.swift in Sources */,
 				F02C823E2E4F971500D48D4B /* TimerLayer.swift in Sources */,
 				F02C823F2E4F971500D48D4B /* InfoContainerView.swift in Sources */,
+				F01240D62EA7F19900EE0FFC /* SharedLogging.swift in Sources */,
+				F01240D72EA7F19900EE0FFC /* AerialPaths.swift in Sources */,
+				F01240D82EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */,
 				F02C82402E4F971500D48D4B /* InfoBatteryView.swift in Sources */,
 				F02C82412E4F971500D48D4B /* TimeManagement.swift in Sources */,
 				F02C82422E4F971500D48D4B /* InfoLocationView.swift in Sources */,
@@ -2759,6 +2800,8 @@
 				F02C827B2E4F971500D48D4B /* NSMenuItem+icons.swift in Sources */,
 				F02C827C2E4F971500D48D4B /* SoundOutputManager+Goodies.swift in Sources */,
 				F02C827D2E4F971500D48D4B /* SourcesViewController.swift in Sources */,
+				F0D637622EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */,
+				F0D637632EA6A62700366EAB /* ScreensaverSettings.swift in Sources */,
 				F02C827E2E4F971500D48D4B /* MessageLayer.swift in Sources */,
 				F02C827F2E4F971500D48D4B /* PrefsDisplays.swift in Sources */,
 				F02C82802E4F971500D48D4B /* SoundOutputManager+Properties.swift in Sources */,
@@ -2839,6 +2882,9 @@
 				F0C062222E4F70580066F2C4 /* TimerLayer.swift in Sources */,
 				F0C062232E4F70580066F2C4 /* InfoContainerView.swift in Sources */,
 				F0C062242E4F70580066F2C4 /* InfoBatteryView.swift in Sources */,
+				F01240D32EA7F19900EE0FFC /* SharedLogging.swift in Sources */,
+				F01240D42EA7F19900EE0FFC /* AerialPaths.swift in Sources */,
+				F01240D52EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */,
 				F0C062252E4F70580066F2C4 /* TimeManagement.swift in Sources */,
 				F0C062262E4F70580066F2C4 /* InfoLocationView.swift in Sources */,
 				F0C062272E4F70580066F2C4 /* Music.swift in Sources */,
@@ -2900,6 +2946,8 @@
 				F0C062622E4F70580066F2C4 /* SourcesViewController.swift in Sources */,
 				F0C062632E4F70580066F2C4 /* MessageLayer.swift in Sources */,
 				F0C062642E4F70580066F2C4 /* PrefsDisplays.swift in Sources */,
+				F0D637662EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */,
+				F0D637672EA6A62700366EAB /* ScreensaverSettings.swift in Sources */,
 				F0C062652E4F70580066F2C4 /* SoundOutputManager+Properties.swift in Sources */,
 				F0C062662E4F70580066F2C4 /* InfoSettingsView.swift in Sources */,
 				F0C062672E4F70580066F2C4 /* CustomVideoController.swift in Sources */,
@@ -3121,7 +3169,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 3.9.9a4;
+				MARKETING_VERSION = 3.9.9a4b;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3152,7 +3200,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 3.9.9a4;
+				MARKETING_VERSION = 3.9.9a4b;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3223,8 +3271,8 @@
 					"@loader_path/../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 3.9.9a4;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 3.9.9a4b;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver";
 				PRODUCT_NAME = Aerial;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3264,8 +3312,8 @@
 					"@loader_path/../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 3.9.9a4;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 3.9.9a4b;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver";
 				PRODUCT_NAME = Aerial;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3305,7 +3353,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.9.9a4;
+				MARKETING_VERSION = 3.9.9a4b;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver-TestApp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -3346,7 +3394,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.9.9a4;
+				MARKETING_VERSION = 3.9.9a4b;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-Screensaver-TestApp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

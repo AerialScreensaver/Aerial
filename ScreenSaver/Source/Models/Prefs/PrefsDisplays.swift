@@ -21,12 +21,18 @@ enum ViewingMode: Int {
 }
 
 struct PrefsDisplays {
-    // Display Mode
-    @SimpleStorage(key: "newDisplayMode", defaultValue: DisplayMode.allDisplays.rawValue)
-    static var intDisplayMode: Int
+    // MARK: - Settings Manager
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Display Settings
+
+    // Display Mode
+    static var intDisplayMode: Int {
+        get { manager.getValue(forKeyPath: \.displays.intDisplayMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.intDisplayMode) }
+    }
+
     static var displayMode: DisplayMode {
         get {
             return DisplayMode(rawValue: intDisplayMode)!
@@ -36,12 +42,12 @@ struct PrefsDisplays {
         }
     }
 
-    // Viewing Mode 
-    @SimpleStorage(key: "newViewingMode", defaultValue: ViewingMode.independent.rawValue)
-    static var intViewingMode: Int
+    // Viewing Mode
+    static var intViewingMode: Int {
+        get { manager.getValue(forKeyPath: \.displays.intViewingMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.intViewingMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var viewingMode: ViewingMode {
         get {
             return ViewingMode(rawValue: intViewingMode)!
@@ -52,11 +58,11 @@ struct PrefsDisplays {
     }
 
     // Aspect Mode
-    @SimpleStorage(key: "aspectMode", defaultValue: AspectMode.fill.rawValue)
-    static var intAspectMode: Int
+    static var intAspectMode: Int {
+        get { manager.getValue(forKeyPath: \.displays.intAspectMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.intAspectMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var aspectMode: AspectMode {
         get {
             return AspectMode(rawValue: intAspectMode)!
@@ -67,48 +73,77 @@ struct PrefsDisplays {
     }
 
     // Display margins
-    @SimpleStorage(key: "displayMarginsAdvanced", defaultValue: false)
-    static var displayMarginsAdvanced: Bool
+    static var displayMarginsAdvanced: Bool {
+        get { manager.getValue(forKeyPath: \.displays.displayMarginsAdvanced) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.displayMarginsAdvanced) }
+    }
 
-    @SimpleStorage(key: "horizontalMargin", defaultValue: 0)
-    static var horizontalMargin: Double
+    static var horizontalMargin: Double {
+        get { manager.getValue(forKeyPath: \.displays.horizontalMargin) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.horizontalMargin) }
+    }
 
-    @SimpleStorage(key: "verticalMargin", defaultValue: 0)
-    static var verticalMargin: Double
-
-
-
+    static var verticalMargin: Double {
+        get { manager.getValue(forKeyPath: \.displays.verticalMargin) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.verticalMargin) }
+    }
 
     // Advanced margins are stored as a string
-    @SimpleStorage(key: "advancedMargins", defaultValue: "")
-    static var advancedMargins: String
-    
-    @SimpleStorage(key: "dimBrightness", defaultValue: false)
-    static var dimBrightness: Bool
-    
-    @SimpleStorage(key: "dimOnlyAtNight", defaultValue: false)
-    static var dimOnlyAtNight: Bool
-    @SimpleStorage(key: "dimOnlyOnBattery", defaultValue: false)
-    static var dimOnlyOnBattery: Bool
-    
-    @SimpleStorage(key: "overrideDimInMinutes", defaultValue: false)
-    static var overrideDimInMinutes: Bool
+    static var advancedMargins: String {
+        get { manager.getValue(forKeyPath: \.displays.advancedMargins) }
+        set { manager.setValue(newValue, forKeyPath: \.displays.advancedMargins) }
+    }
 
-    @SimpleStorage(key: "startDim", defaultValue: 0.5)
-    static var startDim: Double
-    @SimpleStorage(key: "endDim", defaultValue: 0.0)
-    static var endDim: Double
-    @SimpleStorage(key: "dimInMinutes", defaultValue: 30)
-    static var dimInMinutes: Int
+    // Dimming settings
+    static var dimBrightness: Bool {
+        get { manager.getValue(forKeyPath: \.displays.dimBrightness) ?? false }
+        set { manager.setValue(newValue, forKeyPath: \.displays.dimBrightness) }
+    }
+
+    static var dimOnlyAtNight: Bool {
+        get { manager.getValue(forKeyPath: \.displays.dimOnlyAtNight) ?? false }
+        set { manager.setValue(newValue, forKeyPath: \.displays.dimOnlyAtNight) }
+    }
+
+    static var dimOnlyOnBattery: Bool {
+        get { manager.getValue(forKeyPath: \.displays.dimOnlyOnBattery) ?? false }
+        set { manager.setValue(newValue, forKeyPath: \.displays.dimOnlyOnBattery) }
+    }
+
+    static var overrideDimInMinutes: Bool {
+        get { manager.getValue(forKeyPath: \.displays.overrideDimInMinutes) ?? false }
+        set { manager.setValue(newValue, forKeyPath: \.displays.overrideDimInMinutes) }
+    }
+
+    static var startDim: Double {
+        get { manager.getValue(forKeyPath: \.displays.startDim) ?? 0.5 }
+        set { manager.setValue(newValue, forKeyPath: \.displays.startDim) }
+    }
+
+    static var endDim: Double {
+        get { manager.getValue(forKeyPath: \.displays.endDim) ?? 0.0 }
+        set { manager.setValue(newValue, forKeyPath: \.displays.endDim) }
+    }
+
+    static var dimInMinutes: Int {
+        get { manager.getValue(forKeyPath: \.displays.dimInMinutes) ?? 30 }
+        set { manager.setValue(newValue, forKeyPath: \.displays.dimInMinutes) }
+    }
 }
 
 struct PrefsDisplaysDesktop {
-    // Display Mode
-    @SimpleStorage(key: "newDisplayMode", defaultValue: DisplayMode.allDisplays.rawValue)
-    static var intDisplayMode: Int
+    // MARK: - Settings Manager
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Desktop Display Settings
+
+    // Display Mode
+    static var intDisplayMode: Int {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.intDisplayMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.intDisplayMode) }
+    }
+
     static var displayMode: DisplayMode {
         get {
             return DisplayMode(rawValue: intDisplayMode)!
@@ -118,12 +153,12 @@ struct PrefsDisplaysDesktop {
         }
     }
 
-    // Viewing Mode 
-    @SimpleStorage(key: "newViewingMode", defaultValue: ViewingMode.independent.rawValue)
-    static var intViewingMode: Int
+    // Viewing Mode
+    static var intViewingMode: Int {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.intViewingMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.intViewingMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var viewingMode: ViewingMode {
         get {
             return ViewingMode(rawValue: intViewingMode)!
@@ -134,11 +169,11 @@ struct PrefsDisplaysDesktop {
     }
 
     // Aspect Mode
-    @SimpleStorage(key: "aspectMode", defaultValue: AspectMode.fill.rawValue)
-    static var intAspectMode: Int
+    static var intAspectMode: Int {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.intAspectMode) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.intAspectMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var aspectMode: AspectMode {
         get {
             return AspectMode(rawValue: intAspectMode)!
@@ -149,12 +184,18 @@ struct PrefsDisplaysDesktop {
     }
 
     // Display margins
-    @SimpleStorage(key: "displayMarginsAdvanced", defaultValue: false)
-    static var displayMarginsAdvanced: Bool
+    static var displayMarginsAdvanced: Bool {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.displayMarginsAdvanced) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.displayMarginsAdvanced) }
+    }
 
-    @SimpleStorage(key: "horizontalMargin", defaultValue: 0)
-    static var horizontalMargin: Double
+    static var horizontalMargin: Double {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.horizontalMargin) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.horizontalMargin) }
+    }
 
-    @SimpleStorage(key: "verticalMargin", defaultValue: 0)
-    static var verticalMargin: Double
+    static var verticalMargin: Double {
+        get { manager.getValue(forKeyPath: \.displaysDesktop.verticalMargin) }
+        set { manager.setValue(newValue, forKeyPath: \.displaysDesktop.verticalMargin) }
+    }
 }

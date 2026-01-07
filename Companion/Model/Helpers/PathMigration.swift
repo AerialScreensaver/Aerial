@@ -168,10 +168,14 @@ struct PathMigration {
                 }
             }
 
-            // Create companion.json marker to indicate migration complete
-            let companionJsonPath = targetPath + "/companion.json"
-            try "".write(toFile: companionJsonPath, atomically: true, encoding: .utf8)
-            migrationLog.append("✓ Created companion.json marker")
+            // Migrate Companion settings from UserDefaults to companion.json
+            progressCallback("Migrating Companion settings...")
+            let settingsMigrated = migrateCompanionSettings(targetPath: targetPath, migrationLog: &migrationLog, shouldMigrate: true)
+            if settingsMigrated {
+                migrationLog.append("✓ Migrated Companion settings to companion.json")
+            } else {
+                migrationLog.append("✓ Created default Companion settings")
+            }
 
             // Save migration log
             let logPath = targetPath + "/Logs/migration.log"
@@ -216,6 +220,59 @@ struct PathMigration {
         }
     }
 
+    // MARK: - Settings Migration
+
+    /// Migrate Companion settings from UserDefaults to companion.json
+    /// - Parameters:
+    ///   - targetPath: Base path for Aerial data
+    ///   - migrationLog: Log array to append messages
+    ///   - shouldMigrate: If true, migrate from UserDefaults; if false, always use defaults
+    /// - Returns: true if settings were migrated, false if defaults were used
+    @discardableResult
+    private static func migrateCompanionSettings(targetPath: String, migrationLog: inout [String], shouldMigrate: Bool) -> Bool {
+        let companionJsonPath = targetPath + "/companion.json"
+        let companionJsonURL = URL(fileURLWithPath: companionJsonPath)
+
+        let settings: CompanionSettings
+        var wasMigrated = false
+
+        if shouldMigrate {
+            // Check if any UserDefaults settings exist
+            let hasUserDefaultsSettings = UserDefaults.standard.object(forKey: "intDesiredVersion") != nil ||
+                                          UserDefaults.standard.object(forKey: "intLaunchMode") != nil ||
+                                          UserDefaults.standard.object(forKey: "firstTimeSetup") != nil
+
+            if hasUserDefaultsSettings {
+                // Migrate from UserDefaults
+                settings = CompanionSettings.fromUserDefaults()
+                CompanionLogging.debugLog("🚚 Migration: Migrating settings from UserDefaults")
+                migrationLog.append("  - Migrated \(12) settings from UserDefaults")
+                wasMigrated = true
+            } else {
+                // Use defaults
+                settings = .default
+                CompanionLogging.debugLog("🚚 Migration: Using default settings (no existing settings found)")
+                migrationLog.append("  - Using default settings (no existing settings found)")
+            }
+        } else {
+            // Always use defaults when not migrating
+            settings = .default
+            CompanionLogging.debugLog("🚚 Migration: Using default settings (migration disabled)")
+            migrationLog.append("  - Using default settings (start fresh)")
+        }
+
+        // Write settings to JSON
+        let success = JSONPreferencesStore.shared.write(settings, to: companionJsonURL)
+        if success {
+            CompanionLogging.debugLog("🚚 Migration: Settings written to \(companionJsonPath)")
+        } else {
+            CompanionLogging.errorLog("🚚 Migration: Failed to write settings to \(companionJsonPath)")
+            migrationLog.append("  ✗ Warning: Failed to write settings file")
+        }
+
+        return wasMigrated && success
+    }
+
     /// Mark as starting fresh (no migration)
     private static func markAsFresh(completion: @escaping (MigrationResult) -> Void) {
         CompanionLogging.debugLog("🚚 Migration: Marked as fresh start")
@@ -226,9 +283,9 @@ struct PathMigration {
         // Create base directory if needed
         try? fileManager.createDirectory(atPath: targetPath, withIntermediateDirectories: true, attributes: nil)
 
-        // Create companion.json marker
-        let companionJsonPath = targetPath + "/companion.json"
-        try? "".write(toFile: companionJsonPath, atomically: true, encoding: .utf8)
+        // Create companion.json with DEFAULT settings (no migration)
+        var migrationLog: [String] = []
+        migrateCompanionSettings(targetPath: targetPath, migrationLog: &migrationLog, shouldMigrate: false)
 
         // Create My Videos directory
         try? fileManager.createDirectory(atPath: targetPath + "/My Videos", withIntermediateDirectories: true, attributes: nil)
@@ -248,9 +305,9 @@ struct PathMigration {
         // Create base directory if needed
         try? fileManager.createDirectory(atPath: targetPath, withIntermediateDirectories: true, attributes: nil)
 
-        // Create companion.json marker
-        let companionJsonPath = targetPath + "/companion.json"
-        try? "".write(toFile: companionJsonPath, atomically: true, encoding: .utf8)
+        // Create companion.json with settings (migrate if they exist, otherwise use defaults)
+        var migrationLog: [String] = []
+        migrateCompanionSettings(targetPath: targetPath, migrationLog: &migrationLog, shouldMigrate: true)
 
         // Create My Videos directory
         try? fileManager.createDirectory(atPath: targetPath + "/My Videos", withIntermediateDirectories: true, attributes: nil)

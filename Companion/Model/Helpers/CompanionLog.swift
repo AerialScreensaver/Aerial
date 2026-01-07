@@ -63,3 +63,23 @@ enum CompanionLogging {
         Logger.sharedInstance.addCallback(callback)
     }
 }
+
+// MARK: - SharedLogger Conformance
+
+extension CompanionLogging: SharedLogger {
+    static func debug(_ message: String) {
+        debugLog(message)
+    }
+
+    static func info(_ message: String) {
+        infoLog(message)
+    }
+
+    static func warn(_ message: String) {
+        warnLog(message)
+    }
+
+    static func error(_ message: String) {
+        errorLog(message)
+    }
+}

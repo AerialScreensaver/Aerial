@@ -34,12 +34,18 @@ enum RefreshPeriodicity: Int {
 }
 
 struct PrefsVideos {
-    // Main playback mode after v2.5
-    @SimpleStorage(key: "intNewShouldPlay", defaultValue: NewShouldPlay.location.rawValue)
-    static var intNewShouldPlay: Int
+    // MARK: - Settings Manager
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
+    private static let manager = ScreensaverSettingsManager.shared
+
+    // MARK: - Video Settings
+
+    // Main playback mode after v2.5
+    static var intNewShouldPlay: Int {
+        get { manager.getValue(forKeyPath: \.videos.intNewShouldPlay) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intNewShouldPlay) }
+    }
+
     static var newShouldPlay: NewShouldPlay {
         get {
             return NewShouldPlay(rawValue: intNewShouldPlay)!
@@ -50,11 +56,11 @@ struct PrefsVideos {
     }
 
     // Main playback mode (deprecated in 2.5)
-    @SimpleStorage(key: "intShouldPlay", defaultValue: ShouldPlay.everything.rawValue)
-    static var intShouldPlay: Int
+    static var intShouldPlay: Int {
+        get { manager.getValue(forKeyPath: \.videos.intShouldPlay) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intShouldPlay) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var shouldPlay: ShouldPlay {
         get {
             return ShouldPlay(rawValue: intShouldPlay)!
@@ -65,19 +71,23 @@ struct PrefsVideos {
     }
 
     // Starting with v2.5
-    @SimpleStorage(key: "newShouldPlayString", defaultValue: [])
-    static var newShouldPlayString: [String]
+    static var newShouldPlayString: [String] {
+        get { manager.getValue(forKeyPath: \.videos.newShouldPlayString) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.newShouldPlayString) }
+    }
 
     // Deprecated in v2.5
-    @SimpleStorage(key: "shouldPlayString", defaultValue: "")
-    static var shouldPlayString: String
+    static var shouldPlayString: String {
+        get { manager.getValue(forKeyPath: \.videos.shouldPlayString) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.shouldPlayString) }
+    }
 
-    // What do we do on battery ?
-    @SimpleStorage(key: "intOnBatteryMode", defaultValue: OnBatteryMode.keepEnabled.rawValue)
-    static var intOnBatteryMode: Int
+    // What do we do on battery?
+    static var intOnBatteryMode: Int {
+        get { manager.getValue(forKeyPath: \.videos.intOnBatteryMode) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intOnBatteryMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var onBatteryMode: OnBatteryMode {
         get {
             return OnBatteryMode(rawValue: intOnBatteryMode)!
@@ -88,11 +98,11 @@ struct PrefsVideos {
     }
 
     // Internal storage for video format
-    @SimpleStorage(key: "intVideoFormat", defaultValue: VideoFormat.v1080pH264.rawValue)
-    static var intVideoFormat: Int
+    static var intVideoFormat: Int {
+        get { manager.getValue(forKeyPath: \.videos.intVideoFormat) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intVideoFormat) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var videoFormat: VideoFormat {
         get {
             return VideoFormat(rawValue: intVideoFormat)!
@@ -103,11 +113,11 @@ struct PrefsVideos {
     }
 
     // Video fade in/out mode
-    @SimpleStorage(key: "fadeMode", defaultValue: FadeMode.t1.rawValue)
-    static var intFadeMode: Int
+    static var intFadeMode: Int {
+        get { manager.getValue(forKeyPath: \.videos.intFadeMode) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intFadeMode) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var fadeMode: FadeMode {
         get {
             return FadeMode(rawValue: intFadeMode)!
@@ -117,15 +127,12 @@ struct PrefsVideos {
         }
     }
 
-    // How often should we look for new videos ?
-    @SimpleStorage(key: "intRefreshPeriodicity",
-                   defaultValue: PrefsCache.enableManagement
-                    ? RefreshPeriodicity.monthly.rawValue
-                    : RefreshPeriodicity.never.rawValue)
-    static var intRefreshPeriodicity: Int
+    // How often should we look for new videos?
+    static var intRefreshPeriodicity: Int {
+        get { manager.getValue(forKeyPath: \.videos.intRefreshPeriodicity) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.intRefreshPeriodicity) }
+    }
 
-    // We wrap in a separate value, as we can't store an enum as a Codable in
-    // macOS < 10.15
     static var refreshPeriodicity: RefreshPeriodicity {
         get {
             return RefreshPeriodicity(rawValue: intRefreshPeriodicity)!
@@ -136,36 +143,52 @@ struct PrefsVideos {
     }
 
     // Allow video skips with right arrow key (on supporting OSes)
-    @SimpleStorage(key: "allowSkips", defaultValue: true)
-    static var allowSkips: Bool
+    static var allowSkips: Bool {
+        get { manager.getValue(forKeyPath: \.videos.allowSkips) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.allowSkips) }
+    }
 
-    @SimpleStorage(key: "sourcesEnabled", defaultValue: ["macOS 26": true,
-                                                         "tvOS 16": false,
-                                                         "tvOS 13": false])
-    static var enabledSources: [String: Bool]
+    static var enabledSources: [String: Bool] {
+        get { manager.getValue(forKeyPath: \.videos.sourcesEnabled) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.sourcesEnabled) }
+    }
 
     // Favorites (we use the video ID)
-    @SimpleStorage(key: "favorites", defaultValue: [])
-    static var favorites: [String]
+    static var favorites: [String] {
+        get { manager.getValue(forKeyPath: \.videos.favorites) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.favorites) }
+    }
 
     // Hidden list (same)
-    @SimpleStorage(key: "hidden", defaultValue: [])
-    static var hidden: [String]
+    static var hidden: [String] {
+        get { manager.getValue(forKeyPath: \.videos.hidden) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.hidden) }
+    }
 
-    @SimpleStorage(key: "vibrance", defaultValue: [:])
-    static var vibrance: [String: Double]
+    static var vibrance: [String: Double] {
+        get { manager.getValue(forKeyPath: \.videos.vibrance) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.vibrance) }
+    }
 
-    @SimpleStorage(key: "durationCache", defaultValue: [:])
-    static var durationCache: [String: Double]
+    static var durationCache: [String: Double] {
+        get { manager.getValue(forKeyPath: \.videos.durationCache) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.durationCache) }
+    }
 
-    @SimpleStorage(key: "playbackSpeed", defaultValue: [:])
-    static var playbackSpeed: [String: Float]
+    static var playbackSpeed: [String: Float] {
+        get { manager.getValue(forKeyPath: \.videos.playbackSpeed) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.playbackSpeed) }
+    }
 
-    @SimpleStorage(key: "globalVibrance", defaultValue: 0)
-    static var globalVibrance: Double
+    static var globalVibrance: Double {
+        get { manager.getValue(forKeyPath: \.videos.globalVibrance) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.globalVibrance) }
+    }
 
-    @SimpleStorage(key: "allowPerVideoVibrance", defaultValue: false)
-    static var allowPerVideoVibrance: Bool
+    static var allowPerVideoVibrance: Bool {
+        get { manager.getValue(forKeyPath: \.videos.allowPerVideoVibrance) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.allowPerVideoVibrance) }
+    }
 
     static private func defaultLastVideoCheck() -> String {
         let dateFormatter = DateFormatter()
@@ -174,8 +197,10 @@ struct PrefsVideos {
         return dateFormatter.string(from: current)
     }
 
-    @SimpleStorage(key: "lastVideoCheck", defaultValue: defaultLastVideoCheck())
-    static var lastVideoCheck: String
+    static var lastVideoCheck: String {
+        get { manager.getValue(forKeyPath: \.videos.lastVideoCheck) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.lastVideoCheck) }
+    }
 
 
     
