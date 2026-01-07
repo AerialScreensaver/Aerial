@@ -153,13 +153,13 @@ struct SourceList {
             return
         }
 
-        // Check if the source already exists
+        // Check if the source already exists in the list
         if let existingSource = list.first(where: { $0.name == folderName && $0.type == .local }) {
             // Source exists - refresh it to pick up any new videos
             debugLog("Refreshing My Videos source")
             updateLocalSource(source: existingSource, reload: true)
         } else {
-            // Source doesn't exist - create it
+            // Source doesn't exist - create it and scan for videos
             debugLog("Creating My Videos source")
 
             let source = Source(name: folderName,
@@ -171,16 +171,56 @@ struct SourceList {
                                license: "",
                                more: "")
 
+            // Scan the folder for videos
+            let url = URL(fileURLWithPath: folderPath)
+            var assets = [VideoAsset]()
+
+            do {
+                let urls = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+
+                for lurl in urls {
+                    if lurl.path.lowercased().hasSuffix(".mp4") || lurl.path.lowercased().hasSuffix(".mov") {
+                        let fileManager = FileManager.default
+                        let attributes = try? fileManager.attributesOfItem(atPath: lurl.path)
+                        let fileType = attributes?[.type] as? FileAttributeType
+                        let resourceValues = try lurl.resourceValues(forKeys: [.fileSizeKey])
+                        let fileSize = resourceValues.fileSize ?? 0
+
+                        if fileSize > 500000 || fileType == .typeSymbolicLink {
+                            assets.append(VideoAsset(accessibilityLabel: folderName,
+                                                     id: NSUUID().uuidString,
+                                                     title: lurl.lastPathComponent,
+                                                     timeOfDay: "day",
+                                                     scene: "",
+                                                     pointsOfInterest: [:],
+                                                     url4KHDR: "",
+                                                     url4KSDR: lurl.path,
+                                                     url1080H264: "",
+                                                     url1080HDR: "",
+                                                     url4KSDR120FPS: "",
+                                                     url4KSDR240FPS: "",
+                                                     url1080SDR: "",
+                                                     url: "",
+                                                     type: "nature"))
+                        }
+                    }
+                }
+            } catch {
+                errorLog("Could not scan My Videos directory: \(error.localizedDescription)")
+            }
+
+            // Save the source manifest
             saveSource(source)
 
-            // Scan for any existing videos
-            let url = URL(fileURLWithPath: folderPath)
-            processPathForVideos(url: url)
+            // Save entries.json with found videos (even if empty)
+            let videoManifest = VideoManifest(assets: assets, initialAssetCount: 1, version: 1)
+            saveEntries(source: source, manifest: videoManifest)
 
-            // Enable by default
+            // Add to list and enable
+            list.append(source)
             source.setEnabled(true)
 
-            debugLog("My Videos source created and enabled")
+            debugLog("My Videos source created with \(assets.count) videos")
         }
     }
 
@@ -301,72 +341,98 @@ struct SourceList {
         let originalAssets = source.getUnprocessedAssets()
 
         var updatedAssets = [VideoAsset]()
-        
+
+        // Determine the folder URL - either from existing videos or from known paths
+        let url: URL
         if videos.count >= 1 {
-            let url = videos.first!.url.deletingLastPathComponent()
-            let folderName = url.lastPathComponent
-            debugLog("processing url for videos : \(url)")
+            url = videos.first!.url.deletingLastPathComponent()
+        } else if source.name == "My Videos" {
+            // Special case for built-in My Videos source - we know the exact location
+            let myVideosPath = "/Users/Shared/Aerial/My Videos"
+            if FileManager.default.fileExists(atPath: myVideosPath) {
+                url = URL(fileURLWithPath: myVideosPath)
+            } else {
+                debugLog("My Videos folder doesn't exist at \(myVideosPath)")
+                return
+            }
+        } else if source.type == .local && FileManager.default.fileExists(atPath: source.manifestUrl) {
+            // For other local sources, use manifestUrl (which should be the folder path)
+            url = URL(fileURLWithPath: source.manifestUrl)
+        } else {
+            debugLog("Cannot determine folder path for source: \(source.name)")
+            return
+        }
 
-            do {
-                let urls = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
-                // var assets = [VideoAsset]()
+        let folderName = url.lastPathComponent
+        debugLog("processing url for videos : \(url)")
 
-                
-                
-                for lurl in urls {
-                    if lurl.path.lowercased().hasSuffix(".mp4") || lurl.path.lowercased().hasSuffix(".mov") {
-                        let fileManager = FileManager.default
-                        let attributes = try? fileManager.attributesOfItem(atPath: lurl.path)
-                        let fileType = attributes?[.type] as? FileAttributeType
-                        let resourceValues = try lurl.resourceValues(forKeys: [.fileSizeKey])
-                        let fileSize = resourceValues.fileSize!
+        do {
+            let urls = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
 
-                        if fileSize > 500000 || fileType == .typeSymbolicLink {
-                            // Check if the asset was there previously
-                            let foundAssets = originalAssets.filter { $0.url4KSDR == lurl.path }
+            for lurl in urls {
+                if lurl.path.lowercased().hasSuffix(".mp4") || lurl.path.lowercased().hasSuffix(".mov") {
+                    let fileManager = FileManager.default
+                    let attributes = try? fileManager.attributesOfItem(atPath: lurl.path)
+                    let fileType = attributes?[.type] as? FileAttributeType
+                    let resourceValues = try lurl.resourceValues(forKeys: [.fileSizeKey])
+                    let fileSize = resourceValues.fileSize ?? 0
 
-                            if let foundAsset = foundAssets.first {
-                                // Just add the asset to the new array
-                                updatedAssets.append(foundAsset)
-                            } else {
-                                // Create a new entry
-                                updatedAssets.append(VideoAsset(accessibilityLabel: folderName,
-                                                         id: NSUUID().uuidString,
-                                                         title: lurl.lastPathComponent,
-                                                         timeOfDay: "day",
-                                                         scene: "",
-                                                         pointsOfInterest: [:],
-                                                         url4KHDR: "",
-                                                         url4KSDR: lurl.path,
-                                                         url1080H264: "",
-                                                         url1080HDR: "",
-                                                         url4KSDR120FPS: "",
-                                                         url4KSDR240FPS: "",
-                                                         url1080SDR: "",
-                                                         url: "",
-                                                         type: "nature"))
-                            }
+                    if fileSize > 500000 || fileType == .typeSymbolicLink {
+                        // Check if the asset was there previously
+                        let foundAssets = originalAssets.filter { $0.url4KSDR == lurl.path }
 
+                        if let foundAsset = foundAssets.first {
+                            // Just add the asset to the new array
+                            updatedAssets.append(foundAsset)
+                        } else {
+                            // Create a new entry
+                            updatedAssets.append(VideoAsset(accessibilityLabel: folderName,
+                                                     id: NSUUID().uuidString,
+                                                     title: lurl.lastPathComponent,
+                                                     timeOfDay: "day",
+                                                     scene: "",
+                                                     pointsOfInterest: [:],
+                                                     url4KHDR: "",
+                                                     url4KSDR: lurl.path,
+                                                     url1080H264: "",
+                                                     url1080HDR: "",
+                                                     url4KSDR120FPS: "",
+                                                     url4KSDR240FPS: "",
+                                                     url1080SDR: "",
+                                                     url: "",
+                                                     type: "nature"))
                         }
                     }
                 }
-
-                debugLog("Updating manifest \(url.lastPathComponent)")
-
-                let videoManifest = VideoManifest(assets: updatedAssets, initialAssetCount: 1, version: 1)
-
-                SourceList.saveEntries(source: source, manifest: videoManifest)
-
-                if reload {
-                    VideoList.instance.reloadSources()
-                }
-            } catch {
-                errorLog("Could not process directory")
             }
-        } else {
-            debugLog("Cannot parse your directory, did you delete your videos ?")
-        }
 
+            debugLog("Updating manifest \(url.lastPathComponent) with \(updatedAssets.count) videos")
+
+            let videoManifest = VideoManifest(assets: updatedAssets, initialAssetCount: 1, version: 1)
+
+            SourceList.saveEntries(source: source, manifest: videoManifest)
+
+            // Fix corrupt manifests: if manifestUrl doesn't point to the actual folder, update it
+            if source.name == "My Videos" && source.manifestUrl != url.path {
+                // Create a corrected source and re-save the manifest
+                let correctedSource = Source(name: source.name,
+                                            description: source.description,
+                                            manifestUrl: url.path,
+                                            type: source.type,
+                                            scenes: source.scenes,
+                                            isCachable: source.isCachable,
+                                            license: source.license,
+                                            more: source.more)
+                SourceList.saveSource(correctedSource)
+                debugLog("Fixed My Videos manifest with correct path: \(url.path)")
+            }
+
+            if reload {
+                VideoList.instance.reloadSources()
+            }
+        } catch {
+            errorLog("Could not process directory: \(error.localizedDescription)")
+        }
     }
 
     static func processPathForVideos(url: URL) {
