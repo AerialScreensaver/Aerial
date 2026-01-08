@@ -66,7 +66,7 @@ class MessageLayer: AnimationTextLayer {
                         }
                     }
                 }
-                //setupRefresh()
+                setupRefresh()
             case .textfile:
                 // TODO
                 update(string: config.message)
@@ -108,7 +108,9 @@ class MessageLayer: AnimationTextLayer {
 
                 DispatchQueue.global().async {
                     let result = self.runShell()
-                    self.update(string: result ?? "")
+                    DispatchQueue.main.async {
+                        self.update(string: result ?? "")
+                    }
                 }
             })
         }
