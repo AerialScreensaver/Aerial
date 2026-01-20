@@ -163,7 +163,7 @@ struct SourceList {
             debugLog("Creating My Videos source")
 
             let source = Source(name: folderName,
-                               description: "Your personal videos",
+                               description: "Videos from /Users/Shared/Aerial/My Videos/",
                                manifestUrl: folderPath,
                                type: .local,
                                scenes: [.nature],

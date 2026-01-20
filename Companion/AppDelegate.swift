@@ -7,6 +7,7 @@
 
 import Cocoa
 import Sparkle
+import SwiftUI
 
 enum IconMode {
     case normal, updating, notification
@@ -18,6 +19,9 @@ struct PrefTest: Decodable {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+
+    // Feature flag for SwiftUI popover - set to true to use new SwiftUI UI
+    private let useSwiftUIPopover = true
 
     lazy var firstTimeSetupWindowController = FirstTimeSetupWindowController()
 
@@ -124,18 +128,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Set the icon
         setIcon(mode: .normal)
 
-        // Load popover
-        var topLevelObjects: NSArray? = NSArray()
-        Bundle.main.loadNibNamed(NSNib.Name("CompanionPopoverViewController"),
-                            owner: popoverViewController,
-                            topLevelObjects: &topLevelObjects)
-        popoverViewController.setDelegate(self)
-        popoverViewController.viewDidLoad()
+        // Setup popover (SwiftUI or legacy XIB-based)
+        setupPopover()
 
-        // Make it a real popover
-        popover.contentViewController = popoverViewController
-        popover.behavior = .transient
-        
         // Action button
         if let button = statusItem.button {
             button.action = #selector(togglePopover(_:))
@@ -237,7 +232,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     
-    // Popover handling
+    // MARK: - Popover Setup
+
+    private func setupPopover() {
+        if #available(macOS 11.0, *), useSwiftUIPopover {
+            setupSwiftUIPopover()
+        } else {
+            setupLegacyPopover()
+        }
+
+        // Common popover configuration
+        popover.behavior = .transient
+        popover.animates = false  // Disable animation for instant opening
+    }
+
+    private func setupLegacyPopover() {
+        var topLevelObjects: NSArray? = NSArray()
+        Bundle.main.loadNibNamed(NSNib.Name("CompanionPopoverViewController"),
+                            owner: popoverViewController,
+                            topLevelObjects: &topLevelObjects)
+        popoverViewController.setDelegate(self)
+        popoverViewController.viewDidLoad()
+        popover.contentViewController = popoverViewController
+    }
+
+    @available(macOS 11.0, *)
+    private func setupSwiftUIPopover() {
+        let playbackManager = PlaybackManager.shared
+
+        let popoverView = MainPopoverView(
+            playbackManager: playbackManager,
+            onOpenSettings: { [weak self] in
+                self?.openAerialSettings()
+                self?.closePopover(sender: nil)
+            },
+            onOpenCompanionSettings: { [weak self] in
+                self?.openCompanionSettings()
+                self?.closePopover(sender: nil)
+            },
+            onOpenInfo: { [weak self] in
+                self?.openInfoWindow()
+                self?.closePopover(sender: nil)
+            },
+            onOpenHelp: { [weak self] in
+                self?.openHelpWebsite()
+                self?.closePopover(sender: nil)
+            },
+            onExit: {
+                NSApplication.shared.terminate(nil)
+            },
+            onDismiss: { [weak self] in
+                self?.closePopover(sender: nil)
+            },
+            onSetAsDefault: { [weak self] in
+                await self?.setAerialAsDefault()
+            },
+            onUpdateNow: { [weak self] in
+                self?.performUpdate()
+            }
+        )
+
+        let hostingController = NSHostingController(rootView: popoverView)
+        popover.contentViewController = hostingController
+    }
+
+    // MARK: - Popover Handling
+
     @objc func togglePopover(_ sender: Any?) {
         if popover.isShown {
             closePopover(sender: sender)
@@ -248,7 +308,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func showPopover(sender: Any?) {
         if let button = statusItem.button {
-            (popover.contentViewController! as! CompanionPopoverViewController).update()
+            // Refresh content before showing
+            if #available(macOS 11.0, *), useSwiftUIPopover {
+                Task { @MainActor in
+                    PlaybackManager.shared.refreshScreenList()
+                }
+            } else {
+                popoverViewController.update()
+            }
+
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
             popover.contentViewController?.view.window?.makeKey()
             NSApp.activate(ignoringOtherApps: true)
@@ -257,6 +325,59 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func closePopover(sender: Any?) {
         popover.performClose(sender)
+    }
+
+    // MARK: - Window Actions (for SwiftUI callbacks)
+
+    private func openAerialSettings() {
+        SaverLauncher.instance.openSettings()
+    }
+
+    // Lazy info window controller (SwiftUI, no XIB needed)
+    @available(macOS 11.0, *)
+    private lazy var infoWindowController = InfoWindowController()
+
+    // Lazy settings window controller (SwiftUI, macOS 13+)
+    @available(macOS 13.0, *)
+    private lazy var settingsWindowController = SettingsWindowController()
+
+    private func openInfoWindow() {
+        if #available(macOS 11.0, *) {
+            infoWindowController.showAboutWindow()
+        } else {
+            // Fallback for older macOS - use legacy popover method
+            popoverViewController.openInfoClick(self)
+        }
+    }
+
+    private func openCompanionSettings() {
+        if #available(macOS 13.0, *) {
+            settingsWindowController.showSettingsWindow()
+        } else {
+            // Fallback for macOS 11-12 - use legacy popover method
+            popoverViewController.openSettingsClick(self)
+        }
+    }
+
+    private func openHelpWebsite() {
+        let workspace = NSWorkspace.shared
+        if let url = URL(string: "https://aerialscreensaver.github.io/support.html") {
+            workspace.open(url)
+        }
+    }
+
+    @available(macOS 11.0, *)
+    private func setAerialAsDefault() async {
+        do {
+            try await ScreensaverManager.shared.enableAerial()
+            CompanionLogging.infoLog("Aerial set as default screensaver")
+        } catch {
+            CompanionLogging.errorLog("Failed to set Aerial as default: \(error.localizedDescription)")
+        }
+    }
+
+    private func performUpdate() {
+        Update.instance.perform(popoverViewController)
     }
     
     func removeOldAerialApp() {
@@ -403,11 +524,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
-        if popoverViewController.currentMode == .desktop {
-            Preferences.wasRunningBackground = true
+        // Remember if desktop wallpaper was running for restart
+        if #available(macOS 11.0, *), useSwiftUIPopover {
+            Preferences.wasRunningBackground = PlaybackManager.shared.playbackMode == .desktop
         } else {
-            Preferences.wasRunningBackground = false
+            Preferences.wasRunningBackground = popoverViewController.currentMode == .desktop
         }
     }
     

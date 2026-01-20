@@ -10,6 +10,8 @@ import IOKit.ps
 
 class CompanionPopoverViewController: NSViewController, UpdateCallback {
     lazy var infoWindowController = InfoWindowController()
+    lazy var legacySettingsWindowController = LegacySettingsWindowController()
+    @available(macOS 13.0, *)
     lazy var settingsWindowController = SettingsWindowController()
     lazy var updateCheckWindowController = UpdateCheckWindowController()
 
@@ -548,16 +550,22 @@ class CompanionPopoverViewController: NSViewController, UpdateCallback {
     }
     
     @IBAction func openSettingsClick(_ sender: Any) {
-        var topLevelObjects: NSArray? = NSArray()
-        if !Bundle.main.loadNibNamed(NSNib.Name("SettingsWindowController"),
-                            owner: settingsWindowController,
-                            topLevelObjects: &topLevelObjects) {
-            CompanionLogging.errorLog("Could not load nib for SettingsWindow, please report")
+        if #available(macOS 13.0, *) {
+            // Use new SwiftUI settings window
+            settingsWindowController.showSettingsWindow()
+        } else {
+            // Use legacy XIB-based settings window
+            var topLevelObjects: NSArray? = NSArray()
+            if !Bundle.main.loadNibNamed(NSNib.Name("SettingsWindowController"),
+                                owner: legacySettingsWindowController,
+                                topLevelObjects: &topLevelObjects) {
+                CompanionLogging.errorLog("Could not load nib for SettingsWindow, please report")
+            }
+            legacySettingsWindowController.windowDidLoad()
+            legacySettingsWindowController.showWindow(self)
+            legacySettingsWindowController.window!.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
         }
-        settingsWindowController.windowDidLoad()
-        settingsWindowController.showWindow(self)
-        settingsWindowController.window!.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         appDelegate?.closePopover(sender: nil)
     }
     

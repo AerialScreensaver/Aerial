@@ -19,6 +19,7 @@ struct ScreensaverSettings: Codable {
     var displaysDesktop: DisplaySettings  // Desktop mode uses same structure
     var time: TimeSettings
     var advanced: AdvancedSettings
+    var updatesPrefs: UpdatesSettings  // App update settings (different from info.updates overlay)
 
     // MARK: - Defaults
 
@@ -30,7 +31,8 @@ struct ScreensaverSettings: Codable {
         displays: .default,
         displaysDesktop: .default,
         time: .default,
-        advanced: .default
+        advanced: .default,
+        updatesPrefs: .default
     )
 
     // MARK: - File Location
@@ -166,6 +168,17 @@ struct InfoSettings: Codable {
     var customTimeFormat: String
     var intFadeModeText: Int
 
+    // Advanced text settings (migrated from @SimpleStorage)
+    var highQualityTextRendering: Bool
+    var overrideMargins: Bool
+    var hideUnderCompanion: Bool
+    var marginX: Int
+    var marginY: Int
+    var shadowRadius: Int
+    var shadowOpacity: Float
+    var shadowOffsetX: Double  // CGFloat -> Double for Codable
+    var shadowOffsetY: Double
+
     static let `default` = InfoSettings(
         layers: ["message", "clock", "date", "location", "battery", "updates", "weather", "countdown", "timer"],
         location: InfoLocation.default,
@@ -183,7 +196,16 @@ struct InfoSettings: Codable {
         musicProvider: "Apple Music",
         customDateFormat: "",
         customTimeFormat: "",
-        intFadeModeText: 2  // FadeMode.t1
+        intFadeModeText: 2,  // FadeMode.t1
+        highQualityTextRendering: true,  // Default true (most users on Apple Silicon)
+        overrideMargins: false,
+        hideUnderCompanion: true,
+        marginX: 50,
+        marginY: 50,
+        shadowRadius: 2,
+        shadowOpacity: 1.0,
+        shadowOffsetX: 0.0,
+        shadowOffsetY: -3.0
     )
 }
 
@@ -507,5 +529,18 @@ struct AdvancedSettings: Codable {
         debugMode: false,
         ciOverrideLanguage: "",
         newDisplayDict: [:]
+    )
+}
+
+// MARK: - Updates Settings
+
+/// App update checking settings (different from InfoUpdates which is for overlay display)
+struct UpdatesSettings: Codable {
+    var checkForUpdates: Bool
+    var intSparkleUpdateMode: Int  // UpdateMode raw value (0 = notify, 1 = install)
+
+    static let `default` = UpdatesSettings(
+        checkForUpdates: true,
+        intSparkleUpdateMode: 0  // UpdateMode.notify
     )
 }

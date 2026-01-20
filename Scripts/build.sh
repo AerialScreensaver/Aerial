@@ -215,13 +215,23 @@ if [ "$SKIP_NOTARIZATION" = false ]; then
     echo -e "${YELLOW}Submitting screensaver to Apple for notarization...${NC}"
     echo -e "${YELLOW}This may take several minutes...${NC}"
 
-    # Capture notarization output
+    # Capture notarization output (disable set -e temporarily to capture errors)
+    set +e
     NOTARY_OUTPUT=$(xcrun notarytool submit "${SCREENSAVER_ZIP}" \
                      --keychain-profile "${KEYCHAIN_PROFILE}" \
                      --wait 2>&1)
+    NOTARY_EXIT_CODE=$?
+    set -e
 
     # Display the output
     echo "$NOTARY_OUTPUT"
+
+    # Check if the command itself failed
+    if [ $NOTARY_EXIT_CODE -ne 0 ]; then
+        echo ""
+        echo -e "${RED}✗ notarytool command failed with exit code: ${NOTARY_EXIT_CODE}${NC}"
+        exit 1
+    fi
 
     # Extract submission ID
     SUBMISSION_ID=$(echo "$NOTARY_OUTPUT" | grep -E "id: [a-f0-9-]+" | head -1 | awk '{print $2}')
@@ -397,13 +407,24 @@ if [ "$SKIP_NOTARIZATION" = false ]; then
     echo -e "${YELLOW}Submitting app to Apple for notarization...${NC}"
     echo -e "${YELLOW}This may take several minutes...${NC}"
 
-    # Capture notarization output
+    # Capture notarization output (disable set -e temporarily to capture errors)
+    set +e
     NOTARY_OUTPUT=$(xcrun notarytool submit "${APP_ZIP}" \
                      --keychain-profile "${KEYCHAIN_PROFILE}" \
                      --wait 2>&1)
+    NOTARY_EXIT_CODE=$?
+    set -e
 
     # Display the output
     echo "$NOTARY_OUTPUT"
+
+    # Check if the command itself failed
+    if [ $NOTARY_EXIT_CODE -ne 0 ]; then
+        echo ""
+        echo -e "${RED}✗ notarytool command failed with exit code: ${NOTARY_EXIT_CODE}${NC}"
+        rm "${APP_ZIP}"
+        exit 1
+    fi
 
     # Extract submission ID
     SUBMISSION_ID=$(echo "$NOTARY_OUTPUT" | grep -E "id: [a-f0-9-]+" | head -1 | awk '{print $2}')

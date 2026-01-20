@@ -6,34 +6,39 @@
 //
 
 import Cocoa
+import SwiftUI
 
+@available(macOS 11.0, *)
 class InfoWindowController: NSWindowController {
 
-    @IBOutlet var versionLabel: NSTextField!
-    override func windowDidLoad() {
-        super.windowDidLoad()
+    convenience init() {
+        // Create the SwiftUI view
+        let infoView = InfoView()
+        let hostingController = NSHostingController(rootView: infoView)
 
-        versionLabel.stringValue = "Version " + Helpers.version
+        // Get the ideal size for the content
+        let contentSize = hostingController.view.fittingSize
+
+        // Create the window programmatically
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: contentSize.width, height: contentSize.height),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.title = "About Aerial Companion"
+        window.contentViewController = hostingController
+        window.isReleasedWhenClosed = false
+        window.center()
+
+        self.init(window: window)
     }
-    
-    @IBAction func donateButtonClick(_ sender: Any) {
-        print("donate")
-        let workspace = NSWorkspace.shared
-        let url = URL(string: "https://ko-fi.com/A0A32385Y")!
-        workspace.open(url)
+
+    func showAboutWindow() {
+        window?.center()
+        showWindow(nil)
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
-    
-    @IBAction func githubButtonClick(_ sender: Any) {
-        print("github")
-        let workspace = NSWorkspace.shared
-        let url = URL(string: "https://github.com/glouel/AerialCompanion")!
-        workspace.open(url)
-    }
-    
-    @IBAction func iconButtonClick(_ sender: Any) {
-        let workspace = NSWorkspace.shared
-        let url = URL(string: "https://infernodesign.com")!
-        workspace.open(url)
-    }
-    
 }

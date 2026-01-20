@@ -531,37 +531,57 @@ struct PrefsInfo {
         }
     }
 
-    // Note: The following advanced settings are stored in separate keys, not in InfoSettings
-    // TODO: Consider moving these to InfoSettings in a future version for full consolidation
+    // MARK: - Advanced Text Settings (migrated to JSON storage)
 
     // Fast rendering mode
-    @SimpleStorage(key: "highQualityTextRendering", defaultValue: HardwareDetection.sharedInstance.isAppleSilicon())
-    static var highQualityTextRendering: Bool
+    static var highQualityTextRendering: Bool {
+        get { manager.getValue(forKeyPath: \.info.highQualityTextRendering) }
+        set { manager.setValue(newValue, forKeyPath: \.info.highQualityTextRendering) }
+    }
 
     // Override margins
-    @SimpleStorage(key: "overrideMargins", defaultValue: false)
-    static var overrideMargins: Bool
+    static var overrideMargins: Bool {
+        get { manager.getValue(forKeyPath: \.info.overrideMargins) }
+        set { manager.setValue(newValue, forKeyPath: \.info.overrideMargins) }
+    }
 
     // Hide overlays under Companion
-    @SimpleStorage(key: "hideUnderCompanion", defaultValue: true)
-    static var hideUnderCompanion: Bool
+    static var hideUnderCompanion: Bool {
+        get { manager.getValue(forKeyPath: \.info.hideUnderCompanion) }
+        set { manager.setValue(newValue, forKeyPath: \.info.hideUnderCompanion) }
+    }
 
+    static var marginX: Int {
+        get { manager.getValue(forKeyPath: \.info.marginX) }
+        set { manager.setValue(newValue, forKeyPath: \.info.marginX) }
+    }
 
-    @SimpleStorage(key: "marginX", defaultValue: 50)
-    static var marginX: Int
-    @SimpleStorage(key: "marginY", defaultValue: 50)
-    static var marginY: Int
+    static var marginY: Int {
+        get { manager.getValue(forKeyPath: \.info.marginY) }
+        set { manager.setValue(newValue, forKeyPath: \.info.marginY) }
+    }
 
     // MARK: - Shadows
-    // Shadow radius
-    @SimpleStorage(key: "shadowRadius", defaultValue: 2)
-    static var shadowRadius: Int
-    @SimpleStorage(key: "shadowOpacity", defaultValue: 1.0)
-    static var shadowOpacity: Float
-    @SimpleStorage(key: "shadowOffsetX", defaultValue: 0.0)
-    static var shadowOffsetX: CGFloat
-    @SimpleStorage(key: "shadowOffsetY", defaultValue: -3.0)
-    static var shadowOffsetY: CGFloat
+
+    static var shadowRadius: Int {
+        get { manager.getValue(forKeyPath: \.info.shadowRadius) }
+        set { manager.setValue(newValue, forKeyPath: \.info.shadowRadius) }
+    }
+
+    static var shadowOpacity: Float {
+        get { manager.getValue(forKeyPath: \.info.shadowOpacity) }
+        set { manager.setValue(newValue, forKeyPath: \.info.shadowOpacity) }
+    }
+
+    static var shadowOffsetX: CGFloat {
+        get { CGFloat(manager.getValue(forKeyPath: \.info.shadowOffsetX)) }
+        set { manager.setValue(Double(newValue), forKeyPath: \.info.shadowOffsetX) }
+    }
+
+    static var shadowOffsetY: CGFloat {
+        get { CGFloat(manager.getValue(forKeyPath: \.info.shadowOffsetY)) }
+        set { manager.setValue(Double(newValue), forKeyPath: \.info.shadowOffsetY) }
+    }
 
     static func isMacOS11() -> Bool {
         if #available(macOS 11.0, *) {
@@ -754,148 +774,6 @@ struct PrefsInfo {
         // Annnd for backward compatibility with 1.7.2 betas, remove the updates that was once here ;)
         if PrefsInfo.layers.contains(.updates) {
             PrefsInfo.layers.remove(at: PrefsInfo.layers.firstIndex(of: .updates)!)
-        }
-    }
-}
-
-// This retrieves/store any type of property in our plist
-@propertyWrapper struct Storage<T: Codable> {
-    private let key: String
-    private let defaultValue: T
-    private let module = "com.JohnCoates.Aerial"
-    private let bundleID = Aerial.helper.getPreferencesDirectory() + "com.glouel.Aerial"
-    
-    init(key: String, defaultValue: T) {
-        self.key = key
-        self.defaultValue = defaultValue
-    }
-
-    var wrappedValue: T {
-        get {
-            if #available(OSX 10.15, *) {
-                if let userDefaults = UserDefaults(suiteName: bundleID) {
-                    // We shoot for a string in the new system
-                    if let jsonString = userDefaults.string(forKey: key) {
-                        guard let jsonData = jsonString.data(using: .utf8) else {
-                            return defaultValue
-                        }
-                        guard let value = try? JSONDecoder().decode(T.self, from: jsonData) else {
-                            return defaultValue
-                        }
-                        return value
-                    } else {
-                        // Old time users may have the prefs stored as a data blob though
-                        if let data = userDefaults.object(forKey: key) as? Data {
-                            let value = try? JSONDecoder().decode(T.self, from: data)
-                            return value ?? defaultValue
-                        } else {
-                            return defaultValue
-                        }
-                    }
-                }
-            } else {
-                if let userDefaults = ScreenSaverDefaults(forModuleWithName: module) {
-                    // We shoot for a string in the new system
-                    if let jsonString = userDefaults.string(forKey: key) {
-                        guard let jsonData = jsonString.data(using: .utf8) else {
-                            return defaultValue
-                        }
-                        guard let value = try? JSONDecoder().decode(T.self, from: jsonData) else {
-                            return defaultValue
-                        }
-                        return value
-                    } else {
-                        // Old time users may have the prefs stored as a data blob though
-                        if let data = userDefaults.object(forKey: key) as? Data {
-                            let value = try? JSONDecoder().decode(T.self, from: data)
-                            return value ?? defaultValue
-                        } else {
-                            return defaultValue
-                        }
-                    }
-                }
-            }
-
-            return defaultValue
-        }
-        set {
-            let encoder = JSONEncoder()
-            if #available(OSX 10.13, *) {
-                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            } else {
-                encoder.outputFormatting = [.prettyPrinted]
-            }
-
-            let jsonData = try? encoder.encode(newValue)
-            let jsonString = String(bytes: jsonData!, encoding: .utf8)
-
-            if #available(OSX 10.15, *) {
-                if let userDefaults = UserDefaults(suiteName: bundleID) {
-                    // Set value to UserDefaults
-                    userDefaults.set(jsonString, forKey: key)
-
-                    // We force the sync so the settings are automatically saved
-                    // This is needed as the System Preferences instance of Aerial
-                    // is a separate instance from the screensaver ones
-                    userDefaults.synchronize()
-                } else {
-                    errorLog("UserDefaults set failed for \(key)")
-                }
-            } else {
-                if let userDefaults = ScreenSaverDefaults(forModuleWithName: module) {
-                    // Set value to UserDefaults
-                    userDefaults.set(jsonString, forKey: key)
-
-                    // We force the sync so the settings are automatically saved
-                    // This is needed as the System Preferences instance of Aerial
-                    // is a separate instance from the screensaver ones
-                    userDefaults.synchronize()
-                } else {
-                    errorLog("UserDefaults set failed for \(key)")
-                }
-            }
-        }
-    }
-}
-
-// This retrieves store "simple" types that are natively storable on plists
-@propertyWrapper struct SimpleStorage<T> {
-    private let key: String
-    private let defaultValue: T
-    private let module = "com.JohnCoates.Aerial"
-    private let bundleID = Aerial.helper.getPreferencesDirectory() + "com.glouel.Aerial"
-    
-    init(key: String, defaultValue: T) {
-        self.key = key
-        self.defaultValue = defaultValue
-    }
-
-    var wrappedValue: T {
-        get {
-            if #available(OSX 10.15, *) {
-                if let userDefaults = UserDefaults(suiteName: bundleID) {
-                    return userDefaults.object(forKey: key) as? T ?? defaultValue
-                }
-            } else {
-                if let userDefaults = ScreenSaverDefaults(forModuleWithName: module) {
-                    return userDefaults.object(forKey: key) as? T ?? defaultValue
-                }
-            }
-
-            return defaultValue
-        }
-        set {
-            if #available(OSX 10.15, *) {
-                if let userDefaults = UserDefaults(suiteName: bundleID) {
-                    userDefaults.set(newValue, forKey: key)
-                    userDefaults.synchronize()
-                }
-            } else {
-                if let userDefaults = ScreenSaverDefaults(forModuleWithName: module) {
-                    userDefaults.set(newValue, forKey: key)
-                    userDefaults.synchronize()
-                }
-            }
         }
     }
 }

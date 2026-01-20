@@ -10,11 +10,14 @@ import ScreenSaver
 
 class SaverLauncher : NSObject, NSWindowDelegate {
     static let instance: SaverLauncher = SaverLauncher()
-    
+
     let aerialWindowController = SwiftAerialWindow()
-    var uiController: CompanionPopoverViewController?
     var settingsPanelController: PanelWindowController?
-    
+
+    // Legacy UI controller reference - kept for backward compatibility during migration
+    // TODO: Remove once SwiftUI migration is complete
+    weak var legacyUIController: CompanionPopoverViewController?
+
     func windowMode() {
         var topLevelObjects: NSArray? = NSArray()
         if !Bundle.main.loadNibNamed(NSNib.Name("AerialWindow"),
@@ -32,21 +35,41 @@ class SaverLauncher : NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    /// Set the legacy UI controller (for backward compatibility during migration)
     func setController(_ controller: CompanionPopoverViewController) {
-        uiController = controller
+        legacyUIController = controller
     }
+
     func windowWillClose(_ notification: Notification) {
         if let window = notification.object as? NSWindow {
             if window == settingsPanelController?.window {
                 // Settings panel is closing
                 CompanionLogging.debugLog("Settings panel closing")
-                uiController?.shouldRefreshPlaybackMode()
+
+                // Notify PlaybackManager (SwiftUI)
+                if #available(macOS 11.0, *) {
+                    Task { @MainActor in
+                        PlaybackManager.shared.settingsDidClose()
+                    }
+                }
+
+                // Legacy callback (AppKit)
+                legacyUIController?.shouldRefreshPlaybackMode()
                 settingsPanelController = nil
             } else if window == aerialWindowController.window {
                 // Aerial window is closing
                 CompanionLogging.debugLog("Aerial window closing")
                 aerialWindowController.stopScreensaver()
-                uiController?.updatePlaybackMode(mode: .none)
+
+                // Notify PlaybackManager (SwiftUI)
+                if #available(macOS 11.0, *) {
+                    Task { @MainActor in
+                        PlaybackManager.shared.windowModeDidStop()
+                    }
+                }
+
+                // Legacy callback (AppKit)
+                legacyUIController?.updatePlaybackMode(mode: .none)
             }
         }
     }

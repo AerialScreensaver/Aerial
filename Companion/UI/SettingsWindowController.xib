@@ -23,7 +23,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="481" height="556"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1409"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1410"/>
             <view key="contentView" id="se5-gp-TjO">
                 <rect key="frame" x="0.0" y="0.0" width="481" height="556"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -35,7 +35,7 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZOl-Zu-Z62">
-                                    <rect key="frame" x="210" y="104" width="76" height="28"/>
+                                    <rect key="frame" x="210" y="104" width="77" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Yes" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="9j6-Tr-2Mi" id="2tW-FL-6eY">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -50,7 +50,7 @@
                                         <action selector="betaPopupChange:" target="-2" id="ueW-ZV-Muk"/>
                                     </connections>
                                 </popUpButton>
-                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lxo-xj-Glp">
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lxo-xj-Glp">
                                     <rect key="frame" x="21" y="110" width="175" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Get beta releases of Aerial" id="zcW-gA-98C">
                                         <font key="font" metaFont="system" size="14"/>
@@ -59,7 +59,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Zkg-Q7-6IE">
-                                    <rect key="frame" x="210" y="60" width="116" height="28"/>
+                                    <rect key="frame" x="210" y="60" width="117" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Automatic" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="NPg-9t-yrz" id="mdn-Oh-OHp">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -74,7 +74,7 @@
                                         <action selector="updateModePopupChange:" target="-2" id="t2v-Ma-SFk"/>
                                     </connections>
                                 </popUpButton>
-                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bXs-FV-IGt">
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bXs-FV-IGt">
                                     <rect key="frame" x="104" y="66" width="92" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Update mode" id="ffk-Va-Ibl">
                                         <font key="font" metaFont="system" size="14"/>
@@ -83,7 +83,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bfH-PH-VUR">
-                                    <rect key="frame" x="210" y="16" width="88" height="28"/>
+                                    <rect key="frame" x="210" y="16" width="90" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Hour" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="9LZ-6U-eth" id="85D-OA-OEN">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -101,7 +101,7 @@
                                         <action selector="checkEveryPopupChange:" target="-2" id="Vor-wm-nvh"/>
                                     </connections>
                                 </popUpButton>
-                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nHV-7K-y5b">
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nHV-7K-y5b">
                                     <rect key="frame" x="111" y="22" width="85" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Check every" id="ahH-k5-nNe">
                                         <font key="font" metaFont="system" size="14"/>
@@ -110,7 +110,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="C5g-L7-uLl">
-                                    <rect key="frame" x="314" y="16" width="112" height="28"/>
+                                    <rect key="frame" x="316" y="16" width="112" height="28"/>
                                     <buttonCell key="cell" type="push" title="Check now" bezelStyle="rounded" image="arrow.down.circle" catalog="system" imagePosition="leading" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="HDu-qT-BLT">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -147,7 +147,7 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wef-Nq-FWG">
-                                    <rect key="frame" x="210" y="16" width="164" height="28"/>
+                                    <rect key="frame" x="210" y="16" width="166" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Manually" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="MSj-n2-kc1" id="kXY-3u-UCQ">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -165,7 +165,7 @@
                                         <action selector="launchCompanionPopupChange:" target="-2" id="vui-3S-1fc"/>
                                     </connections>
                                 </popUpButton>
-                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QYZ-Ua-n9O">
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QYZ-Ua-n9O">
                                     <rect key="frame" x="69" y="22" width="127" height="17"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Launch companion" id="Gb5-tL-q4w">
                                         <font key="font" metaFont="system" size="14"/>
@@ -232,7 +232,7 @@
                                         <action selector="watchdogTimerChange:" target="-2" id="NUo-f4-VCm"/>
                                     </connections>
                                 </slider>
-                                <textField horizontalHuggingPriority="249" verticalHuggingPriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="lN3-Oz-yN9">
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="lN3-Oz-yN9">
                                     <rect key="frame" x="18" y="20" width="425" height="54"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="421" id="nnq-H5-vpC"/>
