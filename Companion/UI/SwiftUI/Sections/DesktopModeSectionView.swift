@@ -61,7 +61,7 @@ struct DesktopModeSectionView: View {
             // Settings button
             Button(action: onOpenSettings) {
                 Image(systemName: "gear")
-                    .font(.system(size: 16))
+                    .font(.system(size: 25))
             }
             .buttonStyle(.borderless)
             .help("Open Aerial Settings")

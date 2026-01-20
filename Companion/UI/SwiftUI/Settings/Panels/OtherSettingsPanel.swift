@@ -95,7 +95,7 @@ struct OtherSettingsPanel: View {
                     }
                     .padding(12)
                 } label: {
-                    Label("Screen Saver Updates", systemImage: "arrow.down.circle")
+                    Label("Screen Saver Updates", systemImage: "arrow.down.circle").font(Font.title3.bold()).padding(4)
                 }
 
                 // Companion Section
@@ -120,7 +120,7 @@ struct OtherSettingsPanel: View {
                     }
                     .padding(12)
                 } label: {
-                    Label("Companion", systemImage: "app.badge")
+                    Label("Companion", systemImage: "app.badge").font(Font.title3.bold()).padding(4)
                 }
 
                 // Desktop Background Section
@@ -138,7 +138,7 @@ struct OtherSettingsPanel: View {
                     }
                     .padding(12)
                 } label: {
-                    Label("Desktop Background", systemImage: "desktopcomputer")
+                    Label("Desktop Background", systemImage: "desktopcomputer").font(Font.title3.bold()).padding(4)
                 }
 
                 // Watchdog Section
@@ -175,7 +175,7 @@ struct OtherSettingsPanel: View {
                     }
                     .padding(12)
                 } label: {
-                    Label("Legacy Screensaver Watchdog", systemImage: "eye")
+                    Label("Legacy Screensaver Watchdog", systemImage: "eye").font(Font.title3.bold()).padding(4)
                 }
 
                 Spacer()

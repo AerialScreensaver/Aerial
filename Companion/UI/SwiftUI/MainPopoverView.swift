@@ -37,7 +37,7 @@ struct MainPopoverView: View {
             .padding(.bottom, 12)
 
             Divider()
-                .padding(.vertical, 8)
+                .padding(.vertical,8)
 
             // Section 2: Desktop Mode Controls
             DesktopModeSectionView(
@@ -45,7 +45,7 @@ struct MainPopoverView: View {
                 onOpenSettings: onOpenSettings,
                 onDismiss: onDismiss
             )
-            .padding(.bottom, 12)
+            .padding(.bottom, 0)
 
             Divider()
                 .padding(.vertical, 8)

@@ -91,7 +91,7 @@ struct ScreensaverSettingsPanel: View {
                     }
                     .padding(12)
                 } label: {
-                    Label("Activation", systemImage: "clock")
+                    Label("Activation", systemImage: "clock").font(Font.title3.bold()).padding(4)
                 }
 
                 // Sleep Screen Section
@@ -110,13 +110,13 @@ struct ScreensaverSettingsPanel: View {
                             .controlSize(.large)
                         }
 
-                        Text("Open System Settings to change when your display turns off. The screensaver needs time to run before the display sleeps.")
+                        Text("Open System Settings to change when your display turns off. This time must be longer that the one above, or the screensaver won't run at all.")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
                     .padding(12)
                 } label: {
-                    Label("Display Sleep", systemImage: "moon.zzz")
+                    Label("Display Sleep", systemImage: "moon.zzz").font(Font.title3.bold()).padding(4)
                 }
 
                 // Warning Box
