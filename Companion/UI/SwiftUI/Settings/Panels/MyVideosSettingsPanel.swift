@@ -251,6 +251,28 @@ struct MyVideosSettingsPanel: View {
                     return true
                 }
 
+            // Error banner
+            if let error = viewModel.errorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text(error)
+                        .font(.system(size: 12))
+                    Spacer()
+                    Button(action: { viewModel.errorMessage = nil }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .buttonStyle(.borderless)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(6)
+                .padding(.horizontal, 24)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             // Import progress
             if viewModel.isImporting {
                 HStack {
@@ -324,6 +346,8 @@ struct MyVideosSettingsPanel: View {
 
     private func handleDrop(providers: [NSItemProvider]) {
         var urls: [URL] = []
+        var rejectedExtensions: Set<String> = []
+        let supportedExtensions = ["mp4", "mov", "m4v", "avi", "mkv", "webm"]
 
         let group = DispatchGroup()
 
@@ -332,10 +356,11 @@ struct MyVideosSettingsPanel: View {
                 group.enter()
                 _ = provider.loadObject(ofClass: URL.self) { url, _ in
                     if let url = url {
-                        // Only accept video files
                         let ext = url.pathExtension.lowercased()
-                        if ["mp4", "mov", "m4v", "avi", "mkv", "webm"].contains(ext) {
+                        if supportedExtensions.contains(ext) {
                             urls.append(url)
+                        } else {
+                            rejectedExtensions.insert(ext.isEmpty ? "unknown" : ext)
                         }
                     }
                     group.leave()
@@ -346,6 +371,11 @@ struct MyVideosSettingsPanel: View {
         group.notify(queue: .main) {
             if !urls.isEmpty {
                 viewModel.importVideos(urls: urls)
+            }
+            if !rejectedExtensions.isEmpty {
+                let formats = rejectedExtensions.sorted().map { ".\($0)" }.joined(separator: ", ")
+                let count = rejectedExtensions.count
+                viewModel.showError("File type\(count == 1 ? "" : "s") not supported: \(formats)")
             }
         }
     }

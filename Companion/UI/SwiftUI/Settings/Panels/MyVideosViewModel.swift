@@ -92,12 +92,25 @@ class MyVideosViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var isImporting: Bool = false
     @Published var importProgress: String = ""
+    @Published var errorMessage: String? = nil
 
     private let folderPath = "/Users/Shared/Aerial/My Videos"
+    private var errorDismissTask: Task<Void, Never>?
     private let supportedExtensions = ["mp4", "mov"]
     private let minimumFileSize: Int64 = 500_000  // 500KB
 
     // MARK: - Public Methods
+
+    func showError(_ message: String, duration: Double = 4.0) {
+        errorDismissTask?.cancel()
+        errorMessage = message
+        errorDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            if !Task.isCancelled {
+                self.errorMessage = nil
+            }
+        }
+    }
 
     func scanFolder() {
         isLoading = true

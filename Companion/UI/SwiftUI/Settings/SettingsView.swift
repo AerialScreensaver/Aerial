@@ -119,7 +119,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationSplitViewStyle(.balanced)
-        .frame(minWidth: 650, minHeight: 450)
+        .frame(minWidth: 950, minHeight: 700)
     }
 }
 
