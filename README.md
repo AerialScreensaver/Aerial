@@ -6,8 +6,6 @@ The official companion app for the [Aerial screen saver](https://github.com/John
 
 This utility will install the Aerial screensaver and keep you up to date! 
 
-*Previously called AerialUpdater*
-
 ## Installation
 
 1. Download the [latest release](https://github.com/glouel/AerialUpdater/releases)
