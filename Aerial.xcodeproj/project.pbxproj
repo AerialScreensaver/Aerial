@@ -1,0 +1,2166 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03076A072505EF8E00CDF16C /* kofi1@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03076A062505EF8E00CDF16C /* kofi1@2x.png */; };
+		0316C21B2577DD6B007BAF70 /* AerialDesktop.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0316C2192577DD6B007BAF70 /* AerialDesktop.xib */; };
+		0316C21F2577EBF6007BAF70 /* DesktopLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */; };
+		031954C0256409EC0058467C /* SaverLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031954BF256409EC0058467C /* SaverLauncher.swift */; };
+		031A3A6724D835B10011E738 /* InfoWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031A3A6524D835B10011E738 /* InfoWindowController.swift */; };
+		0333115924D85CCA00E4622D /* String+version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333115824D85CCA00E4622D /* String+version.swift */; };
+		033B0B6924E96CE200622CA7 /* ant.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B6824E96CE200622CA7 /* ant.pdf */; };
+		033B0B6C24E96D4C00622CA7 /* sun.max.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B6A24E96D4C00622CA7 /* sun.max.pdf */; };
+		033B0B6D24E96D4C00622CA7 /* cloud.sun.rain.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B6B24E96D4C00622CA7 /* cloud.sun.rain.pdf */; };
+		033B0B7124E9749400622CA7 /* clock.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B6E24E9749300622CA7 /* clock.pdf */; };
+		033B0B7224E9749400622CA7 /* moon.zzz.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B6F24E9749400622CA7 /* moon.zzz.pdf */; };
+		033B0B7324E9749400622CA7 /* exclamationmark.bubble.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 033B0B7024E9749400622CA7 /* exclamationmark.bubble.pdf */; };
+		03592AB224CC765500C1AE52 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592AB124CC765500C1AE52 /* Preferences.swift */; };
+		03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03592AB724CC80FD00C1AE52 /* Helpers.swift */; };
+		03ADA8EC24E034A40093D0A2 /* LaunchAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */; };
+		03BA141924FA8FE800BAAE1D /* AerialWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 03BA141724FA8FE800BAAE1D /* AerialWindow.xib */; };
+		03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F5824CB0CA700494D32 /* AppDelegate.swift */; };
+		03CE4F5D24CB0CA900494D32 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5C24CB0CA900494D32 /* Assets.xcassets */; };
+		03CE4F6024CB0CA900494D32 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03CE4F5E24CB0CA900494D32 /* Main.storyboard */; };
+		03CE4F9A24CB0CA700494D32 /* AerialCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */; };
+		03F5E1472575360600BF4F45 /* icon-512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1462575360600BF4F45 /* icon-512@2x.png */; };
+		03F5E14A2575369200BF4F45 /* LogoIcon-128px@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */; };
+		11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */; };
+		11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11374231735C4A908F3371BB /* SwiftAerialWindow.swift */; };
+		73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */; };
+		F0DOK0012F30000000000001 /* DockInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DOK0002F30000000000001 /* DockInfo.swift */; };
+		F01240DA2EA7F19900EE0FFC /* AerialPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D02EA7F19900EE0FFC /* AerialPaths.swift */; };
+		F01240DB2EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */; };
+		F01C6D612E9ABAB600C1CB73 /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */; };
+		F031340F2F1E8C9A00C9EBD0 /* PlaybackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F031340E2F1E8C9A00C9EBD0 /* PlaybackManager.swift */; };
+		F031341F2F1E8CB100C9EBD0 /* MainPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F031341B2F1E8CB100C9EBD0 /* MainPopoverView.swift */; };
+		F03134212F1E8CB100C9EBD0 /* NotDefaultBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03134102F1E8CB100C9EBD0 /* NotDefaultBarView.swift */; };
+		F03134232F1E8CB100C9EBD0 /* SpeedSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03134142F1E8CB100C9EBD0 /* SpeedSliderView.swift */; };
+		F03134242F1E8CB100C9EBD0 /* ModeSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03134182F1E8CB100C9EBD0 /* ModeSectionView.swift */; };
+		F03134292F1E911E00C9EBD0 /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03134282F1E911E00C9EBD0 /* InfoView.swift */; };
+		F0ABC00012F30000000000001 /* AboutContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ABC00022F30000000000001 /* AboutContent.swift */; };
+		F0326B392E9BDF3300582FED /* AerialLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0326B372E9BDF3300582FED /* AerialLogger.swift */; };
+		F05C63B528F21A390068B545 /* menubar.dock.rectangle.svg in Resources */ = {isa = PBXBuildFile; fileRef = F05C63B428F21A390068B545 /* menubar.dock.rectangle.svg */; };
+		F05C63B728F326300068B545 /* SystemPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05C63B628F326300068B545 /* SystemPrefs.swift */; };
+		F067DB392F5B1ED900F2A59C /* Aerial-tahoe.icon in Resources */ = {isa = PBXBuildFile; fileRef = F067DB382F5B1ED900F2A59C /* Aerial-tahoe.icon */; };
+		F072218E2AD43D91001F5452 /* NightShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = F072218D2AD43D91001F5452 /* NightShift.swift */; };
+		F07221902AD45039001F5452 /* Locations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F072218F2AD45039001F5452 /* Locations.swift */; };
+		F0AECL022F4C000000000001 /* Color+Aerial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AECL012F4C000000000001 /* Color+Aerial.swift */; };
+		F0C060FD2E4F70580066F2C4 /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
+		F0C060FE2E4F70580066F2C4 /* VideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060802E4F70580066F2C4 /* VideoCache.swift */; };
+		F0C061032E4F70580066F2C4 /* SourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AA2E4F70580066F2C4 /* SourceList.swift */; };
+		F0C061062E4F70580066F2C4 /* SourceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A92E4F70580066F2C4 /* SourceInfo.swift */; };
+		F0C061092E4F70580066F2C4 /* VideoList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AB2E4F70580066F2C4 /* VideoList.swift */; };
+		F0C0610E2E4F70580066F2C4 /* TimeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B02E4F70580066F2C4 /* TimeManagement.swift */; };
+		F0C061102E4F70580066F2C4 /* Music.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609D2E4F70580066F2C4 /* Music.swift */; };
+		F0C061162E4F70580066F2C4 /* VideoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060832E4F70580066F2C4 /* VideoManager.swift */; };
+		F0C061182E4F70580066F2C4 /* Aerial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B22E4F70580066F2C4 /* Aerial.swift */; };
+		F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060992E4F70580066F2C4 /* DisplayDetection.swift */; };
+		F0C0611B2E4F70580066F2C4 /* DisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DC2E4F70580066F2C4 /* DisplayView.swift */; };
+		F0C0611D2E4F70580066F2C4 /* PrefsVideos.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */; };
+		F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
+		F0C061282E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
+		F0C0612B2E4F70580066F2C4 /* APISecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060752E4F70580066F2C4 /* APISecrets.swift */; };
+		F0C0612E2E4F70580066F2C4 /* TimeMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */; };
+		F0C061322E4F70580066F2C4 /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
+		F0C061372E4F70580066F2C4 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */; };
+		F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
+		F0C061462E4F70580066F2C4 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060862E4F70580066F2C4 /* DownloadManager.swift */; };
+		F0C0614D2E4F70580066F2C4 /* PrefsDisplays.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */; };
+		F0C061512E4F70580066F2C4 /* Thumbnails.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607E2E4F70580066F2C4 /* Thumbnails.swift */; };
+		F0C061542E4F70580066F2C4 /* Forecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060762E4F70580066F2C4 /* Forecast.swift */; };
+		F0C061562E4F70580066F2C4 /* OpenWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060792E4F70580066F2C4 /* OpenWeather.swift */; };
+		F0C061582E4F70580066F2C4 /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A82E4F70580066F2C4 /* Source.swift */; };
+		F0C061612E4F70580066F2C4 /* VideoDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060812E4F70580066F2C4 /* VideoDownload.swift */; };
+		F0MD500022F30000000000001 /* MD5Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MD500012F30000000000001 /* MD5Verifier.swift */; };
+		F0MD500032F30000000000001 /* MD5Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MD500012F30000000000001 /* MD5Verifier.swift */; };
+		F0RES00022F30000000000001 /* VideoDownloadResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0RES00012F30000000000001 /* VideoDownloadResume.swift */; };
+		F0RES00032F30000000000001 /* VideoDownloadResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0RES00012F30000000000001 /* VideoDownloadResume.swift */; };
+		F0C061662E4F70580066F2C4 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
+		F0C0616A2E4F70580066F2C4 /* Solar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AF2E4F70580066F2C4 /* Solar.swift */; };
+		F0C0616C2E4F70580066F2C4 /* AerialVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B32E4F70580066F2C4 /* AerialVideo.swift */; };
+		F0C061712E4F70580066F2C4 /* FileHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060872E4F70580066F2C4 /* FileHelpers.swift */; };
+		F0C061722E4F70580066F2C4 /* PrefsTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A32E4F70580066F2C4 /* PrefsTime.swift */; };
+		F0C0617F2E4F70580066F2C4 /* AVPlayerViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0608B2E4F70580066F2C4 /* AVPlayerViewExtension.swift */; };
+		F0C061802E4F70580066F2C4 /* PoiStringProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607D2E4F70580066F2C4 /* PoiStringProvider.swift */; };
+		F0C227872A12A5410053D5DA /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0C227862A12A5410053D5DA /* Sparkle */; };
+		F0KBS0012F50000000000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = F0KBS0022F50000000000001 /* KeyboardShortcuts */; };
+		F0KBS0042F50000000000001 /* GlobalShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0KBS0052F50000000000001 /* GlobalShortcuts.swift */; };
+		F0C5B4292E8EBFFF00AEC15C /* PaperSaverKit in Frameworks */ = {isa = PBXBuildFile; productRef = F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */; };
+		F0C5B4302E8EDA9F00AEC15C /* AerialPluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C5B42E2E8EDA9F00AEC15C /* AerialPluginManager.swift */; };
+		F0C5B4312E8EDA9F00AEC15C /* BottomBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03134162F1E8CB100C9EBD0 /* BottomBarView.swift */; };
+		F0CMP0062F30000000000001 /* AerialSaverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0062F30000000000001 /* AerialSaverView.swift */; };
+		F0CMP0612F30000000000001 /* ExtensionVideoLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0602F30000000000001 /* ExtensionVideoLoader.swift */; };
+		F0CMP0B02F30000000000001 /* OverlayState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B22F30000000000001 /* OverlayState.swift */; };
+		F0CMP0B12F30000000000001 /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B32F30000000000001 /* OverlayRootView.swift */; };
+		F0CMP0B42F30000000000001 /* WeatherSymbols.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B62F30000000000001 /* WeatherSymbols.swift */; };
+		F0CMP0B52F30000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B72F30000000000001 /* WeatherOverlayView.swift */; };
+		F0CMP0D12F30000000000001 /* MusicOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0D22F30000000000001 /* MusicOverlayView.swift */; };
+		F0CMP0E12F30000000000001 /* PlayerCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0E02F30000000000001 /* PlayerCoordinator.swift */; };
+		F0D637572EA0239900366EAB /* PathMigrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637562EA0239900366EAB /* PathMigrationView.swift */; };
+		F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637582EA023AD00366EAB /* PathMigration.swift */; };
+		F0D6375E2EA6830100366EAB /* CompanionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D6375C2EA6830100366EAB /* CompanionSettings.swift */; };
+		F0D6375F2EA6830100366EAB /* CompanionSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */; };
+		F0D637642EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */; };
+		F0D637652EA6A62700366EAB /* ScreensaverSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */; };
+		F0DOM0012F30000000000001 /* DesktopOcclusionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DOM0002F30000000000001 /* DesktopOcclusionMonitor.swift */; };
+		F0DSK0012F30000000000001 /* DesktopSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DSK0002F30000000000001 /* DesktopSettingsPanel.swift */; };
+		F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */; };
+		F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060152E4F70580066F2C4 /* screen1.jpg */; };
+		F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060162E4F70580066F2C4 /* screen2.jpg */; };
+		F0E51E612E9D7299002BBAD6 /* screen0.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0C060142E4F70580066F2C4 /* screen0.jpg */; };
+		F0EXT0012F30000000000001 /* AerialScreenSaverExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0022F30000000000001 /* AerialScreenSaverExtension.swift */; };
+		F0EXT0032F30000000000001 /* AerialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0042F30000000000001 /* AerialViewController.swift */; };
+		F0EXT0052F30000000000001 /* AerialSaverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0062F30000000000001 /* AerialSaverView.swift */; };
+		F0EXT0072F30000000000001 /* AerialConfigurationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0082F30000000000001 /* AerialConfigurationViewController.swift */; };
+		F0EXT0092F30000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0EXT00A2F30000000000001 /* Assets.xcassets */; };
+		F0EXT00B2F30000000000001 /* ScreenSaver.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0EXT00C2F30000000000001 /* ScreenSaver.framework */; };
+		F0EXT00D2F30000000000001 /* AerialScreenSaverExtension.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F0EXT00E2F30000000000001 /* AerialScreenSaverExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F0EXT0222F30000000000001 /* AerialPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D02EA7F19900EE0FFC /* AerialPaths.swift */; };
+		F0EXT0232F30000000000001 /* JSONPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */; };
+		F0EXT0252F30000000000001 /* AerialLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0326B372E9BDF3300582FED /* AerialLogger.swift */; };
+		F0EXT0302F30000000000001 /* ScreensaverSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */; };
+		F0EXT0312F30000000000001 /* ScreensaverSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */; };
+		F0EXT0322F30000000000001 /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
+		F0EXT0332F30000000000001 /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
+		F0EXT0342F30000000000001 /* PrefsDisplays.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */; };
+		F0EXT0362F30000000000001 /* PrefsTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A32E4F70580066F2C4 /* PrefsTime.swift */; };
+		F0EXT0372F30000000000001 /* PrefsVideos.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */; };
+		F0EXT0392F30000000000001 /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060992E4F70580066F2C4 /* DisplayDetection.swift */; };
+		F0EXT0402F30000000000001 /* ExtensionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0412F30000000000001 /* ExtensionHelpers.swift */; };
+		F0EXT04F2F30000000000001 /* Aerial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B22E4F70580066F2C4 /* Aerial.swift */; };
+		F0EXT0512F30000000000001 /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
+		F0EXT0612F30000000000001 /* ExtensionVideoLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0602F30000000000001 /* ExtensionVideoLoader.swift */; };
+		F0EXT0702F30000000000001 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
+		F0EXT0902F30000000000001 /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A82E4F70580066F2C4 /* Source.swift */; };
+		F0EXT0912F30000000000001 /* SourceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A92E4F70580066F2C4 /* SourceInfo.swift */; };
+		F0EXT0922F30000000000001 /* SourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AA2E4F70580066F2C4 /* SourceList.swift */; };
+		F0EXT0932F30000000000001 /* VideoList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AB2E4F70580066F2C4 /* VideoList.swift */; };
+		F0EXT0942F30000000000001 /* AerialVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B32E4F70580066F2C4 /* AerialVideo.swift */; };
+		F0EXT0952F30000000000001 /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
+		F0EXT0962F30000000000001 /* VideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060802E4F70580066F2C4 /* VideoCache.swift */; };
+		F0EXT0972F30000000000001 /* PoiStringProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607D2E4F70580066F2C4 /* PoiStringProvider.swift */; };
+		F0EXT0982F30000000000001 /* TimeManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B02E4F70580066F2C4 /* TimeManagement.swift */; };
+		F0EXT0992F30000000000001 /* Solar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060AF2E4F70580066F2C4 /* Solar.swift */; };
+		F0EXT09A2F30000000000001 /* Locations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B82E4F70580066F2C4 /* Locations.swift */; };
+		F0EXT09B2F30000000000001 /* NightShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609B2E4F70580066F2C4 /* NightShift.swift */; };
+		F0EXT09C2F30000000000001 /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
+		F0EXT09D2F30000000000001 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060862E4F70580066F2C4 /* DownloadManager.swift */; };
+		F0EXT09E2F30000000000001 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */; };
+		F0EXT09F2F30000000000001 /* FileHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060872E4F70580066F2C4 /* FileHelpers.swift */; };
+		F0EXT0A02F30000000000001 /* VideoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060832E4F70580066F2C4 /* VideoManager.swift */; };
+		F0EXT0A12F30000000000001 /* VideoDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060812E4F70580066F2C4 /* VideoDownload.swift */; };
+		F0EXT0B02F30000000000001 /* OverlayState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B22F30000000000001 /* OverlayState.swift */; };
+		F0EXT0B12F30000000000001 /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B32F30000000000001 /* OverlayRootView.swift */; };
+		F0EXT0B42F30000000000001 /* WeatherSymbols.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B62F30000000000001 /* WeatherSymbols.swift */; };
+		F0EXT0B52F30000000000001 /* WeatherOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0B72F30000000000001 /* WeatherOverlayView.swift */; };
+		F0EXT0C02F30000000000001 /* OpenWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060792E4F70580066F2C4 /* OpenWeather.swift */; };
+		F0EXT0C12F30000000000001 /* Forecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060762E4F70580066F2C4 /* Forecast.swift */; };
+		F0EXT0C22F30000000000001 /* APISecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060752E4F70580066F2C4 /* APISecrets.swift */; };
+		F0EXT0D02F30000000000001 /* Music.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609D2E4F70580066F2C4 /* Music.swift */; };
+		F0EXT0D12F30000000000001 /* MusicOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0D22F30000000000001 /* MusicOverlayView.swift */; };
+		F0EXT0E12F30000000000001 /* PlayerCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0E02F30000000000001 /* PlayerCoordinator.swift */; };
+		F0F66C7A2F1FC2BA007E6377 /* ScreensaverSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C762F1FC2BA007E6377 /* ScreensaverSettingsPanel.swift */; };
+		F0F66C7B2F1FC2BA007E6377 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C782F1FC2BA007E6377 /* SettingsView.swift */; };
+		F0F66C7C2F1FC2BA007E6377 /* AutoUpdatesPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C752F1FC2BA007E6377 /* AutoUpdatesPanel.swift */; };
+		F0F66C7F2F1FD502007E6377 /* MyVideosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C7E2F1FD502007E6377 /* MyVideosViewModel.swift */; };
+		F0F66C822F1FD502007E6377 /* CacheSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C812F1FD502007E6377 /* CacheSettingsPanel.swift */; };
+		F0F66C852F1FD502007E6377 /* DisplayPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C832F1FD502007E6377 /* DisplayPreviewView.swift */; };
+		F0F66C862F1FD502007E6377 /* DisplaysSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C842F1FD502007E6377 /* DisplaysSettingsPanel.swift */; };
+		F0F66C882F1FD502007E6377 /* AboutSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C872F1FD502007E6377 /* AboutSettingsPanel.swift */; };
+		F0F66C892F1FD502007E6377 /* AdvancedSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F66C8A2F1FD502007E6377 /* AdvancedSettingsPanel.swift */; };
+		F0KBS0062F50000000000001 /* AccessibilityPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0KBS0072F50000000000001 /* AccessibilityPanel.swift */; };
+		F0FA266F2F80072200AEC218 /* UpdateAvailableBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FA266E2F80072200AEC218 /* UpdateAvailableBarView.swift */; };
+		F0LBR0022F30000000000001 /* LogBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LBR0012F30000000000001 /* LogBridge.swift */; };
+		F0LBR0032F30000000000001 /* LogBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LBR0012F30000000000001 /* LogBridge.swift */; };
+		F0LOC0022F30000000000001 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LOC0012F30000000000001 /* LocationProvider.swift */; };
+		F0WPC0022F30000000000001 /* WallpaperContinuity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WPC0012F30000000000001 /* WallpaperContinuity.swift */; };
+		F0DRM0022F30000000000001 /* DirectoryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DRM0012F30000000000001 /* DirectoryMonitor.swift */; };
+		F0WCC0022F30000000000001 /* WallpaperCacheCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WCC0012F30000000000001 /* WallpaperCacheCleaner.swift */; };
+		F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0012F30000000000001 /* NowPlayingSource.swift */; };
+		F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0032F30000000000001 /* AppleMusicProvider.swift */; };
+		F0MUS0062F30000000000001 /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */; };
+		F0NP10022F3E000000000001 /* SourceThumbnailCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0NP10012F3E000000000001 /* SourceThumbnailCard.swift */; };
+		F0NP10042F3E000000000001 /* NowPlayingSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0NP10032F3E000000000001 /* NowPlayingSectionView.swift */; };
+		F0OVC0012F30000000000001 /* OverlayConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0012F30000000000001 /* OverlayConfig.swift */; };
+		F0OVC0022F30000000000001 /* OverlayConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0022F30000000000001 /* OverlayConfigManager.swift */; };
+		F0OVC0032F30000000000001 /* OverlayTypeDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0032F30000000000001 /* OverlayTypeDefaults.swift */; };
+		F0OVC0042F30000000000001 /* OverlayTypeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0012F30000000000001 /* OverlayTypeProvider.swift */; };
+		F0OVC0052F30000000000001 /* OverlayTypeRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0022F30000000000001 /* OverlayTypeRegistry.swift */; };
+		F0OVC0062F30000000000001 /* ClockOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0032F30000000000001 /* ClockOverlayProvider.swift */; };
+		F0OVC0072F30000000000001 /* DateOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0042F30000000000001 /* DateOverlayProvider.swift */; };
+		F0OVC0082F30000000000001 /* LocationOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0052F30000000000001 /* LocationOverlayProvider.swift */; };
+		F0OVC0092F30000000000001 /* WeatherOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0062F30000000000001 /* WeatherOverlayProvider.swift */; };
+		F0OVC00A2F30000000000001 /* MusicOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0072F30000000000001 /* MusicOverlayProvider.swift */; };
+		F0OVC00B2F30000000000001 /* MessageOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0082F30000000000001 /* MessageOverlayProvider.swift */; };
+		F0OVC0202F30000000000001 /* OverlayEditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0012F30000000000001 /* OverlayEditorWindowController.swift */; };
+		F0OVC0212F30000000000001 /* OverlayEditorState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0022F30000000000001 /* OverlayEditorState.swift */; };
+		F0OVC0222F30000000000001 /* OverlayEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0032F30000000000001 /* OverlayEditorView.swift */; };
+		F0OVC0232F30000000000001 /* OverlayEditorToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0042F30000000000001 /* OverlayEditorToolbar.swift */; };
+		F0OVC0242F30000000000001 /* VideoPreviewLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0052F30000000000001 /* VideoPreviewLayer.swift */; };
+		F0OVC0262F30000000000001 /* OverlayPreviewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0072F30000000000001 /* OverlayPreviewRenderer.swift */; };
+		F0OVC0272F30000000000001 /* OverlayDragData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0092F30000000000001 /* OverlayDragData.swift */; };
+		F0OVC0282F30000000000001 /* OverlayPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE00A2F30000000000001 /* OverlayPalette.swift */; };
+		F0OVC0292F30000000000001 /* OverlaySettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE00B2F30000000000001 /* OverlaySettingsPane.swift */; };
+		F0LSP0012F30000000000001 /* LayoutSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LSP0002F30000000000001 /* LayoutSettingsPane.swift */; };
+		F0OVC02A2F30000000000001 /* CommonOverlaySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE00C2F30000000000001 /* CommonOverlaySettingsView.swift */; };
+		F0OVC02C2F30000000000001 /* OverlaysSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE0082F30000000000001 /* OverlaysSettingsPanel.swift */; };
+		F0OVC02D2F30000000000001 /* InspectorPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVE00E2F30000000000001 /* InspectorPanelView.swift */; };
+		F0OVC02E2F30000000000001 /* TimerOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0092F30000000000001 /* TimerOverlayProvider.swift */; };
+		F0OVC02F2F30000000000001 /* CountdownOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00A2F30000000000001 /* CountdownOverlayProvider.swift */; };
+		F0OVC0302F30000000000001 /* BatteryOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00B2F30000000000001 /* BatteryOverlayProvider.swift */; };
+		F0OVC0312F30000000000001 /* VerticalSpacerOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00C2F30000000000001 /* VerticalSpacerOverlayProvider.swift */; };
+		F0OVX0012F30000000000001 /* OverlayConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0012F30000000000001 /* OverlayConfig.swift */; };
+		F0OVX0022F30000000000001 /* OverlayConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0022F30000000000001 /* OverlayConfigManager.swift */; };
+		F0OVX0032F30000000000001 /* OverlayTypeDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0032F30000000000001 /* OverlayTypeDefaults.swift */; };
+		F0OVX0042F30000000000001 /* OverlayTypeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0012F30000000000001 /* OverlayTypeProvider.swift */; };
+		F0OVX0052F30000000000001 /* OverlayTypeRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0022F30000000000001 /* OverlayTypeRegistry.swift */; };
+		F0OVX0062F30000000000001 /* ClockOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0032F30000000000001 /* ClockOverlayProvider.swift */; };
+		F0OVX0072F30000000000001 /* DateOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0042F30000000000001 /* DateOverlayProvider.swift */; };
+		F0OVX0082F30000000000001 /* LocationOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0052F30000000000001 /* LocationOverlayProvider.swift */; };
+		F0OVX0092F30000000000001 /* WeatherOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0062F30000000000001 /* WeatherOverlayProvider.swift */; };
+		F0OVX00A2F30000000000001 /* MusicOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0072F30000000000001 /* MusicOverlayProvider.swift */; };
+		F0OVX00B2F30000000000001 /* MessageOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0082F30000000000001 /* MessageOverlayProvider.swift */; };
+		F0OVX00C2F30000000000001 /* TimerOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP0092F30000000000001 /* TimerOverlayProvider.swift */; };
+		F0OVX00D2F30000000000001 /* CountdownOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00A2F30000000000001 /* CountdownOverlayProvider.swift */; };
+		F0OVX00E2F30000000000001 /* BatteryOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00B2F30000000000001 /* BatteryOverlayProvider.swift */; };
+		F0OVX00F2F30000000000001 /* VerticalSpacerOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00C2F30000000000001 /* VerticalSpacerOverlayProvider.swift */; };
+		F0PL00022F30000000000001 /* PlaylistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00012F30000000000001 /* PlaylistModels.swift */; };
+		F0PL00042F30000000000001 /* PlaylistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00012F30000000000001 /* PlaylistModels.swift */; };
+		F0EXP0022F30000000000001 /* Expansion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP0012F30000000000001 /* Expansion.swift */; };
+		F0EXP0032F30000000000001 /* Expansion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP0012F30000000000001 /* Expansion.swift */; };
+		F0EXP0052F30000000000001 /* ExpansionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP0042F30000000000001 /* ExpansionStore.swift */; };
+		F0EXP0062F30000000000001 /* ExpansionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP0042F30000000000001 /* ExpansionStore.swift */; };
+		F0EXP0072F30000000000001 /* ExpansionsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP00B2F30000000000001 /* ExpansionsContentView.swift */; };
+		F0EXP0082F30000000000001 /* ExpansionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP00C2F30000000000001 /* ExpansionCard.swift */; };
+		F0EXP0092F30000000000001 /* InstallFromLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXP00D2F30000000000001 /* InstallFromLinkView.swift */; };
+		F0ITY00012F30000000000001 /* InstallThankYouView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ITY00022F30000000000001 /* InstallThankYouView.swift */; };
+		F0IAI00012F30000000000001 /* InstallAlreadyInstalledView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0IAI00022F30000000000001 /* InstallAlreadyInstalledView.swift */; };
+		F0EXP00F2F30000000000001 /* expansions.json in Resources */ = {isa = PBXBuildFile; fileRef = F0EXP00E2F30000000000001 /* expansions.json */; };
+		F0PL00062F30000000000001 /* PlaylistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00052F30000000000001 /* PlaylistManager.swift */; };
+		F0PL00082F30000000000001 /* DownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00072F30000000000001 /* DownloadCoordinator.swift */; };
+		F0PL000A2F30000000000001 /* PlaylistStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00092F30000000000001 /* PlaylistStripView.swift */; };
+		F0PL000C2F30000000000001 /* DownloadTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL000B2F30000000000001 /* DownloadTracker.swift */; };
+		F0COR00012F30000000000001 /* CacheOrphanReaper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0COR00022F30000000000001 /* CacheOrphanReaper.swift */; };
+		F0PL000E2F30000000000001 /* PlaylistListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL000D2F30000000000001 /* PlaylistListView.swift */; };
+		F0SPK0022F40000000000001 /* SparkleGentleDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SPK0012F40000000000001 /* SparkleGentleDelegate.swift */; };
+		F0STL0012F30000000000001 /* ScreensaverTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0STL0002F30000000000001 /* ScreensaverTimelineView.swift */; };
+		F0TIM0012F30000000000001 /* TimeSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TIM0002F30000000000001 /* TimeSettingsPanel.swift */; };
+		F0TST0012F30000000000001 /* PlaylistStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST0072F30000000000001 /* PlaylistStateMachineTests.swift */; };
+		F0TST0022F30000000000001 /* OverlayLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST0082F30000000000001 /* OverlayLayoutTests.swift */; };
+		F0TST0032F30000000000001 /* CodableRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST0092F30000000000001 /* CodableRoundTripTests.swift */; };
+		F0TST0042F30000000000001 /* WeatherCacheKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST00A2F30000000000001 /* WeatherCacheKeyTests.swift */; };
+		F0TST0052F30000000000001 /* OverlayConfigResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST00B2F30000000000001 /* OverlayConfigResolutionTests.swift */; };
+		F0UPL0022F30000000000001 /* UserPlaylistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL0012F30000000000001 /* UserPlaylistModels.swift */; };
+		F0UPL0042F30000000000001 /* UserPlaylistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL0012F30000000000001 /* UserPlaylistModels.swift */; };
+		F0UPL0062F30000000000001 /* UserPlaylistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL0052F30000000000001 /* UserPlaylistManager.swift */; };
+		F0LF00022F30000000000001 /* LiveFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00012F30000000000001 /* LiveFeed.swift */; };
+		F0LF00032F30000000000001 /* LiveFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00012F30000000000001 /* LiveFeed.swift */; };
+		F0LF00052F30000000000001 /* LiveFeedManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00042F30000000000001 /* LiveFeedManager.swift */; };
+		F0LF00072F30000000000001 /* LiveFeedsSourceSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00062F30000000000001 /* LiveFeedsSourceSync.swift */; };
+		F0LF00092F30000000000001 /* LiveFeedsTooling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00082F30000000000001 /* LiveFeedsTooling.swift */; };
+		F0LF000B2F30000000000001 /* LiveFeedResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF000A2F30000000000001 /* LiveFeedResolver.swift */; };
+		F0LF000D2F30000000000001 /* LiveFeedsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF000C2F30000000000001 /* LiveFeedsContentView.swift */; };
+		F0LF000F2F30000000000001 /* LivePlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF000E2F30000000000001 /* LivePlaybackDiagnostics.swift */; };
+		F0LF00102F30000000000001 /* LivePlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF000E2F30000000000001 /* LivePlaybackDiagnostics.swift */; };
+		F0LF00122F30000000000001 /* LiveFeedPreviewWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00112F30000000000001 /* LiveFeedPreviewWindow.swift */; };
+		F0LF00142F30000000000001 /* LiveFeedsGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00132F30000000000001 /* LiveFeedsGateway.swift */; };
+		F0LF00162F30000000000001 /* LiveFeedTransmuxer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00152F30000000000001 /* LiveFeedTransmuxer.swift */; };
+		F0LF00182F30000000000001 /* LiveFeedThumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00172F30000000000001 /* LiveFeedThumbnailer.swift */; };
+		F0LF001A2F30000000000001 /* LiveFeedCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00192F30000000000001 /* LiveFeedCredentialStore.swift */; };
+		F0UPL0082F30000000000001 /* UserPlaylistSidebarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL0072F30000000000001 /* UserPlaylistSidebarSection.swift */; };
+		F0UPL00A2F30000000000001 /* UserPlaylistContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL0092F30000000000001 /* UserPlaylistContentView.swift */; };
+		F0UPL00C2F30000000000001 /* MultiSelectionInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0UPL00B2F30000000000001 /* MultiSelectionInspectorView.swift */; };
+		F0VBC0022F30000000000001 /* VideoBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0022F30000000000001 /* VideoBrowserView.swift */; };
+		F0VBC0032F30000000000001 /* VideoBrowserState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0032F30000000000001 /* VideoBrowserState.swift */; };
+		F0VBC0042F30000000000001 /* VideoBrowserSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0042F30000000000001 /* VideoBrowserSidebar.swift */; };
+		F0ACT00012F30000000000001 /* ActivityContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ACT00022F30000000000001 /* ActivityContentView.swift */; };
+		F0FL01012F30000000000001 /* FirstLaunchCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00022F30000000000001 /* FirstLaunchCard.swift */; };
+		F0FL01022F30000000000001 /* FirstLaunchModeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00032F30000000000001 /* FirstLaunchModeStep.swift */; };
+		F0FL01032F30000000000001 /* FirstLaunchOverlayStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00042F30000000000001 /* FirstLaunchOverlayStep.swift */; };
+		F0FL01042F30000000000001 /* FirstLaunchThankYouStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00052F30000000000001 /* FirstLaunchThankYouStep.swift */; };
+		F0FLW00012F30000000000001 /* FirstLaunchWelcomeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FLW00022F30000000000001 /* FirstLaunchWelcomeStep.swift */; };
+		F0FLM00012F30000000000001 /* FirstLaunchMigrationStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FLM00022F30000000000001 /* FirstLaunchMigrationStep.swift */; };
+		F0FL01052F30000000000001 /* FirstLaunchWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00062F30000000000001 /* FirstLaunchWizardView.swift */; };
+		F0FL01062F30000000000001 /* FirstLaunchWizardWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00072F30000000000001 /* FirstLaunchWizardWindowController.swift */; };
+		F0FL01072F30000000000001 /* FirstLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0FL00082F30000000000001 /* FirstLaunch.swift */; };
+		F0CH00012F30000000000001 /* ContentHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CH00022F30000000000001 /* ContentHeader.swift */; };
+		F0GS00012F30000000000001 /* GlobalSearchSourceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GS00022F30000000000001 /* GlobalSearchSourceCard.swift */; };
+		F0GS00032F30000000000001 /* GlobalSearchResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GS00042F30000000000001 /* GlobalSearchResultsView.swift */; };
+		F0EA00012F30000000000001 /* ExpansionAssetCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EA00022F30000000000001 /* ExpansionAssetCardView.swift */; };
+		F0VBC0052F30000000000001 /* PlaylistSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0052F30000000000001 /* PlaylistSummaryView.swift */; };
+		F0VBC0062F30000000000001 /* VideoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0062F30000000000001 /* VideoGridView.swift */; };
+		F0VBC0072F30000000000001 /* VideoBrowserCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0072F30000000000001 /* VideoBrowserCardView.swift */; };
+		F0VBC0082F30000000000001 /* VideoBrowserRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */; };
+		F0VBC0092F30000000000001 /* VideoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0092F30000000000001 /* VideoInspectorView.swift */; };
+		F0VBC00A2F30000000000001 /* TimeOfDayOverrideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */; };
+		F0VBC00B2F30000000000001 /* VideoMetadataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00B2F30000000000001 /* VideoMetadataHelpers.swift */; };
+		F0VBC00C2F30000000000001 /* VideoBrowserPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */; };
+		F0VBC00D2F30000000000001 /* DropZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00D2F30000000000001 /* DropZoneView.swift */; };
+		F0VBC00F2F30000000000001 /* FormatBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00F2F30000000000001 /* FormatBadge.swift */; };
+		F0WP00042F30000000000001 /* WeatherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WP00012F30000000000001 /* WeatherProvider.swift */; };
+		F0WP00052F30000000000001 /* WeatherCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WP00022F30000000000001 /* WeatherCache.swift */; };
+		F0WP000A2F30000000000001 /* WeatherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WP00012F30000000000001 /* WeatherProvider.swift */; };
+		F0WP000B2F30000000000001 /* WeatherCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WP00022F30000000000001 /* WeatherCache.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F0EXT01C2F30000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03CE4F4D24CB0CA700494D32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0EXT0172F30000000000001;
+			remoteInfo = AerialScreenSaverExtension;
+		};
+		F0TST0102F30000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03CE4F4D24CB0CA700494D32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 03CE4F5424CB0CA700494D32;
+			remoteInfo = Aerial;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F0EXT00F2F30000000000001 /* Embed PlugIns */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F0EXT00D2F30000000000001 /* AerialScreenSaverExtension.appex in Embed PlugIns */,
+			);
+			name = "Embed PlugIns";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		03076A062505EF8E00CDF16C /* kofi1@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "kofi1@2x.png"; sourceTree = "<group>"; };
+		0316C2192577DD6B007BAF70 /* AerialDesktop.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AerialDesktop.xib; sourceTree = "<group>"; };
+		0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLauncher.swift; sourceTree = "<group>"; };
+		031954BF256409EC0058467C /* SaverLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverLauncher.swift; sourceTree = "<group>"; };
+		031A3A6524D835B10011E738 /* InfoWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoWindowController.swift; sourceTree = "<group>"; };
+		0333115824D85CCA00E4622D /* String+version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+version.swift"; sourceTree = "<group>"; };
+		033B0B6824E96CE200622CA7 /* ant.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = ant.pdf; sourceTree = "<group>"; };
+		033B0B6A24E96D4C00622CA7 /* sun.max.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = sun.max.pdf; sourceTree = "<group>"; };
+		033B0B6B24E96D4C00622CA7 /* cloud.sun.rain.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = cloud.sun.rain.pdf; sourceTree = "<group>"; };
+		033B0B6E24E9749300622CA7 /* clock.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = clock.pdf; sourceTree = "<group>"; };
+		033B0B6F24E9749400622CA7 /* moon.zzz.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = moon.zzz.pdf; sourceTree = "<group>"; };
+		033B0B7024E9749400622CA7 /* exclamationmark.bubble.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = exclamationmark.bubble.pdf; sourceTree = "<group>"; };
+		03592AB124CC765500C1AE52 /* Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preferences.swift; sourceTree = "<group>"; };
+		03592AB724CC80FD00C1AE52 /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
+		03889BF724FA5EE4007C6B9B /* Aerial-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Aerial-Bridging-Header.h"; sourceTree = "<group>"; };
+		03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAgent.swift; sourceTree = "<group>"; };
+		03BA141724FA8FE800BAAE1D /* AerialWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AerialWindow.xib; sourceTree = "<group>"; };
+		03CE4F5524CB0CA700494D32 /* Aerial.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aerial.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		03CE4F5824CB0CA700494D32 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		03CE4F5C24CB0CA900494D32 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		03CE4F5F24CB0CA900494D32 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		03CE4F6124CB0CA900494D32 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialCompanionApp.swift; sourceTree = "<group>"; };
+		03F5E1462575360600BF4F45 /* icon-512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512@2x.png"; sourceTree = "<group>"; };
+		03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoIcon-128px@2x.png"; sourceTree = "<group>"; };
+		11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialDesktop.swift; sourceTree = "<group>"; };
+		11374231735C4A908F3371BB /* SwiftAerialWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAerialWindow.swift; sourceTree = "<group>"; };
+		73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSScreen+Id.swift"; sourceTree = "<group>"; };
+		F0DOK0002F30000000000001 /* DockInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockInfo.swift; sourceTree = "<group>"; };
+		F01240D02EA7F19900EE0FFC /* AerialPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialPaths.swift; sourceTree = "<group>"; };
+		F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPreferencesStore.swift; sourceTree = "<group>"; };
+		F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		F031340E2F1E8C9A00C9EBD0 /* PlaybackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackManager.swift; sourceTree = "<group>"; };
+		F03134102F1E8CB100C9EBD0 /* NotDefaultBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotDefaultBarView.swift; sourceTree = "<group>"; };
+		F03134142F1E8CB100C9EBD0 /* SpeedSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedSliderView.swift; sourceTree = "<group>"; };
+		F03134162F1E8CB100C9EBD0 /* BottomBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBarView.swift; sourceTree = "<group>"; };
+		F03134182F1E8CB100C9EBD0 /* ModeSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSectionView.swift; sourceTree = "<group>"; };
+		F031341B2F1E8CB100C9EBD0 /* MainPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPopoverView.swift; sourceTree = "<group>"; };
+		F03134282F1E911E00C9EBD0 /* InfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoView.swift; sourceTree = "<group>"; };
+		F0ABC00022F30000000000001 /* AboutContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutContent.swift; sourceTree = "<group>"; };
+		F0326B372E9BDF3300582FED /* AerialLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialLogger.swift; sourceTree = "<group>"; };
+		F05C63B428F21A390068B545 /* menubar.dock.rectangle.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = menubar.dock.rectangle.svg; sourceTree = "<group>"; };
+		F05C63B628F326300068B545 /* SystemPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPrefs.swift; sourceTree = "<group>"; };
+		F067DB382F5B1ED900F2A59C /* Aerial-tahoe.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Aerial-tahoe.icon"; sourceTree = "<group>"; };
+		F072218D2AD43D91001F5452 /* NightShift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShift.swift; sourceTree = "<group>"; };
+		F072218F2AD45039001F5452 /* Locations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Locations.swift; sourceTree = "<group>"; };
+		F0A3E09F28845C1D005E8D8D /* MusicKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MusicKit.framework; path = System/Library/Frameworks/MusicKit.framework; sourceTree = SDKROOT; };
+		F0AECL012F4C000000000001 /* Color+Aerial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Aerial.swift"; sourceTree = "<group>"; };
+		F0BUILD012F30000000000001 /* BuildNumber.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildNumber.xcconfig; sourceTree = "<group>"; };
+		F0C05FC12E4F70580066F2C4 /* ar.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ar.json; sourceTree = "<group>"; };
+		F0C05FC22E4F70580066F2C4 /* de.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = de.json; sourceTree = "<group>"; };
+		F0C05FC32E4F70580066F2C4 /* en.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = en.json; sourceTree = "<group>"; };
+		F0C05FC42E4F70580066F2C4 /* es.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = es.json; sourceTree = "<group>"; };
+		F0C05FC52E4F70580066F2C4 /* fr.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = fr.json; sourceTree = "<group>"; };
+		F0C05FC62E4F70580066F2C4 /* he.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = he.json; sourceTree = "<group>"; };
+		F0C05FC72E4F70580066F2C4 /* hu.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = hu.json; sourceTree = "<group>"; };
+		F0C05FC82E4F70580066F2C4 /* it.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = it.json; sourceTree = "<group>"; };
+		F0C05FC92E4F70580066F2C4 /* ja.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ja.json; sourceTree = "<group>"; };
+		F0C05FCA2E4F70580066F2C4 /* ko.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ko.json; sourceTree = "<group>"; };
+		F0C05FCB2E4F70580066F2C4 /* missingvideos.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = missingvideos.json; sourceTree = "<group>"; };
+		F0C05FCC2E4F70580066F2C4 /* nl.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = nl.json; sourceTree = "<group>"; };
+		F0C05FCD2E4F70580066F2C4 /* pl.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = pl.json; sourceTree = "<group>"; };
+		F0C05FCE2E4F70580066F2C4 /* pt.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = pt.json; sourceTree = "<group>"; };
+		F0C05FCF2E4F70580066F2C4 /* pt_BR.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = pt_BR.json; sourceTree = "<group>"; };
+		F0C05FD02E4F70580066F2C4 /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
+		F0C05FD12E4F70580066F2C4 /* ru.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ru.json; sourceTree = "<group>"; };
+		F0C05FD22E4F70580066F2C4 /* sv.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sv.json; sourceTree = "<group>"; };
+		F0C05FD32E4F70580066F2C4 /* tl.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = tl.json; sourceTree = "<group>"; };
+		F0C05FD42E4F70580066F2C4 /* zh_CN.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = zh_CN.json; sourceTree = "<group>"; };
+		F0C05FD52E4F70580066F2C4 /* zh_TW.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = zh_TW.json; sourceTree = "<group>"; };
+		F0C060142E4F70580066F2C4 /* screen0.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = screen0.jpg; sourceTree = "<group>"; };
+		F0C060152E4F70580066F2C4 /* screen1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = screen1.jpg; sourceTree = "<group>"; };
+		F0C060162E4F70580066F2C4 /* screen2.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = screen2.jpg; sourceTree = "<group>"; };
+		F0C060172E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = video_inspire_alabama_montgomery_countryside_00007.png; sourceTree = "<group>"; };
+		F0C060182E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "video_inspire_california_big-sur_2020_00001.png"; sourceTree = "<group>"; };
+		F0C060192E4F70580066F2C4 /* video_inspire_california_catalina_00005.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = video_inspire_california_catalina_00005.png; sourceTree = "<group>"; };
+		F0C0601A2E4F70580066F2C4 /* video_inspire_california_vineyard_sierra-mar_sunrise_110.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "video_inspire_california_vineyard_sierra-mar_sunrise_110.png"; sourceTree = "<group>"; };
+		F0C0601B2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "video_inspire_italy_como_cerano-dintelvi_006.png"; sourceTree = "<group>"; };
+		F0C0606C2E4F70580066F2C4 /* icon-320@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-320@2x.png"; sourceTree = "<group>"; };
+		F0C0606D2E4F70580066F2C4 /* icon-512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512@2x.png"; sourceTree = "<group>"; };
+		F0C0606E2E4F70580066F2C4 /* kofi1@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "kofi1@2x.png"; sourceTree = "<group>"; };
+		F0C0606F2E4F70580066F2C4 /* LogoIcon-128px@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoIcon-128px@2x.png"; sourceTree = "<group>"; };
+		F0C060702E4F70580066F2C4 /* openweather_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = openweather_logo.png; sourceTree = "<group>"; };
+		F0C060752E4F70580066F2C4 /* APISecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APISecrets.swift; sourceTree = "<group>"; };
+		F0C060762E4F70580066F2C4 /* Forecast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Forecast.swift; sourceTree = "<group>"; };
+		F0C060792E4F70580066F2C4 /* OpenWeather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenWeather.swift; sourceTree = "<group>"; };
+		F0C0607C2E4F70580066F2C4 /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
+		F0C0607D2E4F70580066F2C4 /* PoiStringProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoiStringProvider.swift; sourceTree = "<group>"; };
+		F0C0607E2E4F70580066F2C4 /* Thumbnails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnails.swift; sourceTree = "<group>"; };
+		F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeMachine.swift; sourceTree = "<group>"; };
+		F0C060802E4F70580066F2C4 /* VideoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCache.swift; sourceTree = "<group>"; };
+		F0C060812E4F70580066F2C4 /* VideoDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDownload.swift; sourceTree = "<group>"; };
+		F0MD500012F30000000000001 /* MD5Verifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MD5Verifier.swift; sourceTree = "<group>"; };
+		F0RES00012F30000000000001 /* VideoDownloadResume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDownloadResume.swift; sourceTree = "<group>"; };
+		F0C060832E4F70580066F2C4 /* VideoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoManager.swift; sourceTree = "<group>"; };
+		F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsynchronousOperation.swift; sourceTree = "<group>"; };
+		F0C060862E4F70580066F2C4 /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
+		F0C060872E4F70580066F2C4 /* FileHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHelpers.swift; sourceTree = "<group>"; };
+		F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+VideoOrientation.swift"; sourceTree = "<group>"; };
+		F0C0608B2E4F70580066F2C4 /* AVPlayerViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayerViewExtension.swift; sourceTree = "<group>"; };
+		F0C060962E4F70580066F2C4 /* Battery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Battery.swift; sourceTree = "<group>"; };
+		F0C060982E4F70580066F2C4 /* DarkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkMode.swift; sourceTree = "<group>"; };
+		F0C060992E4F70580066F2C4 /* DisplayDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetection.swift; sourceTree = "<group>"; };
+		F0C0609B2E4F70580066F2C4 /* NightShift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShift.swift; sourceTree = "<group>"; };
+		F0C0609D2E4F70580066F2C4 /* Music.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Music.swift; sourceTree = "<group>"; };
+		F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsAdvanced.swift; sourceTree = "<group>"; };
+		F0C060A02E4F70580066F2C4 /* PrefsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsCache.swift; sourceTree = "<group>"; };
+		F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsDisplays.swift; sourceTree = "<group>"; };
+		F0C060A32E4F70580066F2C4 /* PrefsTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsTime.swift; sourceTree = "<group>"; };
+		F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsVideos.swift; sourceTree = "<group>"; };
+		F0C060A82E4F70580066F2C4 /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
+		F0C060A92E4F70580066F2C4 /* SourceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceInfo.swift; sourceTree = "<group>"; };
+		F0C060AA2E4F70580066F2C4 /* SourceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceList.swift; sourceTree = "<group>"; };
+		F0C060AB2E4F70580066F2C4 /* VideoList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoList.swift; sourceTree = "<group>"; };
+		F0C060AF2E4F70580066F2C4 /* Solar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Solar.swift; sourceTree = "<group>"; };
+		F0C060B02E4F70580066F2C4 /* TimeManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeManagement.swift; sourceTree = "<group>"; };
+		F0C060B22E4F70580066F2C4 /* Aerial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aerial.swift; sourceTree = "<group>"; };
+		F0C060B32E4F70580066F2C4 /* AerialVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialVideo.swift; sourceTree = "<group>"; };
+		F0C060B82E4F70580066F2C4 /* Locations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Locations.swift; sourceTree = "<group>"; };
+		F0C060DC2E4F70580066F2C4 /* DisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayView.swift; sourceTree = "<group>"; };
+		F0C060F82E4F70580066F2C4 /* Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Header.h; sourceTree = "<group>"; };
+		F0C5B42E2E8EDA9F00AEC15C /* AerialPluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialPluginManager.swift; sourceTree = "<group>"; };
+		F0D637562EA0239900366EAB /* PathMigrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigrationView.swift; sourceTree = "<group>"; };
+		F0D637582EA023AD00366EAB /* PathMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathMigration.swift; sourceTree = "<group>"; };
+		F0D6375C2EA6830100366EAB /* CompanionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettings.swift; sourceTree = "<group>"; };
+		F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettingsManager.swift; sourceTree = "<group>"; };
+		F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverSettings.swift; sourceTree = "<group>"; };
+		F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverSettingsManager.swift; sourceTree = "<group>"; };
+		F0DOM0002F30000000000001 /* DesktopOcclusionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopOcclusionMonitor.swift; sourceTree = "<group>"; };
+		F0DSK0002F30000000000001 /* DesktopSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopSettingsPanel.swift; sourceTree = "<group>"; };
+		F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPaths.swift; sourceTree = "<group>"; };
+		F0EXT0022F30000000000001 /* AerialScreenSaverExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialScreenSaverExtension.swift; sourceTree = "<group>"; };
+		F0EXT0042F30000000000001 /* AerialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialViewController.swift; sourceTree = "<group>"; };
+		F0EXT0062F30000000000001 /* AerialSaverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialSaverView.swift; sourceTree = "<group>"; };
+		F0EXT0082F30000000000001 /* AerialConfigurationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerialConfigurationViewController.swift; sourceTree = "<group>"; };
+		F0EXT00A2F30000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F0EXT00C2F30000000000001 /* ScreenSaver.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScreenSaver.framework; path = System/Library/Frameworks/ScreenSaver.framework; sourceTree = SDKROOT; };
+		F0EXT00E2F30000000000001 /* AerialScreenSaverExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AerialScreenSaverExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0EXT0102F30000000000001 /* AerialScreenSaverExtension-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AerialScreenSaverExtension-Bridging-Header.h"; sourceTree = "<group>"; };
+		F0EXT0112F30000000000001 /* ScreenSaverPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ScreenSaverPrivate.h; sourceTree = "<group>"; };
+		F0EXT0122F30000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F0EXT0132F30000000000001 /* AerialScreenSaverExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AerialScreenSaverExtension.entitlements; sourceTree = "<group>"; };
+		F0EXT0412F30000000000001 /* ExtensionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionHelpers.swift; sourceTree = "<group>"; };
+		F0EXT0602F30000000000001 /* ExtensionVideoLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionVideoLoader.swift; sourceTree = "<group>"; };
+		F0EXT0B22F30000000000001 /* OverlayState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayState.swift; sourceTree = "<group>"; };
+		F0EXT0B32F30000000000001 /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
+		F0EXT0B62F30000000000001 /* WeatherSymbols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherSymbols.swift; sourceTree = "<group>"; };
+		F0EXT0B72F30000000000001 /* WeatherOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayView.swift; sourceTree = "<group>"; };
+		F0EXT0D22F30000000000001 /* MusicOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicOverlayView.swift; sourceTree = "<group>"; };
+		F0EXT0E02F30000000000001 /* PlayerCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCoordinator.swift; sourceTree = "<group>"; };
+		F0F66C752F1FC2BA007E6377 /* AutoUpdatesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoUpdatesPanel.swift; sourceTree = "<group>"; };
+		F0F66C762F1FC2BA007E6377 /* ScreensaverSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverSettingsPanel.swift; sourceTree = "<group>"; };
+		F0F66C782F1FC2BA007E6377 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F0F66C7D2F1FD502007E6377 /* MyVideosSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyVideosSettingsPanel.swift; sourceTree = "<group>"; };
+		F0F66C7E2F1FD502007E6377 /* MyVideosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyVideosViewModel.swift; sourceTree = "<group>"; };
+		F0F66C812F1FD502007E6377 /* CacheSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheSettingsPanel.swift; sourceTree = "<group>"; };
+		F0F66C832F1FD502007E6377 /* DisplayPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayPreviewView.swift; sourceTree = "<group>"; };
+		F0F66C842F1FD502007E6377 /* DisplaysSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplaysSettingsPanel.swift; sourceTree = "<group>"; };
+		F0F66C872F1FD502007E6377 /* AboutSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsPanel.swift; sourceTree = "<group>"; };
+		F0F66C8A2F1FD502007E6377 /* AdvancedSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsPanel.swift; sourceTree = "<group>"; };
+		F0KBS0072F50000000000001 /* AccessibilityPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPanel.swift; sourceTree = "<group>"; };
+		F0FA266E2F80072200AEC218 /* UpdateAvailableBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateAvailableBarView.swift; sourceTree = "<group>"; };
+		F0LBR0012F30000000000001 /* LogBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogBridge.swift; sourceTree = "<group>"; };
+		F0LOC0012F30000000000001 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
+		F0WPC0012F30000000000001 /* WallpaperContinuity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperContinuity.swift; sourceTree = "<group>"; };
+		F0DRM0012F30000000000001 /* DirectoryMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryMonitor.swift; sourceTree = "<group>"; };
+		F0WCC0012F30000000000001 /* WallpaperCacheCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperCacheCleaner.swift; sourceTree = "<group>"; };
+		F0MUS0012F30000000000001 /* NowPlayingSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSource.swift; sourceTree = "<group>"; };
+		F0MUS0032F30000000000001 /* AppleMusicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicProvider.swift; sourceTree = "<group>"; };
+		F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
+		F0NP10012F3E000000000001 /* SourceThumbnailCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceThumbnailCard.swift; sourceTree = "<group>"; };
+		F0NP10032F3E000000000001 /* NowPlayingSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSectionView.swift; sourceTree = "<group>"; };
+		F0OVE0012F30000000000001 /* OverlayEditorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorWindowController.swift; sourceTree = "<group>"; };
+		F0OVE0022F30000000000001 /* OverlayEditorState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorState.swift; sourceTree = "<group>"; };
+		F0OVE0032F30000000000001 /* OverlayEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorView.swift; sourceTree = "<group>"; };
+		F0OVE0042F30000000000001 /* OverlayEditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorToolbar.swift; sourceTree = "<group>"; };
+		F0OVE0052F30000000000001 /* VideoPreviewLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPreviewLayer.swift; sourceTree = "<group>"; };
+		F0OVE0072F30000000000001 /* OverlayPreviewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPreviewRenderer.swift; sourceTree = "<group>"; };
+		F0OVE0082F30000000000001 /* OverlaysSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaysSettingsPanel.swift; sourceTree = "<group>"; };
+		F0OVE0092F30000000000001 /* OverlayDragData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayDragData.swift; sourceTree = "<group>"; };
+		F0OVE00A2F30000000000001 /* OverlayPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPalette.swift; sourceTree = "<group>"; };
+		F0OVE00B2F30000000000001 /* OverlaySettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettingsPane.swift; sourceTree = "<group>"; };
+		F0LSP0002F30000000000001 /* LayoutSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutSettingsPane.swift; sourceTree = "<group>"; };
+		F0OVE00C2F30000000000001 /* CommonOverlaySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonOverlaySettingsView.swift; sourceTree = "<group>"; };
+		F0OVE00E2F30000000000001 /* InspectorPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanelView.swift; sourceTree = "<group>"; };
+		F0OVP0012F30000000000001 /* OverlayTypeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayTypeProvider.swift; sourceTree = "<group>"; };
+		F0OVP0022F30000000000001 /* OverlayTypeRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayTypeRegistry.swift; sourceTree = "<group>"; };
+		F0OVP0032F30000000000001 /* ClockOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0042F30000000000001 /* DateOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0052F30000000000001 /* LocationOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0062F30000000000001 /* WeatherOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0072F30000000000001 /* MusicOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0082F30000000000001 /* MessageOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP0092F30000000000001 /* TimerOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP00A2F30000000000001 /* CountdownOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP00B2F30000000000001 /* BatteryOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVP00C2F30000000000001 /* VerticalSpacerOverlayProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalSpacerOverlayProvider.swift; sourceTree = "<group>"; };
+		F0OVR0012F30000000000001 /* OverlayConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayConfig.swift; sourceTree = "<group>"; };
+		F0OVR0022F30000000000001 /* OverlayConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayConfigManager.swift; sourceTree = "<group>"; };
+		F0OVR0032F30000000000001 /* OverlayTypeDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayTypeDefaults.swift; sourceTree = "<group>"; };
+		F0PL00012F30000000000001 /* PlaylistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistModels.swift; sourceTree = "<group>"; };
+		F0EXP0012F30000000000001 /* Expansion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expansion.swift; sourceTree = "<group>"; };
+		F0EXP0042F30000000000001 /* ExpansionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpansionStore.swift; sourceTree = "<group>"; };
+		F0EXP00B2F30000000000001 /* ExpansionsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpansionsContentView.swift; sourceTree = "<group>"; };
+		F0EXP00C2F30000000000001 /* ExpansionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpansionCard.swift; sourceTree = "<group>"; };
+		F0EXP00D2F30000000000001 /* InstallFromLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallFromLinkView.swift; sourceTree = "<group>"; };
+		F0ITY00022F30000000000001 /* InstallThankYouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallThankYouView.swift; sourceTree = "<group>"; };
+		F0IAI00022F30000000000001 /* InstallAlreadyInstalledView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallAlreadyInstalledView.swift; sourceTree = "<group>"; };
+		F0EXP00E2F30000000000001 /* expansions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = expansions.json; sourceTree = "<group>"; };
+		F0PL00052F30000000000001 /* PlaylistManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistManager.swift; sourceTree = "<group>"; };
+		F0PL00072F30000000000001 /* DownloadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadCoordinator.swift; sourceTree = "<group>"; };
+		F0PL00092F30000000000001 /* PlaylistStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistStripView.swift; sourceTree = "<group>"; };
+		F0PL000B2F30000000000001 /* DownloadTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTracker.swift; sourceTree = "<group>"; };
+		F0COR00022F30000000000001 /* CacheOrphanReaper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheOrphanReaper.swift; sourceTree = "<group>"; };
+		F0PL000D2F30000000000001 /* PlaylistListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistListView.swift; sourceTree = "<group>"; };
+		F0SPK0012F40000000000001 /* SparkleGentleDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleGentleDelegate.swift; sourceTree = "<group>"; };
+		F0KBS0052F50000000000001 /* GlobalShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcuts.swift; sourceTree = "<group>"; };
+		F0STL0002F30000000000001 /* ScreensaverTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreensaverTimelineView.swift; sourceTree = "<group>"; };
+		F0TIM0002F30000000000001 /* TimeSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSettingsPanel.swift; sourceTree = "<group>"; };
+		F0TST0062F30000000000001 /* AerialTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AerialTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0TST0072F30000000000001 /* PlaylistStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistStateMachineTests.swift; sourceTree = "<group>"; };
+		F0TST0082F30000000000001 /* OverlayLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayLayoutTests.swift; sourceTree = "<group>"; };
+		F0TST0092F30000000000001 /* CodableRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableRoundTripTests.swift; sourceTree = "<group>"; };
+		F0TST00A2F30000000000001 /* WeatherCacheKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherCacheKeyTests.swift; sourceTree = "<group>"; };
+		F0TST00B2F30000000000001 /* OverlayConfigResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayConfigResolutionTests.swift; sourceTree = "<group>"; };
+		F0UPL0012F30000000000001 /* UserPlaylistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPlaylistModels.swift; sourceTree = "<group>"; };
+		F0UPL0052F30000000000001 /* UserPlaylistManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPlaylistManager.swift; sourceTree = "<group>"; };
+		F0LF00012F30000000000001 /* LiveFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeed.swift; sourceTree = "<group>"; };
+		F0LF00042F30000000000001 /* LiveFeedManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedManager.swift; sourceTree = "<group>"; };
+		F0LF00062F30000000000001 /* LiveFeedsSourceSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedsSourceSync.swift; sourceTree = "<group>"; };
+		F0LF00082F30000000000001 /* LiveFeedsTooling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedsTooling.swift; sourceTree = "<group>"; };
+		F0LF000A2F30000000000001 /* LiveFeedResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedResolver.swift; sourceTree = "<group>"; };
+		F0LF000C2F30000000000001 /* LiveFeedsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedsContentView.swift; sourceTree = "<group>"; };
+		F0LF000E2F30000000000001 /* LivePlaybackDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackDiagnostics.swift; sourceTree = "<group>"; };
+		F0LF00112F30000000000001 /* LiveFeedPreviewWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedPreviewWindow.swift; sourceTree = "<group>"; };
+		F0LF00132F30000000000001 /* LiveFeedsGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedsGateway.swift; sourceTree = "<group>"; };
+		F0LF00152F30000000000001 /* LiveFeedTransmuxer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedTransmuxer.swift; sourceTree = "<group>"; };
+		F0LF00172F30000000000001 /* LiveFeedThumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedThumbnailer.swift; sourceTree = "<group>"; };
+		F0LF00192F30000000000001 /* LiveFeedCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedCredentialStore.swift; sourceTree = "<group>"; };
+		F0UPL0072F30000000000001 /* UserPlaylistSidebarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPlaylistSidebarSection.swift; sourceTree = "<group>"; };
+		F0UPL0092F30000000000001 /* UserPlaylistContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPlaylistContentView.swift; sourceTree = "<group>"; };
+		F0UPL00B2F30000000000001 /* MultiSelectionInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiSelectionInspectorView.swift; sourceTree = "<group>"; };
+		F0VBR0022F30000000000001 /* VideoBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserView.swift; sourceTree = "<group>"; };
+		F0VBR0032F30000000000001 /* VideoBrowserState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserState.swift; sourceTree = "<group>"; };
+		F0VBR0042F30000000000001 /* VideoBrowserSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserSidebar.swift; sourceTree = "<group>"; };
+		F0ACT00022F30000000000001 /* ActivityContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityContentView.swift; sourceTree = "<group>"; };
+		F0FL00022F30000000000001 /* FirstLaunchCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchCard.swift; sourceTree = "<group>"; };
+		F0FL00032F30000000000001 /* FirstLaunchModeStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchModeStep.swift; sourceTree = "<group>"; };
+		F0FL00042F30000000000001 /* FirstLaunchOverlayStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchOverlayStep.swift; sourceTree = "<group>"; };
+		F0FL00052F30000000000001 /* FirstLaunchThankYouStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchThankYouStep.swift; sourceTree = "<group>"; };
+		F0FLW00022F30000000000001 /* FirstLaunchWelcomeStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchWelcomeStep.swift; sourceTree = "<group>"; };
+		F0FLM00022F30000000000001 /* FirstLaunchMigrationStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchMigrationStep.swift; sourceTree = "<group>"; };
+		F0FL00062F30000000000001 /* FirstLaunchWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchWizardView.swift; sourceTree = "<group>"; };
+		F0FL00072F30000000000001 /* FirstLaunchWizardWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchWizardWindowController.swift; sourceTree = "<group>"; };
+		F0FL00082F30000000000001 /* FirstLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunch.swift; sourceTree = "<group>"; };
+		F0CH00022F30000000000001 /* ContentHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentHeader.swift; sourceTree = "<group>"; };
+		F0GS00022F30000000000001 /* GlobalSearchSourceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalSearchSourceCard.swift; sourceTree = "<group>"; };
+		F0GS00042F30000000000001 /* GlobalSearchResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalSearchResultsView.swift; sourceTree = "<group>"; };
+		F0EA00022F30000000000001 /* ExpansionAssetCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpansionAssetCardView.swift; sourceTree = "<group>"; };
+		F0VBR0052F30000000000001 /* PlaylistSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistSummaryView.swift; sourceTree = "<group>"; };
+		F0VBR0062F30000000000001 /* VideoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGridView.swift; sourceTree = "<group>"; };
+		F0VBR0072F30000000000001 /* VideoBrowserCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserCardView.swift; sourceTree = "<group>"; };
+		F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserRowView.swift; sourceTree = "<group>"; };
+		F0VBR0092F30000000000001 /* VideoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoInspectorView.swift; sourceTree = "<group>"; };
+		F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeOfDayOverrideView.swift; sourceTree = "<group>"; };
+		F0VBR00B2F30000000000001 /* VideoMetadataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataHelpers.swift; sourceTree = "<group>"; };
+		F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserPreviews.swift; sourceTree = "<group>"; };
+		F0VBR00D2F30000000000001 /* DropZoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropZoneView.swift; sourceTree = "<group>"; };
+		F0VBR00F2F30000000000001 /* FormatBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatBadge.swift; sourceTree = "<group>"; };
+		F0WP00012F30000000000001 /* WeatherProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherProvider.swift; sourceTree = "<group>"; };
+		F0WP00022F30000000000001 /* WeatherCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherCache.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		03CE4F5224CB0CA700494D32 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0C5B4292E8EBFFF00AEC15C /* PaperSaverKit in Frameworks */,
+				F0C227872A12A5410053D5DA /* Sparkle in Frameworks */,
+				F0KBS0012F50000000000001 /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0EXT0142F30000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0EXT00B2F30000000000001 /* ScreenSaver.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0TST0322F30000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0333115024D8360A00E4622D /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				F0VBR0002F30000000000001 /* VideoBrowser */,
+				F0OVE0002F30000000000001 /* OverlayEditor */,
+				F0FL00012F30000000000001 /* FirstLaunch */,
+				F031341C2F1E8CB100C9EBD0 /* SwiftUI */,
+				03076A062505EF8E00CDF16C /* kofi1@2x.png */,
+				031A3A6524D835B10011E738 /* InfoWindowController.swift */,
+				11374231735C4A908F3371BA /* SwiftAerialDesktop.swift */,
+				11374231735C4A908F3371BB /* SwiftAerialWindow.swift */,
+				F0D637562EA0239900366EAB /* PathMigrationView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		033B0B6724E96CD100622CA7 /* Icons */ = {
+			isa = PBXGroup;
+			children = (
+				F067DB382F5B1ED900F2A59C /* Aerial-tahoe.icon */,
+				F05C63B428F21A390068B545 /* menubar.dock.rectangle.svg */,
+				03F5E1492575369200BF4F45 /* LogoIcon-128px@2x.png */,
+				03F5E1462575360600BF4F45 /* icon-512@2x.png */,
+				033B0B6B24E96D4C00622CA7 /* cloud.sun.rain.pdf */,
+				033B0B6A24E96D4C00622CA7 /* sun.max.pdf */,
+				033B0B6824E96CE200622CA7 /* ant.pdf */,
+				033B0B6E24E9749300622CA7 /* clock.pdf */,
+				033B0B7024E9749400622CA7 /* exclamationmark.bubble.pdf */,
+				033B0B6F24E9749400622CA7 /* moon.zzz.pdf */,
+			);
+			path = Icons;
+			sourceTree = "<group>";
+		};
+		03592AB624CC80A600C1AE52 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				F072218A2AD437AB001F5452 /* Bridge */,
+				035F6F1A24CC8842002E4EEE /* Helpers */,
+				03592AB124CC765500C1AE52 /* Preferences.swift */,
+				F0FL00082F30000000000001 /* FirstLaunch.swift */,
+				03ADA8EB24E034A40093D0A2 /* LaunchAgent.swift */,
+				031954BF256409EC0058467C /* SaverLauncher.swift */,
+				0316C21E2577EBF6007BAF70 /* DesktopLauncher.swift */,
+				F0DOM0002F30000000000001 /* DesktopOcclusionMonitor.swift */,
+				F05C63B628F326300068B545 /* SystemPrefs.swift */,
+				F0D6375C2EA6830100366EAB /* CompanionSettings.swift */,
+				F0D6375D2EA6830100366EAB /* CompanionSettingsManager.swift */,
+				F031340E2F1E8C9A00C9EBD0 /* PlaybackManager.swift */,
+				F0PL00052F30000000000001 /* PlaylistManager.swift */,
+				F0UPL0052F30000000000001 /* UserPlaylistManager.swift */,
+				F0LF00042F30000000000001 /* LiveFeedManager.swift */,
+				F0LF00062F30000000000001 /* LiveFeedsSourceSync.swift */,
+				F0LF00082F30000000000001 /* LiveFeedsTooling.swift */,
+				F0LF000A2F30000000000001 /* LiveFeedResolver.swift */,
+				F0LF00132F30000000000001 /* LiveFeedsGateway.swift */,
+				F0LF00152F30000000000001 /* LiveFeedTransmuxer.swift */,
+				F0LF00172F30000000000001 /* LiveFeedThumbnailer.swift */,
+				F0LF00192F30000000000001 /* LiveFeedCredentialStore.swift */,
+				F0PL00072F30000000000001 /* DownloadCoordinator.swift */,
+				F0PL000B2F30000000000001 /* DownloadTracker.swift */,
+				F0COR00022F30000000000001 /* CacheOrphanReaper.swift */,
+				F0C5B42E2E8EDA9F00AEC15C /* AerialPluginManager.swift */,
+				F0LOC0012F30000000000001 /* LocationProvider.swift */,
+				F0MUS0012F30000000000001 /* NowPlayingSource.swift */,
+				F0MUS0032F30000000000001 /* AppleMusicProvider.swift */,
+				F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */,
+				F0WPC0012F30000000000001 /* WallpaperContinuity.swift */,
+				F0DRM0012F30000000000001 /* DirectoryMonitor.swift */,
+				F0WCC0012F30000000000001 /* WallpaperCacheCleaner.swift */,
+				F0KBS0052F50000000000001 /* GlobalShortcuts.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		035F6F1A24CC8842002E4EEE /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				F0D637582EA023AD00366EAB /* PathMigration.swift */,
+				03592AB724CC80FD00C1AE52 /* Helpers.swift */,
+				0333115824D85CCA00E4622D /* String+version.swift */,
+				73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */,
+				F0DOK0002F30000000000001 /* DockInfo.swift */,
+				F0E51E5D2E9D53BF002BBAD6 /* UnifiedPaths.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		03889BF624FA5EAC007C6B9B /* ObjC */ = {
+			isa = PBXGroup;
+			children = (
+				03BA141724FA8FE800BAAE1D /* AerialWindow.xib */,
+				0316C2192577DD6B007BAF70 /* AerialDesktop.xib */,
+				03889BF724FA5EE4007C6B9B /* Aerial-Bridging-Header.h */,
+			);
+			path = ObjC;
+			sourceTree = "<group>";
+		};
+		03CE4F4C24CB0CA700494D32 = {
+			isa = PBXGroup;
+			children = (
+				F0BUILD012F30000000000001 /* BuildNumber.xcconfig */,
+				F01C6D5F2E9ABAB600C1CB73 /* Config */,
+				F0C05E872E4E2BF30066F2C4 /* ScreenSaver */,
+				03CE4F5724CB0CA700494D32 /* Aerial */,
+				F0C05FA52E4E2C060066F2C4 /* Shared */,
+				F0EXT0152F30000000000001 /* AerialScreenSaverExtension */,
+				F0TST0202F30000000000001 /* AerialTests */,
+				03CE4F5624CB0CA700494D32 /* Products */,
+				F0A3E09E28845C1D005E8D8D /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		03CE4F5624CB0CA700494D32 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				03CE4F5524CB0CA700494D32 /* Aerial.app */,
+				F0EXT00E2F30000000000001 /* AerialScreenSaverExtension.appex */,
+				F0TST0062F30000000000001 /* AerialTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		03CE4F5724CB0CA700494D32 /* Aerial */ = {
+			isa = PBXGroup;
+			children = (
+				03889BF624FA5EAC007C6B9B /* ObjC */,
+				033B0B6724E96CD100622CA7 /* Icons */,
+				0333115024D8360A00E4622D /* UI */,
+				03CE4F5824CB0CA700494D32 /* AppDelegate.swift */,
+				F0SPK0012F40000000000001 /* SparkleGentleDelegate.swift */,
+				03CE4F9924CB0CA700494D32 /* AerialCompanionApp.swift */,
+				03CE4F5C24CB0CA900494D32 /* Assets.xcassets */,
+				03CE4F5E24CB0CA900494D32 /* Main.storyboard */,
+				03CE4F6124CB0CA900494D32 /* Info.plist */,
+				03592AB624CC80A600C1AE52 /* Model */,
+				F0EXP00E2F30000000000001 /* expansions.json */,
+			);
+			path = Aerial;
+			sourceTree = "<group>";
+		};
+		F01C6D5F2E9ABAB600C1CB73 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F01C6D5E2E9ABAB600C1CB73 /* Version.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		F03134122F1E8CB100C9EBD0 /* Alerts */ = {
+			isa = PBXGroup;
+			children = (
+				F03134102F1E8CB100C9EBD0 /* NotDefaultBarView.swift */,
+				F0FA266E2F80072200AEC218 /* UpdateAvailableBarView.swift */,
+			);
+			path = Alerts;
+			sourceTree = "<group>";
+		};
+		F03134152F1E8CB100C9EBD0 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F0NP10012F3E000000000001 /* SourceThumbnailCard.swift */,
+				F03134142F1E8CB100C9EBD0 /* SpeedSliderView.swift */,
+				F0VBR00B2F30000000000001 /* VideoMetadataHelpers.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F031341A2F1E8CB100C9EBD0 /* Sections */ = {
+			isa = PBXGroup;
+			children = (
+				F03134162F1E8CB100C9EBD0 /* BottomBarView.swift */,
+				F03134182F1E8CB100C9EBD0 /* ModeSectionView.swift */,
+				F0NP10032F3E000000000001 /* NowPlayingSectionView.swift */,
+				F0PL000D2F30000000000001 /* PlaylistListView.swift */,
+				F0PL00092F30000000000001 /* PlaylistStripView.swift */,
+			);
+			path = Sections;
+			sourceTree = "<group>";
+		};
+		F031341C2F1E8CB100C9EBD0 /* SwiftUI */ = {
+			isa = PBXGroup;
+			children = (
+				F0F66C792F1FC2BA007E6377 /* Settings */,
+				F03134122F1E8CB100C9EBD0 /* Alerts */,
+				F03134152F1E8CB100C9EBD0 /* Components */,
+				F031341A2F1E8CB100C9EBD0 /* Sections */,
+				F0AECL012F4C000000000001 /* Color+Aerial.swift */,
+				F03134282F1E911E00C9EBD0 /* InfoView.swift */,
+				F0ABC00022F30000000000001 /* AboutContent.swift */,
+				F031341B2F1E8CB100C9EBD0 /* MainPopoverView.swift */,
+			);
+			path = SwiftUI;
+			sourceTree = "<group>";
+		};
+		F072218A2AD437AB001F5452 /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				F072218D2AD43D91001F5452 /* NightShift.swift */,
+				F072218F2AD45039001F5452 /* Locations.swift */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		F0A3E09E28845C1D005E8D8D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F0EXT00C2F30000000000001 /* ScreenSaver.framework */,
+				F0A3E09F28845C1D005E8D8D /* MusicKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F0C05E872E4E2BF30066F2C4 /* ScreenSaver */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060712E4F70580066F2C4 /* Resources */,
+				F0C060F92E4F70580066F2C4 /* Source */,
+			);
+			path = ScreenSaver;
+			sourceTree = "<group>";
+		};
+		F0C05FA22E4E2C060066F2C4 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F0326B372E9BDF3300582FED /* AerialLogger.swift */,
+				F0LBR0012F30000000000001 /* LogBridge.swift */,
+				F01240D02EA7F19900EE0FFC /* AerialPaths.swift */,
+				F01240D12EA7F19900EE0FFC /* JSONPreferencesStore.swift */,
+				F0WP00032F30000000000001 /* Weather */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F0C05FA52E4E2C060066F2C4 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				F0C05FA22E4E2C060066F2C4 /* Models */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F0C05FD62E4F70580066F2C4 /* Community */ = {
+			isa = PBXGroup;
+			children = (
+				F0C05FC12E4F70580066F2C4 /* ar.json */,
+				F0C05FC22E4F70580066F2C4 /* de.json */,
+				F0C05FC32E4F70580066F2C4 /* en.json */,
+				F0C05FC42E4F70580066F2C4 /* es.json */,
+				F0C05FC52E4F70580066F2C4 /* fr.json */,
+				F0C05FC62E4F70580066F2C4 /* he.json */,
+				F0C05FC72E4F70580066F2C4 /* hu.json */,
+				F0C05FC82E4F70580066F2C4 /* it.json */,
+				F0C05FC92E4F70580066F2C4 /* ja.json */,
+				F0C05FCA2E4F70580066F2C4 /* ko.json */,
+				F0C05FCB2E4F70580066F2C4 /* missingvideos.json */,
+				F0C05FCC2E4F70580066F2C4 /* nl.json */,
+				F0C05FCD2E4F70580066F2C4 /* pl.json */,
+				F0C05FCE2E4F70580066F2C4 /* pt.json */,
+				F0C05FCF2E4F70580066F2C4 /* pt_BR.json */,
+				F0C05FD02E4F70580066F2C4 /* Readme.md */,
+				F0C05FD12E4F70580066F2C4 /* ru.json */,
+				F0C05FD22E4F70580066F2C4 /* sv.json */,
+				F0C05FD32E4F70580066F2C4 /* tl.json */,
+				F0C05FD42E4F70580066F2C4 /* zh_CN.json */,
+				F0C05FD52E4F70580066F2C4 /* zh_TW.json */,
+			);
+			path = Community;
+			sourceTree = "<group>";
+		};
+		F0C0601C2E4F70580066F2C4 /* Screenshots */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060142E4F70580066F2C4 /* screen0.jpg */,
+				F0C060152E4F70580066F2C4 /* screen1.jpg */,
+				F0C060162E4F70580066F2C4 /* screen2.jpg */,
+				F0C060172E4F70580066F2C4 /* video_inspire_alabama_montgomery_countryside_00007.png */,
+				F0C060182E4F70580066F2C4 /* video_inspire_california_big-sur_2020_00001.png */,
+				F0C060192E4F70580066F2C4 /* video_inspire_california_catalina_00005.png */,
+				F0C0601A2E4F70580066F2C4 /* video_inspire_california_vineyard_sierra-mar_sunrise_110.png */,
+				F0C0601B2E4F70580066F2C4 /* video_inspire_italy_como_cerano-dintelvi_006.png */,
+			);
+			path = Screenshots;
+			sourceTree = "<group>";
+		};
+		F0C060712E4F70580066F2C4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F0C05FD62E4F70580066F2C4 /* Community */,
+				F0C0601C2E4F70580066F2C4 /* Screenshots */,
+				F0C0606C2E4F70580066F2C4 /* icon-320@2x.png */,
+				F0C0606D2E4F70580066F2C4 /* icon-512@2x.png */,
+				F0C0606E2E4F70580066F2C4 /* kofi1@2x.png */,
+				F0C0606F2E4F70580066F2C4 /* LogoIcon-128px@2x.png */,
+				F0C060702E4F70580066F2C4 /* openweather_logo.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F0C0607A2E4F70580066F2C4 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060752E4F70580066F2C4 /* APISecrets.swift */,
+				F0C060762E4F70580066F2C4 /* Forecast.swift */,
+				F0C060792E4F70580066F2C4 /* OpenWeather.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		F0C060842E4F70580066F2C4 /* Cache */ = {
+			isa = PBXGroup;
+			children = (
+				F0C0607C2E4F70580066F2C4 /* Cache.swift */,
+				F0C0607D2E4F70580066F2C4 /* PoiStringProvider.swift */,
+				F0C0607E2E4F70580066F2C4 /* Thumbnails.swift */,
+				F0C0607F2E4F70580066F2C4 /* TimeMachine.swift */,
+				F0C060802E4F70580066F2C4 /* VideoCache.swift */,
+				F0C060812E4F70580066F2C4 /* VideoDownload.swift */,
+				F0MD500012F30000000000001 /* MD5Verifier.swift */,
+				F0RES00012F30000000000001 /* VideoDownloadResume.swift */,
+				F0C060832E4F70580066F2C4 /* VideoManager.swift */,
+			);
+			path = Cache;
+			sourceTree = "<group>";
+		};
+		F0EXP00A2F30000000000001 /* Expansions */ = {
+			isa = PBXGroup;
+			children = (
+				F0EXP0012F30000000000001 /* Expansion.swift */,
+				F0EXP0042F30000000000001 /* ExpansionStore.swift */,
+			);
+			path = Expansions;
+			sourceTree = "<group>";
+		};
+		F0C060882E4F70580066F2C4 /* Downloads */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */,
+				F0C060862E4F70580066F2C4 /* DownloadManager.swift */,
+				F0C060872E4F70580066F2C4 /* FileHelpers.swift */,
+			);
+			path = Downloads;
+			sourceTree = "<group>";
+		};
+		F0C060902E4F70580066F2C4 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */,
+				F0C0608B2E4F70580066F2C4 /* AVPlayerViewExtension.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		F0C0609C2E4F70580066F2C4 /* Hardware */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060962E4F70580066F2C4 /* Battery.swift */,
+				F0C060982E4F70580066F2C4 /* DarkMode.swift */,
+				F0C060992E4F70580066F2C4 /* DisplayDetection.swift */,
+				F0C0609B2E4F70580066F2C4 /* NightShift.swift */,
+			);
+			path = Hardware;
+			sourceTree = "<group>";
+		};
+		F0C0609E2E4F70580066F2C4 /* Music */ = {
+			isa = PBXGroup;
+			children = (
+				F0C0609D2E4F70580066F2C4 /* Music.swift */,
+			);
+			path = Music;
+			sourceTree = "<group>";
+		};
+		F0C060A62E4F70580066F2C4 /* Prefs */ = {
+			isa = PBXGroup;
+			children = (
+				F0D637602EA6A62700366EAB /* ScreensaverSettings.swift */,
+				F0D637612EA6A62700366EAB /* ScreensaverSettingsManager.swift */,
+				F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */,
+				F0C060A02E4F70580066F2C4 /* PrefsCache.swift */,
+				F0C060A12E4F70580066F2C4 /* PrefsDisplays.swift */,
+				F0C060A32E4F70580066F2C4 /* PrefsTime.swift */,
+				F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */,
+			);
+			path = Prefs;
+			sourceTree = "<group>";
+		};
+		F0C060AC2E4F70580066F2C4 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060A82E4F70580066F2C4 /* Source.swift */,
+				F0C060A92E4F70580066F2C4 /* SourceInfo.swift */,
+				F0C060AA2E4F70580066F2C4 /* SourceList.swift */,
+				F0C060AB2E4F70580066F2C4 /* VideoList.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		F0C060B12E4F70580066F2C4 /* Time */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060AF2E4F70580066F2C4 /* Solar.swift */,
+				F0C060B02E4F70580066F2C4 /* TimeManagement.swift */,
+			);
+			path = Time;
+			sourceTree = "<group>";
+		};
+		F0C060BC2E4F70580066F2C4 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVR0002F30000000000001 /* Overlay */,
+				F0C0607A2E4F70580066F2C4 /* API */,
+				F0C060842E4F70580066F2C4 /* Cache */,
+				F0C060882E4F70580066F2C4 /* Downloads */,
+				F0C060902E4F70580066F2C4 /* Extensions */,
+				F0C0609C2E4F70580066F2C4 /* Hardware */,
+				F0C0609E2E4F70580066F2C4 /* Music */,
+				F0C060A62E4F70580066F2C4 /* Prefs */,
+				F0C060AC2E4F70580066F2C4 /* Sources */,
+				F0C060B12E4F70580066F2C4 /* Time */,
+				F0C060B22E4F70580066F2C4 /* Aerial.swift */,
+				F0C060B32E4F70580066F2C4 /* AerialVideo.swift */,
+				F0C060B82E4F70580066F2C4 /* Locations.swift */,
+				F0PL00012F30000000000001 /* PlaylistModels.swift */,
+				F0UPL0012F30000000000001 /* UserPlaylistModels.swift */,
+				F0LF00012F30000000000001 /* LiveFeed.swift */,
+				F0EXP00A2F30000000000001 /* Expansions */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F0C060ED2E4F70580066F2C4 /* PrefPanel */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060DC2E4F70580066F2C4 /* DisplayView.swift */,
+			);
+			path = PrefPanel;
+			sourceTree = "<group>";
+		};
+		F0C060F72E4F70580066F2C4 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060ED2E4F70580066F2C4 /* PrefPanel */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F0C060F92E4F70580066F2C4 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				F0C060BC2E4F70580066F2C4 /* Models */,
+				F0C060F72E4F70580066F2C4 /* Views */,
+				F0C060F82E4F70580066F2C4 /* Header.h */,
+			);
+			path = Source;
+			sourceTree = "<group>";
+		};
+		F0EXT0152F30000000000001 /* AerialScreenSaverExtension */ = {
+			isa = PBXGroup;
+			children = (
+				F0EXT0022F30000000000001 /* AerialScreenSaverExtension.swift */,
+				F0EXT0042F30000000000001 /* AerialViewController.swift */,
+				F0EXT0062F30000000000001 /* AerialSaverView.swift */,
+				F0EXT0082F30000000000001 /* AerialConfigurationViewController.swift */,
+				F0EXT0412F30000000000001 /* ExtensionHelpers.swift */,
+				F0EXT0602F30000000000001 /* ExtensionVideoLoader.swift */,
+				F0EXT0E02F30000000000001 /* PlayerCoordinator.swift */,
+				F0LF000E2F30000000000001 /* LivePlaybackDiagnostics.swift */,
+				F0EXT0B82F30000000000001 /* Overlays */,
+				F0EXT0102F30000000000001 /* AerialScreenSaverExtension-Bridging-Header.h */,
+				F0EXT0162F30000000000001 /* PrivateHeaders */,
+				F0EXT0122F30000000000001 /* Info.plist */,
+				F0EXT0132F30000000000001 /* AerialScreenSaverExtension.entitlements */,
+				F0EXT00A2F30000000000001 /* Assets.xcassets */,
+			);
+			path = AerialScreenSaverExtension;
+			sourceTree = "<group>";
+		};
+		F0EXT0162F30000000000001 /* PrivateHeaders */ = {
+			isa = PBXGroup;
+			children = (
+				F0EXT0112F30000000000001 /* ScreenSaverPrivate.h */,
+			);
+			path = PrivateHeaders;
+			sourceTree = "<group>";
+		};
+		F0EXT0B82F30000000000001 /* Overlays */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVP0002F30000000000001 /* Providers */,
+				F0OVP0012F30000000000001 /* OverlayTypeProvider.swift */,
+				F0OVP0022F30000000000001 /* OverlayTypeRegistry.swift */,
+				F0EXT0B22F30000000000001 /* OverlayState.swift */,
+				F0EXT0B32F30000000000001 /* OverlayRootView.swift */,
+				F0EXT0B62F30000000000001 /* WeatherSymbols.swift */,
+				F0EXT0B72F30000000000001 /* WeatherOverlayView.swift */,
+				F0EXT0D22F30000000000001 /* MusicOverlayView.swift */,
+			);
+			path = Overlays;
+			sourceTree = "<group>";
+		};
+		F0F66C772F1FC2BA007E6377 /* Panels */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVE0082F30000000000001 /* OverlaysSettingsPanel.swift */,
+				F0F66C752F1FC2BA007E6377 /* AutoUpdatesPanel.swift */,
+				F0F66C762F1FC2BA007E6377 /* ScreensaverSettingsPanel.swift */,
+				F0STL0002F30000000000001 /* ScreensaverTimelineView.swift */,
+				F0F66C7D2F1FD502007E6377 /* MyVideosSettingsPanel.swift */,
+				F0F66C7E2F1FD502007E6377 /* MyVideosViewModel.swift */,
+				F0F66C812F1FD502007E6377 /* CacheSettingsPanel.swift */,
+				F0F66C832F1FD502007E6377 /* DisplayPreviewView.swift */,
+				F0F66C842F1FD502007E6377 /* DisplaysSettingsPanel.swift */,
+				F0DSK0002F30000000000001 /* DesktopSettingsPanel.swift */,
+				F0F66C872F1FD502007E6377 /* AboutSettingsPanel.swift */,
+				F0F66C8A2F1FD502007E6377 /* AdvancedSettingsPanel.swift */,
+				F0KBS0072F50000000000001 /* AccessibilityPanel.swift */,
+				F0TIM0002F30000000000001 /* TimeSettingsPanel.swift */,
+			);
+			path = Panels;
+			sourceTree = "<group>";
+		};
+		F0F66C792F1FC2BA007E6377 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				F0F66C772F1FC2BA007E6377 /* Panels */,
+				F0F66C782F1FC2BA007E6377 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		F0FL00012F30000000000001 /* FirstLaunch */ = {
+			isa = PBXGroup;
+			children = (
+				F0FL00072F30000000000001 /* FirstLaunchWizardWindowController.swift */,
+				F0FL00062F30000000000001 /* FirstLaunchWizardView.swift */,
+				F0FL00022F30000000000001 /* FirstLaunchCard.swift */,
+				F0FL00032F30000000000001 /* FirstLaunchModeStep.swift */,
+				F0FL00042F30000000000001 /* FirstLaunchOverlayStep.swift */,
+				F0FL00052F30000000000001 /* FirstLaunchThankYouStep.swift */,
+				F0FLW00022F30000000000001 /* FirstLaunchWelcomeStep.swift */,
+				F0FLM00022F30000000000001 /* FirstLaunchMigrationStep.swift */,
+			);
+			path = FirstLaunch;
+			sourceTree = "<group>";
+		};
+		F0OVE0002F30000000000001 /* OverlayEditor */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVE0012F30000000000001 /* OverlayEditorWindowController.swift */,
+				F0OVE0022F30000000000001 /* OverlayEditorState.swift */,
+				F0OVE0032F30000000000001 /* OverlayEditorView.swift */,
+				F0OVE0042F30000000000001 /* OverlayEditorToolbar.swift */,
+				F0OVE0052F30000000000001 /* VideoPreviewLayer.swift */,
+				F0OVE0072F30000000000001 /* OverlayPreviewRenderer.swift */,
+				F0OVE0092F30000000000001 /* OverlayDragData.swift */,
+				F0OVE00A2F30000000000001 /* OverlayPalette.swift */,
+				F0OVE00B2F30000000000001 /* OverlaySettingsPane.swift */,
+				F0LSP0002F30000000000001 /* LayoutSettingsPane.swift */,
+				F0OVE00C2F30000000000001 /* CommonOverlaySettingsView.swift */,
+				F0OVE00E2F30000000000001 /* InspectorPanelView.swift */,
+			);
+			path = OverlayEditor;
+			sourceTree = "<group>";
+		};
+		F0OVP0002F30000000000001 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVP0032F30000000000001 /* ClockOverlayProvider.swift */,
+				F0OVP0042F30000000000001 /* DateOverlayProvider.swift */,
+				F0OVP0052F30000000000001 /* LocationOverlayProvider.swift */,
+				F0OVP0062F30000000000001 /* WeatherOverlayProvider.swift */,
+				F0OVP0072F30000000000001 /* MusicOverlayProvider.swift */,
+				F0OVP0082F30000000000001 /* MessageOverlayProvider.swift */,
+				F0OVP0092F30000000000001 /* TimerOverlayProvider.swift */,
+				F0OVP00A2F30000000000001 /* CountdownOverlayProvider.swift */,
+				F0OVP00B2F30000000000001 /* BatteryOverlayProvider.swift */,
+				F0OVP00C2F30000000000001 /* VerticalSpacerOverlayProvider.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
+		F0OVR0002F30000000000001 /* Overlay */ = {
+			isa = PBXGroup;
+			children = (
+				F0OVR0012F30000000000001 /* OverlayConfig.swift */,
+				F0OVR0022F30000000000001 /* OverlayConfigManager.swift */,
+				F0OVR0032F30000000000001 /* OverlayTypeDefaults.swift */,
+			);
+			path = Overlay;
+			sourceTree = "<group>";
+		};
+		F0TST0202F30000000000001 /* AerialTests */ = {
+			isa = PBXGroup;
+			children = (
+				F0TST0072F30000000000001 /* PlaylistStateMachineTests.swift */,
+				F0TST0082F30000000000001 /* OverlayLayoutTests.swift */,
+				F0TST0092F30000000000001 /* CodableRoundTripTests.swift */,
+				F0TST00A2F30000000000001 /* WeatherCacheKeyTests.swift */,
+				F0TST00B2F30000000000001 /* OverlayConfigResolutionTests.swift */,
+			);
+			path = AerialTests;
+			sourceTree = "<group>";
+		};
+		F0VBR0002F30000000000001 /* VideoBrowser */ = {
+			isa = PBXGroup;
+			children = (
+				F0VBR0022F30000000000001 /* VideoBrowserView.swift */,
+				F0VBR0032F30000000000001 /* VideoBrowserState.swift */,
+				F0VBR0042F30000000000001 /* VideoBrowserSidebar.swift */,
+				F0ACT00022F30000000000001 /* ActivityContentView.swift */,
+				F0CH00022F30000000000001 /* ContentHeader.swift */,
+				F0GS00022F30000000000001 /* GlobalSearchSourceCard.swift */,
+				F0GS00042F30000000000001 /* GlobalSearchResultsView.swift */,
+				F0EA00022F30000000000001 /* ExpansionAssetCardView.swift */,
+				F0VBR0052F30000000000001 /* PlaylistSummaryView.swift */,
+				F0VBR0062F30000000000001 /* VideoGridView.swift */,
+				F0VBR0072F30000000000001 /* VideoBrowserCardView.swift */,
+				F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */,
+				F0VBR0092F30000000000001 /* VideoInspectorView.swift */,
+				F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */,
+				F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */,
+				F0VBR00D2F30000000000001 /* DropZoneView.swift */,
+				F0VBR00F2F30000000000001 /* FormatBadge.swift */,
+				F0UPL0072F30000000000001 /* UserPlaylistSidebarSection.swift */,
+				F0UPL0092F30000000000001 /* UserPlaylistContentView.swift */,
+				F0UPL00B2F30000000000001 /* MultiSelectionInspectorView.swift */,
+				F0LF000C2F30000000000001 /* LiveFeedsContentView.swift */,
+				F0LF00112F30000000000001 /* LiveFeedPreviewWindow.swift */,
+				F0EXP00B2F30000000000001 /* ExpansionsContentView.swift */,
+				F0EXP00C2F30000000000001 /* ExpansionCard.swift */,
+				F0EXP00D2F30000000000001 /* InstallFromLinkView.swift */,
+				F0ITY00022F30000000000001 /* InstallThankYouView.swift */,
+				F0IAI00022F30000000000001 /* InstallAlreadyInstalledView.swift */,
+			);
+			path = VideoBrowser;
+			sourceTree = "<group>";
+		};
+		F0WP00032F30000000000001 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				F0WP00012F30000000000001 /* WeatherProvider.swift */,
+				F0WP00022F30000000000001 /* WeatherCache.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		03CE4F5424CB0CA700494D32 /* Aerial */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 03CE4F6524CB0CA900494D32 /* Build configuration list for PBXNativeTarget "Aerial" */;
+			buildPhases = (
+				03CE4F5124CB0CA700494D32 /* Sources */,
+				F0LINT012F30000000000001 /* SwiftLint */,
+				03CE4F5224CB0CA700494D32 /* Frameworks */,
+				03CE4F5324CB0CA700494D32 /* Resources */,
+				F0EXT00F2F30000000000001 /* Embed PlugIns */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0EXT01B2F30000000000001 /* PBXTargetDependency */,
+			);
+			name = Aerial;
+			packageProductDependencies = (
+				F0C227862A12A5410053D5DA /* Sparkle */,
+				F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */,
+				F0KBS0022F50000000000001 /* KeyboardShortcuts */,
+			);
+			productName = Aerial;
+			productReference = 03CE4F5524CB0CA700494D32 /* Aerial.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F0EXT0172F30000000000001 /* AerialScreenSaverExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0EXT0182F30000000000001 /* Build configuration list for PBXNativeTarget "AerialScreenSaverExtension" */;
+			buildPhases = (
+				F0EXT0192F30000000000001 /* Sources */,
+				F0EXT0142F30000000000001 /* Frameworks */,
+				F0EXT01A2F30000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AerialScreenSaverExtension;
+			packageProductDependencies = (
+			);
+			productName = AerialScreenSaverExtension;
+			productReference = F0EXT00E2F30000000000001 /* AerialScreenSaverExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F0TST0302F30000000000001 /* AerialTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0TST0402F30000000000001 /* Build configuration list for PBXNativeTarget "AerialTests" */;
+			buildPhases = (
+				F0TST0312F30000000000001 /* Sources */,
+				F0TST0322F30000000000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0TST0112F30000000000001 /* PBXTargetDependency */,
+			);
+			name = AerialTests;
+			productName = AerialTests;
+			productReference = F0TST0062F30000000000001 /* AerialTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		03CE4F4D24CB0CA700494D32 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 1300;
+				TargetAttributes = {
+					03CE4F5424CB0CA700494D32 = {
+						CreatedOnToolsVersion = 12.0;
+						LastSwiftMigration = 1200;
+					};
+					F0EXT0172F30000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					F0TST0302F30000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 03CE4F5424CB0CA700494D32;
+					};
+				};
+			};
+			buildConfigurationList = 03CE4F5024CB0CA700494D32 /* Build configuration list for PBXProject "Aerial" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 03CE4F4C24CB0CA700494D32;
+			packageReferences = (
+				F0C227852A12A5410053D5DA /* XCRemoteSwiftPackageReference "Sparkle" */,
+				F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */,
+				F0KBS0032F50000000000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
+			productRefGroup = 03CE4F5624CB0CA700494D32 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				03CE4F5424CB0CA700494D32 /* Aerial */,
+				F0EXT0172F30000000000001 /* AerialScreenSaverExtension */,
+				F0TST0302F30000000000001 /* AerialTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		03CE4F5324CB0CA700494D32 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				033B0B7224E9749400622CA7 /* moon.zzz.pdf in Resources */,
+				03F5E1472575360600BF4F45 /* icon-512@2x.png in Resources */,
+				03CE4F5D24CB0CA900494D32 /* Assets.xcassets in Resources */,
+				033B0B7324E9749400622CA7 /* exclamationmark.bubble.pdf in Resources */,
+				03BA141924FA8FE800BAAE1D /* AerialWindow.xib in Resources */,
+				033B0B7124E9749400622CA7 /* clock.pdf in Resources */,
+				03CE4F6024CB0CA900494D32 /* Main.storyboard in Resources */,
+				03F5E14A2575369200BF4F45 /* LogoIcon-128px@2x.png in Resources */,
+				F05C63B528F21A390068B545 /* menubar.dock.rectangle.svg in Resources */,
+				0316C21B2577DD6B007BAF70 /* AerialDesktop.xib in Resources */,
+				033B0B6924E96CE200622CA7 /* ant.pdf in Resources */,
+				03076A072505EF8E00CDF16C /* kofi1@2x.png in Resources */,
+				033B0B6D24E96D4C00622CA7 /* cloud.sun.rain.pdf in Resources */,
+				033B0B6C24E96D4C00622CA7 /* sun.max.pdf in Resources */,
+				F0E51E5F2E9D7299002BBAD6 /* screen1.jpg in Resources */,
+				F0E51E602E9D7299002BBAD6 /* screen2.jpg in Resources */,
+				F0E51E612E9D7299002BBAD6 /* screen0.jpg in Resources */,
+				F01C6D612E9ABAB600C1CB73 /* Version.xcconfig in Resources */,
+				F067DB392F5B1ED900F2A59C /* Aerial-tahoe.icon in Resources */,
+				F0EXP00F2F30000000000001 /* expansions.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0EXT01A2F30000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0EXT0092F30000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F0LINT012F30000000000001 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n  swiftlint\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		03CE4F5124CB0CA700494D32 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				73309F322685AFEA00B8FAB0 /* NSScreen+Id.swift in Sources */,
+				F0DOK0012F30000000000001 /* DockInfo.swift in Sources */,
+				031A3A6724D835B10011E738 /* InfoWindowController.swift in Sources */,
+				0333115924D85CCA00E4622D /* String+version.swift in Sources */,
+				031954C0256409EC0058467C /* SaverLauncher.swift in Sources */,
+				0316C21F2577EBF6007BAF70 /* DesktopLauncher.swift in Sources */,
+				F0DOM0012F30000000000001 /* DesktopOcclusionMonitor.swift in Sources */,
+				F0C5B4302E8EDA9F00AEC15C /* AerialPluginManager.swift in Sources */,
+				F0D637572EA0239900366EAB /* PathMigrationView.swift in Sources */,
+				03592AB824CC80FD00C1AE52 /* Helpers.swift in Sources */,
+				03592AB224CC765500C1AE52 /* Preferences.swift in Sources */,
+				F07221902AD45039001F5452 /* Locations.swift in Sources */,
+				03CE4F5924CB0CA700494D32 /* AppDelegate.swift in Sources */,
+				03CE4F9A24CB0CA700494D32 /* AerialCompanionApp.swift in Sources */,
+				03ADA8EC24E034A40093D0A2 /* LaunchAgent.swift in Sources */,
+				11374231735C4A908F3371BC /* SwiftAerialDesktop.swift in Sources */,
+				F03134292F1E911E00C9EBD0 /* InfoView.swift in Sources */,
+				F0ABC00012F30000000000001 /* AboutContent.swift in Sources */,
+				11374231735C4A908F3371BD /* SwiftAerialWindow.swift in Sources */,
+				F0D6375E2EA6830100366EAB /* CompanionSettings.swift in Sources */,
+				F0D6375F2EA6830100366EAB /* CompanionSettingsManager.swift in Sources */,
+				F0F66C7F2F1FD502007E6377 /* MyVideosViewModel.swift in Sources */,
+				F05C63B728F326300068B545 /* SystemPrefs.swift in Sources */,
+				F072218E2AD43D91001F5452 /* NightShift.swift in Sources */,
+				F0C060FD2E4F70580066F2C4 /* DarkMode.swift in Sources */,
+				F0C060FE2E4F70580066F2C4 /* VideoCache.swift in Sources */,
+				F0C061032E4F70580066F2C4 /* SourceList.swift in Sources */,
+				F0C061062E4F70580066F2C4 /* SourceInfo.swift in Sources */,
+				F0C061092E4F70580066F2C4 /* VideoList.swift in Sources */,
+				F0C0610E2E4F70580066F2C4 /* TimeManagement.swift in Sources */,
+				F0C061102E4F70580066F2C4 /* Music.swift in Sources */,
+				F0C061162E4F70580066F2C4 /* VideoManager.swift in Sources */,
+				F0C061182E4F70580066F2C4 /* Aerial.swift in Sources */,
+				F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */,
+				F0C0611B2E4F70580066F2C4 /* DisplayView.swift in Sources */,
+				F0C0611D2E4F70580066F2C4 /* PrefsVideos.swift in Sources */,
+				F0F66C7A2F1FC2BA007E6377 /* ScreensaverSettingsPanel.swift in Sources */,
+				F0STL0012F30000000000001 /* ScreensaverTimelineView.swift in Sources */,
+				F0F66C7B2F1FC2BA007E6377 /* SettingsView.swift in Sources */,
+				F0F66C7C2F1FC2BA007E6377 /* AutoUpdatesPanel.swift in Sources */,
+				F0F66C822F1FD502007E6377 /* CacheSettingsPanel.swift in Sources */,
+				F0F66C852F1FD502007E6377 /* DisplayPreviewView.swift in Sources */,
+				F0F66C862F1FD502007E6377 /* DisplaysSettingsPanel.swift in Sources */,
+				F0DSK0012F30000000000001 /* DesktopSettingsPanel.swift in Sources */,
+				F0F66C882F1FD502007E6377 /* AboutSettingsPanel.swift in Sources */,
+				F0TIM0012F30000000000001 /* TimeSettingsPanel.swift in Sources */,
+				F0F66C892F1FD502007E6377 /* AdvancedSettingsPanel.swift in Sources */,
+				F0KBS0062F50000000000001 /* AccessibilityPanel.swift in Sources */,
+				F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */,
+				F0C061282E4F70580066F2C4 /* PrefsAdvanced.swift in Sources */,
+				F0C0612B2E4F70580066F2C4 /* APISecrets.swift in Sources */,
+				F0C0612E2E4F70580066F2C4 /* TimeMachine.swift in Sources */,
+				F0C061322E4F70580066F2C4 /* Cache.swift in Sources */,
+				F0C061372E4F70580066F2C4 /* AsynchronousOperation.swift in Sources */,
+				F0AECL022F4C000000000001 /* Color+Aerial.swift in Sources */,
+				F031341F2F1E8CB100C9EBD0 /* MainPopoverView.swift in Sources */,
+				F03134212F1E8CB100C9EBD0 /* NotDefaultBarView.swift in Sources */,
+				F03134232F1E8CB100C9EBD0 /* SpeedSliderView.swift in Sources */,
+				F03134242F1E8CB100C9EBD0 /* ModeSectionView.swift in Sources */,
+				F0NP10022F3E000000000001 /* SourceThumbnailCard.swift in Sources */,
+				F0NP10042F3E000000000001 /* NowPlayingSectionView.swift in Sources */,
+				F0C5B4312E8EDA9F00AEC15C /* BottomBarView.swift in Sources */,
+				F01240DA2EA7F19900EE0FFC /* AerialPaths.swift in Sources */,
+				F01240DB2EA7F19900EE0FFC /* JSONPreferencesStore.swift in Sources */,
+				F0WP00042F30000000000001 /* WeatherProvider.swift in Sources */,
+				F0WP00052F30000000000001 /* WeatherCache.swift in Sources */,
+				F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */,
+				F0D637642EA6A62700366EAB /* ScreensaverSettingsManager.swift in Sources */,
+				F0D637652EA6A62700366EAB /* ScreensaverSettings.swift in Sources */,
+				F0E51E5E2E9D53BF002BBAD6 /* UnifiedPaths.swift in Sources */,
+				F0C061462E4F70580066F2C4 /* DownloadManager.swift in Sources */,
+				F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */,
+				F0C0614D2E4F70580066F2C4 /* PrefsDisplays.swift in Sources */,
+				F0C061512E4F70580066F2C4 /* Thumbnails.swift in Sources */,
+				F0C061542E4F70580066F2C4 /* Forecast.swift in Sources */,
+				F0C061562E4F70580066F2C4 /* OpenWeather.swift in Sources */,
+				F0C061582E4F70580066F2C4 /* Source.swift in Sources */,
+				F031340F2F1E8C9A00C9EBD0 /* PlaybackManager.swift in Sources */,
+				F0C061612E4F70580066F2C4 /* VideoDownload.swift in Sources */,
+				F0MD500022F30000000000001 /* MD5Verifier.swift in Sources */,
+				F0RES00022F30000000000001 /* VideoDownloadResume.swift in Sources */,
+				F0326B392E9BDF3300582FED /* AerialLogger.swift in Sources */,
+				F0LBR0022F30000000000001 /* LogBridge.swift in Sources */,
+				F0FA266F2F80072200AEC218 /* UpdateAvailableBarView.swift in Sources */,
+				F0C061662E4F70580066F2C4 /* Battery.swift in Sources */,
+				F0C0616A2E4F70580066F2C4 /* Solar.swift in Sources */,
+				F0C0616C2E4F70580066F2C4 /* AerialVideo.swift in Sources */,
+				F0C061712E4F70580066F2C4 /* FileHelpers.swift in Sources */,
+				F0C061722E4F70580066F2C4 /* PrefsTime.swift in Sources */,
+				F0C0617F2E4F70580066F2C4 /* AVPlayerViewExtension.swift in Sources */,
+				F0C061802E4F70580066F2C4 /* PoiStringProvider.swift in Sources */,
+				F0CMP0B02F30000000000001 /* OverlayState.swift in Sources */,
+				F0CMP0B12F30000000000001 /* OverlayRootView.swift in Sources */,
+				F0CMP0B42F30000000000001 /* WeatherSymbols.swift in Sources */,
+				F0CMP0B52F30000000000001 /* WeatherOverlayView.swift in Sources */,
+				F0CMP0D12F30000000000001 /* MusicOverlayView.swift in Sources */,
+				F0CMP0E12F30000000000001 /* PlayerCoordinator.swift in Sources */,
+				F0CMP0612F30000000000001 /* ExtensionVideoLoader.swift in Sources */,
+				F0CMP0062F30000000000001 /* AerialSaverView.swift in Sources */,
+				F0PL00022F30000000000001 /* PlaylistModels.swift in Sources */,
+				F0UPL0022F30000000000001 /* UserPlaylistModels.swift in Sources */,
+				F0LF00022F30000000000001 /* LiveFeed.swift in Sources */,
+				F0LF00052F30000000000001 /* LiveFeedManager.swift in Sources */,
+				F0LF00072F30000000000001 /* LiveFeedsSourceSync.swift in Sources */,
+				F0LF00092F30000000000001 /* LiveFeedsTooling.swift in Sources */,
+				F0LF000B2F30000000000001 /* LiveFeedResolver.swift in Sources */,
+				F0LF000D2F30000000000001 /* LiveFeedsContentView.swift in Sources */,
+				F0EXP0022F30000000000001 /* Expansion.swift in Sources */,
+				F0EXP0052F30000000000001 /* ExpansionStore.swift in Sources */,
+				F0EXP0072F30000000000001 /* ExpansionsContentView.swift in Sources */,
+				F0EXP0082F30000000000001 /* ExpansionCard.swift in Sources */,
+				F0EXP0092F30000000000001 /* InstallFromLinkView.swift in Sources */,
+				F0ITY00012F30000000000001 /* InstallThankYouView.swift in Sources */,
+				F0IAI00012F30000000000001 /* InstallAlreadyInstalledView.swift in Sources */,
+				F0LF000F2F30000000000001 /* LivePlaybackDiagnostics.swift in Sources */,
+				F0LF00122F30000000000001 /* LiveFeedPreviewWindow.swift in Sources */,
+				F0LF00142F30000000000001 /* LiveFeedsGateway.swift in Sources */,
+				F0LF00162F30000000000001 /* LiveFeedTransmuxer.swift in Sources */,
+				F0LF00182F30000000000001 /* LiveFeedThumbnailer.swift in Sources */,
+				F0LF001A2F30000000000001 /* LiveFeedCredentialStore.swift in Sources */,
+				F0PL00062F30000000000001 /* PlaylistManager.swift in Sources */,
+				F0UPL0062F30000000000001 /* UserPlaylistManager.swift in Sources */,
+				F0PL00082F30000000000001 /* DownloadCoordinator.swift in Sources */,
+				F0PL000C2F30000000000001 /* DownloadTracker.swift in Sources */,
+				F0COR00012F30000000000001 /* CacheOrphanReaper.swift in Sources */,
+				F0LOC0022F30000000000001 /* LocationProvider.swift in Sources */,
+				F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */,
+				F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */,
+				F0MUS0062F30000000000001 /* NowPlayingCoordinator.swift in Sources */,
+				F0WPC0022F30000000000001 /* WallpaperContinuity.swift in Sources */,
+				F0DRM0022F30000000000001 /* DirectoryMonitor.swift in Sources */,
+				F0WCC0022F30000000000001 /* WallpaperCacheCleaner.swift in Sources */,
+				F0KBS0042F50000000000001 /* GlobalShortcuts.swift in Sources */,
+				F0PL000A2F30000000000001 /* PlaylistStripView.swift in Sources */,
+				F0PL000E2F30000000000001 /* PlaylistListView.swift in Sources */,
+				F0SPK0022F40000000000001 /* SparkleGentleDelegate.swift in Sources */,
+				F0OVC0012F30000000000001 /* OverlayConfig.swift in Sources */,
+				F0OVC0022F30000000000001 /* OverlayConfigManager.swift in Sources */,
+				F0OVC0032F30000000000001 /* OverlayTypeDefaults.swift in Sources */,
+				F0OVC0042F30000000000001 /* OverlayTypeProvider.swift in Sources */,
+				F0OVC0052F30000000000001 /* OverlayTypeRegistry.swift in Sources */,
+				F0OVC0062F30000000000001 /* ClockOverlayProvider.swift in Sources */,
+				F0OVC0072F30000000000001 /* DateOverlayProvider.swift in Sources */,
+				F0OVC0082F30000000000001 /* LocationOverlayProvider.swift in Sources */,
+				F0OVC0092F30000000000001 /* WeatherOverlayProvider.swift in Sources */,
+				F0OVC00A2F30000000000001 /* MusicOverlayProvider.swift in Sources */,
+				F0OVC00B2F30000000000001 /* MessageOverlayProvider.swift in Sources */,
+				F0OVC02E2F30000000000001 /* TimerOverlayProvider.swift in Sources */,
+				F0OVC02F2F30000000000001 /* CountdownOverlayProvider.swift in Sources */,
+				F0OVC0302F30000000000001 /* BatteryOverlayProvider.swift in Sources */,
+				F0OVC0312F30000000000001 /* VerticalSpacerOverlayProvider.swift in Sources */,
+				F0OVC0202F30000000000001 /* OverlayEditorWindowController.swift in Sources */,
+				F0OVC0212F30000000000001 /* OverlayEditorState.swift in Sources */,
+				F0OVC0222F30000000000001 /* OverlayEditorView.swift in Sources */,
+				F0OVC0232F30000000000001 /* OverlayEditorToolbar.swift in Sources */,
+				F0OVC0242F30000000000001 /* VideoPreviewLayer.swift in Sources */,
+				F0OVC0262F30000000000001 /* OverlayPreviewRenderer.swift in Sources */,
+				F0OVC0272F30000000000001 /* OverlayDragData.swift in Sources */,
+				F0OVC0282F30000000000001 /* OverlayPalette.swift in Sources */,
+				F0OVC0292F30000000000001 /* OverlaySettingsPane.swift in Sources */,
+				F0LSP0012F30000000000001 /* LayoutSettingsPane.swift in Sources */,
+				F0OVC02A2F30000000000001 /* CommonOverlaySettingsView.swift in Sources */,
+				F0OVC02C2F30000000000001 /* OverlaysSettingsPanel.swift in Sources */,
+				F0OVC02D2F30000000000001 /* InspectorPanelView.swift in Sources */,
+				F0VBC0022F30000000000001 /* VideoBrowserView.swift in Sources */,
+				F0VBC0032F30000000000001 /* VideoBrowserState.swift in Sources */,
+				F0VBC0042F30000000000001 /* VideoBrowserSidebar.swift in Sources */,
+				F0ACT00012F30000000000001 /* ActivityContentView.swift in Sources */,
+				F0FL01072F30000000000001 /* FirstLaunch.swift in Sources */,
+				F0FL01062F30000000000001 /* FirstLaunchWizardWindowController.swift in Sources */,
+				F0FL01052F30000000000001 /* FirstLaunchWizardView.swift in Sources */,
+				F0FL01012F30000000000001 /* FirstLaunchCard.swift in Sources */,
+				F0FL01022F30000000000001 /* FirstLaunchModeStep.swift in Sources */,
+				F0FL01032F30000000000001 /* FirstLaunchOverlayStep.swift in Sources */,
+				F0FL01042F30000000000001 /* FirstLaunchThankYouStep.swift in Sources */,
+				F0FLW00012F30000000000001 /* FirstLaunchWelcomeStep.swift in Sources */,
+				F0FLM00012F30000000000001 /* FirstLaunchMigrationStep.swift in Sources */,
+				F0CH00012F30000000000001 /* ContentHeader.swift in Sources */,
+				F0GS00012F30000000000001 /* GlobalSearchSourceCard.swift in Sources */,
+				F0GS00032F30000000000001 /* GlobalSearchResultsView.swift in Sources */,
+				F0EA00012F30000000000001 /* ExpansionAssetCardView.swift in Sources */,
+				F0VBC0052F30000000000001 /* PlaylistSummaryView.swift in Sources */,
+				F0VBC0062F30000000000001 /* VideoGridView.swift in Sources */,
+				F0VBC0072F30000000000001 /* VideoBrowserCardView.swift in Sources */,
+				F0VBC0082F30000000000001 /* VideoBrowserRowView.swift in Sources */,
+				F0VBC0092F30000000000001 /* VideoInspectorView.swift in Sources */,
+				F0VBC00A2F30000000000001 /* TimeOfDayOverrideView.swift in Sources */,
+				F0VBC00B2F30000000000001 /* VideoMetadataHelpers.swift in Sources */,
+				F0VBC00C2F30000000000001 /* VideoBrowserPreviews.swift in Sources */,
+				F0VBC00D2F30000000000001 /* DropZoneView.swift in Sources */,
+				F0UPL0082F30000000000001 /* UserPlaylistSidebarSection.swift in Sources */,
+				F0UPL00A2F30000000000001 /* UserPlaylistContentView.swift in Sources */,
+				F0UPL00C2F30000000000001 /* MultiSelectionInspectorView.swift in Sources */,
+				F0VBC00F2F30000000000001 /* FormatBadge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0EXT0192F30000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0EXT0012F30000000000001 /* AerialScreenSaverExtension.swift in Sources */,
+				F0EXT0032F30000000000001 /* AerialViewController.swift in Sources */,
+				F0EXT0052F30000000000001 /* AerialSaverView.swift in Sources */,
+				F0EXT0072F30000000000001 /* AerialConfigurationViewController.swift in Sources */,
+				F0EXT0222F30000000000001 /* AerialPaths.swift in Sources */,
+				F0EXT0232F30000000000001 /* JSONPreferencesStore.swift in Sources */,
+				F0WP000A2F30000000000001 /* WeatherProvider.swift in Sources */,
+				F0WP000B2F30000000000001 /* WeatherCache.swift in Sources */,
+				F0EXT0252F30000000000001 /* AerialLogger.swift in Sources */,
+				F0LBR0032F30000000000001 /* LogBridge.swift in Sources */,
+				F0EXT0302F30000000000001 /* ScreensaverSettings.swift in Sources */,
+				F0EXT0312F30000000000001 /* ScreensaverSettingsManager.swift in Sources */,
+				F0EXT0322F30000000000001 /* PrefsAdvanced.swift in Sources */,
+				F0EXT0332F30000000000001 /* PrefsCache.swift in Sources */,
+				F0EXT0342F30000000000001 /* PrefsDisplays.swift in Sources */,
+				F0EXT0362F30000000000001 /* PrefsTime.swift in Sources */,
+				F0EXT0372F30000000000001 /* PrefsVideos.swift in Sources */,
+				F0EXT0392F30000000000001 /* DisplayDetection.swift in Sources */,
+				F0EXT0512F30000000000001 /* DarkMode.swift in Sources */,
+				F0EXT04F2F30000000000001 /* Aerial.swift in Sources */,
+				F0EXT0402F30000000000001 /* ExtensionHelpers.swift in Sources */,
+				F0EXT0612F30000000000001 /* ExtensionVideoLoader.swift in Sources */,
+				F0EXT0E12F30000000000001 /* PlayerCoordinator.swift in Sources */,
+				F0EXT0B02F30000000000001 /* OverlayState.swift in Sources */,
+				F0EXT0B12F30000000000001 /* OverlayRootView.swift in Sources */,
+				F0EXT0B42F30000000000001 /* WeatherSymbols.swift in Sources */,
+				F0EXT0B52F30000000000001 /* WeatherOverlayView.swift in Sources */,
+				F0EXT0D02F30000000000001 /* Music.swift in Sources */,
+				F0EXT0D12F30000000000001 /* MusicOverlayView.swift in Sources */,
+				F0EXT0C02F30000000000001 /* OpenWeather.swift in Sources */,
+				F0EXT0C12F30000000000001 /* Forecast.swift in Sources */,
+				F0EXT0C22F30000000000001 /* APISecrets.swift in Sources */,
+				F0EXT0702F30000000000001 /* Battery.swift in Sources */,
+				F0EXT0902F30000000000001 /* Source.swift in Sources */,
+				F0EXT0912F30000000000001 /* SourceInfo.swift in Sources */,
+				F0EXT0922F30000000000001 /* SourceList.swift in Sources */,
+				F0EXT0932F30000000000001 /* VideoList.swift in Sources */,
+				F0EXT0942F30000000000001 /* AerialVideo.swift in Sources */,
+				F0EXT0952F30000000000001 /* Cache.swift in Sources */,
+				F0EXT0962F30000000000001 /* VideoCache.swift in Sources */,
+				F0EXT0972F30000000000001 /* PoiStringProvider.swift in Sources */,
+				F0EXT0982F30000000000001 /* TimeManagement.swift in Sources */,
+				F0EXT0992F30000000000001 /* Solar.swift in Sources */,
+				F0EXT09A2F30000000000001 /* Locations.swift in Sources */,
+				F0EXT09B2F30000000000001 /* NightShift.swift in Sources */,
+				F0EXT09C2F30000000000001 /* AVAsset+VideoOrientation.swift in Sources */,
+				F0EXT09D2F30000000000001 /* DownloadManager.swift in Sources */,
+				F0EXT09E2F30000000000001 /* AsynchronousOperation.swift in Sources */,
+				F0EXT09F2F30000000000001 /* FileHelpers.swift in Sources */,
+				F0EXT0A02F30000000000001 /* VideoManager.swift in Sources */,
+				F0EXT0A12F30000000000001 /* VideoDownload.swift in Sources */,
+				F0MD500032F30000000000001 /* MD5Verifier.swift in Sources */,
+				F0RES00032F30000000000001 /* VideoDownloadResume.swift in Sources */,
+				F0PL00042F30000000000001 /* PlaylistModels.swift in Sources */,
+				F0EXP0032F30000000000001 /* Expansion.swift in Sources */,
+				F0EXP0062F30000000000001 /* ExpansionStore.swift in Sources */,
+				F0UPL0042F30000000000001 /* UserPlaylistModels.swift in Sources */,
+				F0LF00032F30000000000001 /* LiveFeed.swift in Sources */,
+				F0LF00102F30000000000001 /* LivePlaybackDiagnostics.swift in Sources */,
+				F0OVX0012F30000000000001 /* OverlayConfig.swift in Sources */,
+				F0OVX0022F30000000000001 /* OverlayConfigManager.swift in Sources */,
+				F0OVX0032F30000000000001 /* OverlayTypeDefaults.swift in Sources */,
+				F0OVX0042F30000000000001 /* OverlayTypeProvider.swift in Sources */,
+				F0OVX0052F30000000000001 /* OverlayTypeRegistry.swift in Sources */,
+				F0OVX0062F30000000000001 /* ClockOverlayProvider.swift in Sources */,
+				F0OVX0072F30000000000001 /* DateOverlayProvider.swift in Sources */,
+				F0OVX0082F30000000000001 /* LocationOverlayProvider.swift in Sources */,
+				F0OVX0092F30000000000001 /* WeatherOverlayProvider.swift in Sources */,
+				F0OVX00A2F30000000000001 /* MusicOverlayProvider.swift in Sources */,
+				F0OVX00B2F30000000000001 /* MessageOverlayProvider.swift in Sources */,
+				F0OVX00C2F30000000000001 /* TimerOverlayProvider.swift in Sources */,
+				F0OVX00D2F30000000000001 /* CountdownOverlayProvider.swift in Sources */,
+				F0OVX00E2F30000000000001 /* BatteryOverlayProvider.swift in Sources */,
+				F0OVX00F2F30000000000001 /* VerticalSpacerOverlayProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0TST0312F30000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0TST0012F30000000000001 /* PlaylistStateMachineTests.swift in Sources */,
+				F0TST0022F30000000000001 /* OverlayLayoutTests.swift in Sources */,
+				F0TST0032F30000000000001 /* CodableRoundTripTests.swift in Sources */,
+				F0TST0042F30000000000001 /* WeatherCacheKeyTests.swift in Sources */,
+				F0TST0052F30000000000001 /* OverlayConfigResolutionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0EXT01B2F30000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0EXT0172F30000000000001 /* AerialScreenSaverExtension */;
+			targetProxy = F0EXT01C2F30000000000001 /* PBXContainerItemProxy */;
+		};
+		F0TST0112F30000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 03CE4F5424CB0CA700494D32 /* Aerial */;
+			targetProxy = F0TST0102F30000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		03CE4F5E24CB0CA900494D32 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				03CE4F5F24CB0CA900494D32 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		03CE4F6324CB0CA900494D32 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0BUILD012F30000000000001 /* BuildNumber.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		03CE4F6424CB0CA900494D32 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F0BUILD012F30000000000001 /* BuildNumber.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		03CE4F6624CB0CA900494D32 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Aerial-tahoe";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Aerial/Aerial.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Aerial/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Aerial;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 4.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = COMPANION_APP;
+				SWIFT_OBJC_BRIDGING_HEADER = "Aerial/ObjC/Aerial-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		03CE4F6724CB0CA900494D32 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Aerial-tahoe";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Aerial/Aerial.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Aerial/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Aerial;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 4.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = COMPANION_APP;
+				SWIFT_OBJC_BRIDGING_HEADER = "Aerial/ObjC/Aerial-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F0EXT01D2F30000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = AerialScreenSaverExtension/AerialScreenSaverExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AerialScreenSaverExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AerialScreenSaverExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 4.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "AerialScreenSaverExtension/AerialScreenSaverExtension-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F0EXT01E2F30000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = AerialScreenSaverExtension/AerialScreenSaverExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AerialScreenSaverExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AerialScreenSaverExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 4.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "AerialScreenSaverExtension/AerialScreenSaverExtension-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F0TST0412F30000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) COMPANION_APP";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aerial.app/Contents/MacOS/Aerial";
+			};
+			name = Debug;
+		};
+		F0TST0422F30000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3L54M5L5KK;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) COMPANION_APP";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aerial.app/Contents/MacOS/Aerial";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		03CE4F5024CB0CA700494D32 /* Build configuration list for PBXProject "Aerial" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03CE4F6324CB0CA900494D32 /* Debug */,
+				03CE4F6424CB0CA900494D32 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		03CE4F6524CB0CA900494D32 /* Build configuration list for PBXNativeTarget "Aerial" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03CE4F6624CB0CA900494D32 /* Debug */,
+				03CE4F6724CB0CA900494D32 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0EXT0182F30000000000001 /* Build configuration list for PBXNativeTarget "AerialScreenSaverExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0EXT01D2F30000000000001 /* Debug */,
+				F0EXT01E2F30000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0TST0402F30000000000001 /* Build configuration list for PBXNativeTarget "AerialTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0TST0412F30000000000001 /* Debug */,
+				F0TST0422F30000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F0C227852A12A5410053D5DA /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+		F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AerialScreensaver/PaperSaver.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.1;
+			};
+		};
+		F0KBS0032F50000000000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F0C227862A12A5410053D5DA /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0C227852A12A5410053D5DA /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+		F0C5B4282E8EBFFF00AEC15C /* PaperSaverKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0C5B4272E8EBFFF00AEC15C /* XCRemoteSwiftPackageReference "PaperSaver" */;
+			productName = PaperSaverKit;
+		};
+		F0KBS0022F50000000000001 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0KBS0032F50000000000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 03CE4F4D24CB0CA700494D32 /* Project object */;
+}

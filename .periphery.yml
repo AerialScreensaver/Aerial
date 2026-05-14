@@ -1,0 +1,40 @@
+# Periphery dead-code scan configuration.
+#
+# Scope:    main app + screensaver extension. Tests excluded — they
+#           legitimately reference symbols that look unused.
+# Run:      `periphery scan`  (uses this file by default)
+# Re-run:   no manual flags needed; this file is the source of truth.
+#
+# Tuning notes:
+# - retain_objc_accessible: @objc methods (NSNotification handlers,
+#   #selector(...) targets, NSWindowDelegate, etc.) read as unused
+#   without this. The codebase has many: windowDidChangeScreen,
+#   screensaverWillStop, login-shield observers, marquee selection
+#   gestures wired via @objc.
+# - retain_unused_protocol_func_params: protocol conformance methods
+#   often ignore parameters; flagging them is noise.
+# - retain_assign_only_properties: false — a property only ever
+#   assigned and never read IS dead and worth surfacing. Flip to true
+#   if SwiftUI @State / @Published noise becomes overwhelming.
+
+project: Aerial.xcodeproj
+schemes:
+  - Aerial
+
+retain_public: false
+retain_objc_accessible: true
+retain_unused_protocol_func_params: true
+retain_assign_only_properties: false
+
+# Skip test target indexing — tests reference symbols (test fixtures,
+# helpers) that look unused but exist for the test surface. We're
+# auditing production code here.
+exclude_targets:
+  - AerialTests
+
+# Don't index third-party / generated code that isn't ours to clean up.
+index_exclude:
+  - "**/build/**"
+  - "**/DerivedData/**"
+  - "**/SourcePackages/**"
+  - "ScreenSaver/Source/Models/Time/Solar.swift"

@@ -1,0 +1,71 @@
+# SwiftLint configuration for AerialCompanion
+# Start permissive — focus on high-value rules, silence legacy noise
+
+excluded:
+  - build
+  - Experiments
+  - ScreenSaver/Source/Models/Time/Solar.swift  # Third-party code
+
+disabled_rules:
+  - line_length
+  - type_body_length
+  - file_length
+  - cyclomatic_complexity
+  - identifier_name
+  - nesting
+  - force_unwrapping
+  - todo
+  - function_body_length
+  - function_parameter_count
+  - large_tuple
+  - trailing_comma
+  - trailing_whitespace
+  - multiple_closures_with_trailing_closure
+  - opening_brace
+  - vertical_whitespace
+  - colon
+  - comment_spacing
+  - for_where
+  - closure_spacing
+  - statement_position
+  - redundant_string_enum_value
+  - implicit_optional_initialization
+  - blanket_disable_command
+  - function_name_whitespace
+  - trailing_newline
+  - redundant_void_return
+  - optional_data_string_conversion
+  - unused_optional_binding
+  - orphaned_doc_comment
+  - empty_enum_arguments
+  - closure_parameter_position
+  - unused_closure_parameter
+  - unneeded_override
+  - trailing_semicolon
+  - inclusive_language
+  - void_return
+  - control_statement
+  - void_function_in_ternary
+  - shorthand_operator
+  - switch_case_alignment
+
+opt_in_rules:
+  - empty_count
+  - contains_over_filter_count
+  - flatmap_over_map_reduce
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - toggle_bool
+
+# Downgrade error-level rules to warnings so they don't break the build
+force_cast:
+  severity: warning
+force_try:
+  severity: warning
+empty_count:
+  severity: warning
+type_name:
+  severity: warning
+attribute_name_spacing:
+  severity: warning

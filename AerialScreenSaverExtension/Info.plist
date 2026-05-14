@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Aerial4</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.screensaver</string>
+		<key>NSExtensionPointVersion</key>
+		<string>1.0</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).AerialScreenSaverExtension</string>
+	</dict>
+	<key>NSLocationUsageDescription</key>
+	<string>Aerial uses your location to display local weather information and calculate sunrise/sunset times.</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright 2024 Guillaume Louel. All rights reserved.</string>
+	<key>SSEHasConfigureSheet</key>
+	<true/>
+	<key>SSENeedsAnimationTimer</key>
+	<false/>
+	<key>ScreenSaverConfigurationSheetViewControllerClass</key>
+	<string>$(PRODUCT_MODULE_NAME).AerialConfigurationViewController</string>
+	<key>ScreenSaverViewControllerClass</key>
+	<string>$(PRODUCT_MODULE_NAME).AerialViewController</string>
+</dict>
+</plist>

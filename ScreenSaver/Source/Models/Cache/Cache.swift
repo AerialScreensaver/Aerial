@@ -1,0 +1,443 @@
+//
+//  Cache.swift
+//  Aerial
+//
+//  Created by Guillaume Louel on 06/06/2020.
+//  Copyright © 2020 Guillaume Louel. All rights reserved.
+//
+
+import Cocoa
+import AVKit
+
+#if canImport(CoreWLAN)
+import CoreWLAN
+#endif
+
+/**
+ Aerial's unified Cache management
+
+ Everything Cache related is managed here.
+
+ - Note: Where is our data?
+
+ **Unified Path System (3.3.0+):**
+
+ All Aerial data is now stored in `/Users/Shared/Aerial/` across all macOS versions:
+ - `/Users/Shared/Aerial/` : Base directory for all Aerial data
+ - `/Users/Shared/Aerial/Cache/` : Video cache
+ - `/Users/Shared/Aerial/Thumbnails/` : Thumbnail cache
+ - `/Users/Shared/Aerial/Sources/` : Per-source manifests and files
+ - `/Users/Shared/Aerial/Logs/` : Application and screensaver logs
+
+ **Benefits:**
+ - No more container issues
+ - Accessible to all users on the system
+ - Consistent across all macOS versions
+ - Simpler code and easier debugging
+
+ **Custom Paths:**
+ Users can still override the cache location via `PrefsCache.overrideCache` for advanced use cases.
+ */
+
+// swiftlint:disable:next type_body_length
+struct Cache {
+    /**
+     Returns the SSID of the Wi-Fi network the user is currently connected to.
+     - Note: Returns an empty string if not connected to Wi-Fi or if CoreWLAN is not available (sandboxed extension)
+     */
+    static var ssid: String {
+        #if canImport(CoreWLAN)
+        return CWWiFiClient.shared().interface(withName: nil)?.ssid() ?? ""
+        #else
+        return ""
+        #endif
+    }
+
+    static var processedSupportPath = ""
+
+    /**
+     Returns Aerial's unified path.
+
+     All data is now stored in `/Users/Shared/Aerial/` across all macOS versions.
+     Only the Cache subfolder is relocatable via `PrefsCache.overrideCache`.
+
+     - Note: Returns `/` on failure (extremely rare - would indicate permissions issue)
+     */
+    static var supportPath: String {
+        // Cache the computed value
+        if processedSupportPath != "" {
+            return processedSupportPath
+        }
+
+        let appPath = "/Users/Shared/Aerial"
+
+        // Ensure directory exists
+        if FileManager.default.fileExists(atPath: appPath) {
+            processedSupportPath = appPath
+            return processedSupportPath
+        } else {
+            debugLog("Creating support directory at \(appPath)")
+            do {
+                try FileManager.default.createDirectory(
+                    atPath: appPath,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+                processedSupportPath = appPath
+                return appPath
+            } catch let error {
+                errorLog("FATAL: Couldn't create directory at \(appPath): \(error)")
+                return "/"
+            }
+        }
+    }
+
+    /**
+     Returns Aerial's video cache path.
+
+     By default returns `/Users/Shared/Aerial/Cache/`. When `PrefsCache.overrideCache` is
+     enabled with a valid `cachePath`, returns the custom location instead.
+
+     - Note: Returns `/` on failure (extremely rare).
+     */
+    private static var _resolvedCachePath: String?
+
+    static var path: String {
+        if let p = _resolvedCachePath { return p }
+        let p = resolveCachePath()
+        _resolvedCachePath = p
+        return p
+    }
+
+    private static func resolveCachePath() -> String {
+        let effectivePath: String
+        if PrefsCache.overrideCache, let custom = PrefsCache.cachePath, !custom.isEmpty {
+            if FileManager.default.fileExists(atPath: custom) {
+                effectivePath = custom
+            } else {
+                debugLog("Custom cache path \(custom) not found (drive disconnected?), falling back to default")
+                effectivePath = supportPath.appending("/Cache")
+            }
+        } else {
+            effectivePath = supportPath.appending("/Cache")
+        }
+
+        if !FileManager.default.fileExists(atPath: effectivePath) {
+            do {
+                try FileManager.default.createDirectory(atPath: effectivePath,
+                    withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                errorLog("FATAL: Couldn't create Cache directory: \(error)")
+                return "/"
+            }
+        }
+        return effectivePath
+    }
+
+    /// Invalidate cached path values (call after changing cache location settings).
+    static func invalidateCachePath() {
+        _resolvedCachePath = nil
+    }
+    /**
+     Returns Aerial's thumbnail cache path, creating it if needed.
+
+     Always returns `/Users/Shared/Aerial/Thumbnails/` across all macOS versions.
+
+     - Note: Returns `/` on failure (extremely rare).
+     */
+    static var thumbnailsPath: String = {
+        let path = Cache.supportPath.appending("/Thumbnails")
+
+        if FileManager.default.fileExists(atPath: path as String) {
+            return path
+        } else {
+            do {
+                try FileManager.default.createDirectory(atPath: path,
+                                                withIntermediateDirectories: true, attributes: nil)
+                return path
+            } catch let error {
+                errorLog("FATAL : Couldn't create Thumbnails directory in Aerial's AppSupport directory: \(error)")
+                return "/"
+            }
+        }
+    }()
+
+    /// This clears the whole cache. User beware !
+    static func clearCache() {
+        let pathURL = URL(fileURLWithPath: path)
+        do {
+            let directoryContent = try FileManager.default.contentsOfDirectory(at: pathURL, includingPropertiesForKeys: nil)
+            let videoURLs = directoryContent.filter { $0.pathExtension == "mov" }
+
+            for video in videoURLs {
+                try? FileManager.default.removeItem(at: video)
+            }
+        } catch {
+            errorLog("Error during removal of videos in wrong format, please report")
+            errorLog(error.localizedDescription)
+        }
+    }
+
+    static func clearNonCacheableSources() {
+        // Then we need to look at individual online sources
+        // let onlineVideos = VideoList.instance.videos.filter({ !$0.source.isCachable })
+
+        for source in SourceList.foundSources.filter({!$0.isCachable}) {
+            let pathSource = URL(fileURLWithPath: supportPath).appendingPathComponent("Sources").appendingPathComponent(source.name)
+            if FileManager.default.fileExists(atPath: pathSource.path) {
+                do {
+                    let directoryContent = try FileManager.default.contentsOfDirectory(at: pathSource, includingPropertiesForKeys: nil)
+
+                    let videoURLs = directoryContent.filter { $0.pathExtension == "mov" }
+
+                    for video in videoURLs {
+                        debugLog("Removing file : \(video)")
+                        try? FileManager.default.removeItem(at: video)
+                    }
+
+                } catch {
+                    errorLog("Error during removing of videos in wrong format, please report")
+                    errorLog(error.localizedDescription)
+                }
+            }
+        }
+
+    }
+
+    // MARK: - About the cache
+
+    /**
+     Do we still have a bit of free space (0.5 GB)
+     */
+    static func hasSomeFreeSpace() -> Bool {
+        return size() < PrefsCache.cacheLimit - 0.5
+    }
+
+    /**
+     Returns the cache size in GB as a string (eg. 5.1 GB)
+     */
+    static func sizeString() -> String {
+        let pathURL = Foundation.URL(fileURLWithPath: path)
+
+        // check if the url is a directory
+        if (try? pathURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            var folderSize = 0
+            (FileManager.default.enumerator(at: pathURL, includingPropertiesForKeys: nil)?.allObjects as? [URL])?.lazy.forEach {
+                folderSize += (try? $0.resourceValues(forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0
+            }
+            let byteCountFormatter =  ByteCountFormatter()
+            byteCountFormatter.allowedUnits = .useGB
+            byteCountFormatter.countStyle = .file
+            let sizeToDisplay = byteCountFormatter.string(for: folderSize) ?? ""
+            return sizeToDisplay
+        }
+
+        // In case it fails somehow
+        return "No cache found"
+    }
+
+    // MARK: - Helpers
+
+    /**
+     Returns cache size in GB
+     */
+    static func size() -> Double {
+        let pathURL = URL(fileURLWithPath: path)
+
+        // check if the url is a directory
+        if (try? pathURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            var folderSize = 0
+            (FileManager.default.enumerator(at: pathURL, includingPropertiesForKeys: nil)?.allObjects as? [URL])?.lazy.forEach {
+                folderSize += (try? $0.resourceValues(forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0
+            }
+
+            return Double(folderSize) / 1000000000
+        }
+
+        return 0
+    }
+
+    static func getDirectorySize(directory: String) -> Double {
+        if FileManager.default.fileExists(atPath: directory) {
+            let pathURL = URL(fileURLWithPath: directory)
+
+            // check if the url is a directory
+            if (try? pathURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                var folderSize = 0
+                (FileManager.default.enumerator(at: pathURL, includingPropertiesForKeys: nil)?.allObjects as? [URL])?.lazy.forEach {
+                    folderSize += (try? $0.resourceValues(forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0
+                }
+
+                return Double(folderSize) / 1000000000
+            }
+
+            return 0
+        } else {
+            return 0
+        }
+    }
+
+    static func packsSize() -> Double {
+        var totalSize: Double = 0
+        for source in SourceList.foundSources where !source.isCachable {
+            let sourcePath = supportPath.appending("/Sources/" + source.name)
+            totalSize += getDirectorySize(directory: sourcePath)
+        }
+
+        return totalSize
+    }
+
+    /**
+    Can we safely use network ?
+    
+    Depending on user's settings, they may not be on a trusted network.
+    - Note: If a user disabled cache management (full manual mode), this will always be true.
+    */
+    static func canNetwork() -> Bool {
+        if !PrefsCache.enableManagement {
+            return true
+        }
+
+        if PrefsCache.restrictOnWiFi {
+            // If we are not connected to WiFi we allow
+            if Cache.ssid == "" || PrefsCache.allowedNetworks.contains(ssid) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            return true
+        }
+    }
+
+    static func outdatedVideos() -> [AerialVideo] {
+        guard PrefsCache.enableManagement else {
+            return []
+        }
+
+        var cutoffDate = Date()
+        switch PrefsCache.cachePeriodicity {
+        case .daily:
+            cutoffDate = Calendar.current.date(byAdding: .day, value: -1, to: cutoffDate)!
+        case .weekly:
+            cutoffDate = Calendar.current.date(byAdding: .day, value: -7, to: cutoffDate)!
+        case .monthly:
+            cutoffDate = Calendar.current.date(byAdding: .month, value: -1, to: cutoffDate)!
+        case .never:
+            return []
+        }
+
+        // Get a list of cached videos that are not favorites, and are from a cacheable source (not a pack)
+        // Yes this is getting a bit complicated
+        var evictable: [Date: AerialVideo] = [:]
+        let currentlyCached = VideoList.instance.videos.filter({ $0.isAvailableOffline && $0.source.isCachable && !PrefsVideos.favorites.contains($0.id)})
+
+        for video in currentlyCached {
+            let path = VideoCache.cachePath(forVideo: video)!
+
+            // swiftlint:disable:next force_try
+            let attributes = try! FileManager.default.attributesOfItem(atPath: path)
+            let creationDate = attributes[.creationDate] as! Date
+
+            if creationDate < cutoffDate {
+                evictable[creationDate] = video
+            }
+        }
+
+        return  evictable.sorted { $0.key < $1.key }.map({ $0.value })
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity
+    static func freeCache() {
+        guard PrefsCache.enableManagement else {
+            return
+        }
+
+
+        // Step 1 : Delete hidden videos
+        debugLog("Looking for hidden videos to delete...")
+        for video in VideoList.instance.videos.filter({ PrefsVideos.hidden.contains($0.id) && $0.isAvailableOffline }) {
+            debugLog("Deleting hidden video \(video.secondaryName)")
+            do {
+                let path = VideoList.instance.localPathFor(video: video)
+                try FileManager.default.removeItem(atPath: path)
+            } catch {
+                errorLog("Could not delete video : \(video.secondaryName)")
+            }
+        }
+
+        // We may be good ?
+        if hasSomeFreeSpace() {
+            return
+        }
+
+        // Step 2 : Delete videos that are out of rotation
+        let evictables = outdatedVideos()
+
+        if evictables.isEmpty {
+            debugLog("No outdated videos, we won't delete anything")
+            return
+        }
+
+        debugLog("Looking for outdated videos that aren't in rotation (candidates : \(evictables.count)")
+
+        outerLoop: for video in evictables {
+            if VideoList.instance.currentRotation().contains(video) {
+                // Outdated but in rotation, so keep it !
+                // debugLog("outdated but in rotation \(video.secondaryName)")
+            } else {
+                debugLog("Removing outdated video not in rotation \(video.secondaryName)")
+                do {
+                    try FileManager.default.removeItem(atPath: VideoCache.cachePath(forVideo: video)!)
+                } catch {
+                    errorLog("Could not delete video : \(video.secondaryName)")
+                }
+
+                if hasSomeFreeSpace() {
+                    // Removed enough
+                    break outerLoop
+                }
+            }
+        }
+
+        // Are we there yeeeet ?
+        if hasSomeFreeSpace() {
+            return
+        }
+
+        debugLog("Looking for outdated videos that may still be in rotation (candidates : \(evictables.count)")
+
+        var currentVideos = [AerialVideo]()
+
+
+        outerLoop2: for video in evictables {
+            if currentVideos.contains(video) {
+                debugLog("\(video.secondaryName) is currently playing, trying another")
+            } else {
+                debugLog("Removing outdated video that was in rotation \(video.secondaryName)")
+                do {
+                    try FileManager.default.removeItem(atPath: VideoCache.cachePath(forVideo: video)!)
+                } catch {
+                    errorLog("Could not delete video : \(video.secondaryName)")
+                }
+
+                if hasSomeFreeSpace() {
+                    // Removed enough
+                    break outerLoop2
+                }
+            }
+        }
+
+        // At this point we can't do more 
+    }
+
+}
+
+#if COMPANION_APP
+extension Double {
+    func rounded(toPlaces places: Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
+}
+#endif
