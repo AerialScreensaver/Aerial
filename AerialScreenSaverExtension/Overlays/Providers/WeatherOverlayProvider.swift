@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreLocation
+import AppKit
 
 struct WeatherOverlayProvider: OverlayTypeProvider {
     static let kind: OverlayKind = .weather
@@ -75,6 +77,21 @@ struct WeatherOverlayProvider: OverlayTypeProvider {
 private struct WeatherSettingsContent: View {
     @Binding var instance: OverlayInstance
 
+    /// Cached Core Location authorization status. `Current Location`
+    /// mode reverse-geocodes the user's coordinates to find their
+    /// city; without Location authorization OpenWeather can't be
+    /// queried for "where I am" weather. Refreshed on appear and
+    /// whenever the app regains focus (so the user opening System
+    /// Settings, granting, and coming back sees the warning clear).
+    @State private var locationAuthStatus: CLAuthorizationStatus = CLLocationManager().authorizationStatus
+
+    private var locationGrantNeeded: Bool {
+        locationMode == "current"
+            && (locationAuthStatus == .notDetermined
+                || locationAuthStatus == .denied
+                || locationAuthStatus == .restricted)
+    }
+
     private var degree: String {
         instance.typeSettings["degree"]?.asString ?? "celsius"
     }
@@ -125,6 +142,10 @@ private struct WeatherSettingsContent: View {
                 .textFieldStyle(.roundedBorder)
             }
 
+            if locationGrantNeeded {
+                locationPermissionWarning
+            }
+
             Picker("Units", selection: Binding(
                 get: { degree },
                 set: { instance.typeSettings["degree"] = .string($0) }
@@ -169,5 +190,51 @@ private struct WeatherSettingsContent: View {
                 set: { instance.typeSettings["showCity"] = .bool($0) }
             ))
         }
+        .onAppear { refreshLocationAuth() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // User likely came back from System Settings after
+            // granting / denying. Re-read so the warning clears
+            // without requiring them to close + reopen the inspector.
+            refreshLocationAuth()
+        }
+    }
+
+    /// Inline warning shown when "Current Location" is selected but
+    /// Core Location hasn't been authorized for the Companion. Mirrors
+    /// the equivalent affordance in `CacheSettingsPanel` — same
+    /// visual, same one-click deep link into Privacy & Security.
+    private var locationPermissionWarning: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Location permission needed")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Aerial needs Location access to detect your current city for weather. Without it, weather won't appear.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Open Location Settings…") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    private func refreshLocationAuth() {
+        locationAuthStatus = CLLocationManager().authorizationStatus
     }
 }

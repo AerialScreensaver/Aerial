@@ -127,7 +127,24 @@ class LocationProvider: NSObject {
             }
         }
 
+        // Wi-Fi-restricted downloads need to read the current SSID, and
+        // on macOS 14+ `CWInterface.ssid()` is gated on Location auth.
+        // We don't actually use the coordinates for this — just the
+        // permission grant — but the simplest way to trigger the
+        // prompt is to keep Location considered "needed" while the
+        // user has Wi-Fi restriction enabled.
+        if PrefsCache.restrictOnWiFi {
+            return true
+        }
+
         return false
+    }
+
+    /// Current Core Location authorization status. Exposed so UI can
+    /// distinguish "permission denied / not granted" from "actually
+    /// not on Wi-Fi" — both produce `Cache.ssid == ""`.
+    var authorizationStatus: CLAuthorizationStatus {
+        locationManager.authorizationStatus
     }
 
     // MARK: - NightShift Caching

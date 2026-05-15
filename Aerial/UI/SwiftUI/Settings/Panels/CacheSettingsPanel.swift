@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct CacheSettingsPanel: View {
     // Disk usage
@@ -23,6 +24,12 @@ struct CacheSettingsPanel: View {
     @State private var restrictOnWiFi = false
     @State private var currentSSID: String = ""
     @State private var allowedNetworks: [String] = []
+    /// Cached Core Location authorization status. `CWInterface.ssid()`
+    /// returns nil when this isn't `.authorizedAlways` or
+    /// `.authorizedWhenInUse`, regardless of actual Wi-Fi state — so
+    /// the panel needs this to distinguish "not on Wi-Fi" from
+    /// "Location permission missing".
+    @State private var locationAuth: CLAuthorizationStatus = .notDetermined
 
     // Storage
     @State private var excludeTimeMachine = false
@@ -326,8 +333,8 @@ struct CacheSettingsPanel: View {
                             Text("Cache limit")
                                 .font(.system(size: 14))
                             Spacer()
-                            Slider(value: $cacheLimit, in: 1...60, step: 1)
-                                .frame(width: 200)
+                            Slider(value: $cacheLimit, in: 5...150, step: 5)
+                                .frame(width: 360)
                                 .onChange(of: cacheLimit) { newValue in
                                     if !unlimitedCache {
                                         PrefsCache.cacheLimit = newValue
@@ -377,17 +384,38 @@ struct CacheSettingsPanel: View {
                     .font(.system(size: 14))
                     .onChange(of: restrictOnWiFi) { newValue in
                         PrefsCache.restrictOnWiFi = newValue
+                        if newValue {
+                            // Ensure Location is requested so macOS
+                            // un-gates `CWInterface.ssid()`. The first
+                            // call here is what surfaces the system
+                            // prompt — without it the user has no way
+                            // to grant access from inside Aerial.
+                            LocationProvider.shared.reevaluate()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                currentSSID = Cache.ssid
+                                locationAuth = LocationProvider.shared.authorizationStatus
+                            }
+                        }
                     }
 
                 if restrictOnWiFi {
                     Divider()
 
+                    let needsLocationGrant = currentSSID.isEmpty
+                        && (locationAuth == .notDetermined
+                            || locationAuth == .denied
+                            || locationAuth == .restricted)
+
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(currentSSID.isEmpty ? Color.red : (allowedNetworks.contains(currentSSID) ? Color.green : Color.orange))
+                            .fill(needsLocationGrant ? Color.orange : (currentSSID.isEmpty ? Color.red : (allowedNetworks.contains(currentSSID) ? Color.green : Color.orange)))
                             .frame(width: 8, height: 8)
 
-                        if currentSSID.isEmpty {
+                        if needsLocationGrant {
+                            Text("Wi-Fi name needs Location permission")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        } else if currentSSID.isEmpty {
                             Text("Not connected to Wi-Fi")
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
@@ -396,6 +424,19 @@ struct CacheSettingsPanel: View {
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                         }
+                    }
+
+                    if needsLocationGrant {
+                        // macOS gates `CWInterface.ssid()` on Location
+                        // auth; without it the panel can't tell which
+                        // network the user is on. Open the right pane
+                        // directly so the user has a one-click path.
+                        Button("Open Location Settings…") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .controlSize(.small)
                     }
 
                     if !allowedNetworks.isEmpty {
@@ -467,6 +508,7 @@ struct CacheSettingsPanel: View {
         restrictOnWiFi = PrefsCache.restrictOnWiFi
         allowedNetworks = PrefsCache.allowedNetworks
         currentSSID = Cache.ssid
+        locationAuth = LocationProvider.shared.authorizationStatus
         excludeTimeMachine = TimeMachine.isExcluded()
         useCustomLocation = PrefsCache.overrideCache
         customCachePath = PrefsCache.cachePath ?? ""

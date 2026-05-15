@@ -30,6 +30,8 @@
 	<string>Aerial needs to communicate with Music to display now-playing information.</string>
 	<key>NSAppDataUsageDescription</key>
 	<string>Aerial needs to access macOS screen savers to install and update Aerial</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Aerial uses your location to read the current Wi-Fi network name (so you can mark trusted Wi-Fi for downloads), display local weather, and calculate sunrise/sunset times.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreLocation
+import AppKit
 
 struct TimeSettingsPanel: View {
     @State private var selectedMode: Int = PrefsTime.timeMode.rawValue
@@ -26,6 +28,11 @@ struct TimeSettingsPanel: View {
     @State private var showLocationSuccess: Bool = false
     @State private var showLocationError: Bool = false
     @State private var locationResultText: String = ""
+    /// Cached Core Location authorization status. The Location Service
+    /// time mode needs CL auth to fetch coordinates; without it we
+    /// surface a warning + deep link into System Settings. Refreshed
+    /// on view appear and again when the app regains focus.
+    @State private var locationAuthStatus: CLAuthorizationStatus = LocationProvider.shared.authorizationStatus
 
     // Computed sunrise/sunset for the time bar
     @State private var barSunrise: Date? = nil
@@ -182,19 +189,73 @@ struct TimeSettingsPanel: View {
     // MARK: - Sub-content Views
 
     private var locationSubContent: some View {
-        HStack(spacing: 12) {
-            if PrefsTime.cachedLatitude != 0 || PrefsTime.cachedLongitude != 0 {
-                let lat = String(format: "%.2f", PrefsTime.cachedLatitude)
-                let lon = String(format: "%.2f", PrefsTime.cachedLongitude)
-                Text("Cached location: \(lat), \(lon)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            if locationGrantNeeded {
+                locationPermissionWarning
             }
-            Button("Test Location") {
-                testLocation()
+            HStack(spacing: 12) {
+                if PrefsTime.cachedLatitude != 0 || PrefsTime.cachedLongitude != 0 {
+                    let lat = String(format: "%.2f", PrefsTime.cachedLatitude)
+                    let lon = String(format: "%.2f", PrefsTime.cachedLongitude)
+                    Text("Cached location: \(lat), \(lon)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                Button("Test Location") {
+                    testLocation()
+                }
             }
         }
         .padding(.leading, 36)
+        .onAppear { refreshLocationAuth() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshLocationAuth()
+        }
+    }
+
+    private var locationGrantNeeded: Bool {
+        locationAuthStatus == .notDetermined
+            || locationAuthStatus == .denied
+            || locationAuthStatus == .restricted
+    }
+
+    /// Inline warning shown when "Use Location Services" is selected
+    /// but Core Location hasn't been authorized for the Companion.
+    /// Same affordance as `CacheSettingsPanel` and the Weather overlay
+    /// inspector — one-click deep link to Privacy & Security.
+    private var locationPermissionWarning: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Location permission needed")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Sunrise/sunset times for this mode are computed from your coordinates. Without Location access Aerial can't pick them up.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Open Location Settings…") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    private func refreshLocationAuth() {
+        locationAuthStatus = LocationProvider.shared.authorizationStatus
     }
 
     private var manualSubContent: some View {
