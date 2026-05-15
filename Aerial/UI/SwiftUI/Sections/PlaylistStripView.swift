@@ -113,8 +113,13 @@ struct PlaylistSectionView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
-                .help(shuffleMode ? "Replay in order" : "Shuffle on each loop")
-                .accessibilityLabel(shuffleMode ? "Replay in order" : "Shuffle on each loop")
+                .help(shuffleMode
+                      ? "Shuffle: reshuffles when the playlist loops. Tap to switch to loop."
+                      : "Loop: replays the same order. Tap to switch to shuffle.")
+                .accessibilityLabel(shuffleMode ? "Shuffle on" : "Loop on")
+                .accessibilityHint(shuffleMode
+                                   ? "Reshuffles the playlist each time it loops. Tap to switch to loop."
+                                   : "Replays the same order each loop. Tap to switch to shuffle.")
             }
         }
     }
