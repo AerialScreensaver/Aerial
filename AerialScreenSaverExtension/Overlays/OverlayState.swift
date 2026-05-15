@@ -67,6 +67,15 @@ class OverlayState: ObservableObject {
     /// Weak reference to current player (for removing observers)
     private weak var currentPlayer: AVPlayer?
 
+    /// The video currently being rendered. Kept so `replaceLayout`
+    /// can re-evaluate per-video overlay state (Location, primarily)
+    /// when the active layout changes mid-playback — without it, the
+    /// late screen-detection layout swap in `AerialSaverView.
+    /// windowDidChangeScreen` only takes effect on the NEXT setVideo,
+    /// leaving the first video missing overlays that only exist in
+    /// the now-correct layout.
+    private var currentVideo: AerialVideo?
+
     /// Combine subscriptions for WeatherProvider updates
     private var weatherSubs = Set<AnyCancellable>()
 
@@ -150,6 +159,16 @@ class OverlayState: ObservableObject {
         }
 
         applyRotationMode(OverlayConfigManager.shared.config.rotationMode)
+
+        // Re-evaluate per-video Location state for the currently-playing
+        // video. Without this, a layout swap that adds (or removes) a
+        // Location overlay only takes effect on the NEXT video — the
+        // running video keeps whatever Location state was set at the
+        // last setVideo, which for a multi-screen "screen detected
+        // late" scenario means no location overlay on the first video.
+        if let video = currentVideo, let player = currentPlayer {
+            updateLocationOverlay(video: video, player: player)
+        }
     }
 
     // MARK: - Rotation Timer
@@ -198,6 +217,13 @@ class OverlayState: ObservableObject {
 
     /// Called when a new video starts playing
     func setVideo(video: AerialVideo, player: AVPlayer) {
+        // Store BOTH unconditionally — `updateLocationOverlay` only
+        // assigns `currentPlayer` when the active layout contains a
+        // Location overlay, but `replaceLayout` needs both to be set
+        // so it can re-evaluate per-video state after a late layout
+        // swap (e.g. secondary screen detected after first setVideo).
+        currentVideo = video
+        currentPlayer = player
         updateLocationOverlay(video: video, player: player)
     }
 
@@ -216,6 +242,7 @@ class OverlayState: ObservableObject {
         musicSub?.cancel()
         musicSub = nil
         removePoiObserver()
+        currentVideo = nil
     }
 
     // MARK: - Version Banner
