@@ -9,11 +9,8 @@
 import Foundation
 
 // This is where Aerial stores credentials for various external API providers.
-// They are intentionally left blank in the open-source repository so the
-// official build's keys stay private. If you're building Aerial from source
-// and want the weather overlay to work, get a free key from
-// https://openweathermap.org and paste it below — the rest of the app
-// works without it.
+// Those are intentionally left blank in the repository, as to keep them secret
+// and still let them be used for everyone in the officially distributed Aerial.
 
 struct APISecrets {
     static let openWeatherAppId = ""

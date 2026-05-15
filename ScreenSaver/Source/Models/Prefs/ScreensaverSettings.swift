@@ -98,7 +98,7 @@ struct VideoSettings: Codable {
         intFadeMode: 0,  // FadeMode.disabled
         intRefreshPeriodicity: 0,  // RefreshPeriodicity.weekly
         allowSkips: true,
-        sourcesEnabled: ["macOS 26": true, "tvOS 26": false, "tvOS 13": false],
+        sourcesEnabled: ["macOS 26": true, "tvOS 26": true, "tvOS 13": false],
         favorites: [],
         hidden: [],
         vibrance: [:],

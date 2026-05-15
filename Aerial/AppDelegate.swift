@@ -85,6 +85,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // One-time cleanup of legacy LaunchAgent plist and UserDefaults keys
         LaunchAgent.removeLegacyAgentIfNeeded()
         cleanupLegacyUserDefaults()
+        enableTvOS26IfNeeded()
 
         // One-time cleanup of obsolete `{id}-large.jpg` thumbnails
         // (pre-single-file refactor). Idempotent — once the directory
@@ -385,6 +386,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for key in legacyKeys {
             defaults.removeObject(forKey: key)
         }
+    }
+
+    /// One-time migration: early v4 builds shipped with `tvOS 26` disabled
+    /// by default in `ScreensaverSettings.default.sourcesEnabled`. That
+    /// surfaced as a cache-wipe for migrating users whose Aerial 3 cache
+    /// referenced tvOS 26 video IDs — those IDs weren't in any active
+    /// manifest, so `CacheOrphanReaper` evicted the files. The default is
+    /// now `true`, but that only helps fresh installs. This pass enables
+    /// the source for existing users who were on the old default. Marked
+    /// done in `UserDefaults` so it runs exactly once.
+    ///
+    /// Trade-off: a user who actively disabled tvOS 26 will see it
+    /// re-enabled here. They can flip it back in Settings → Sources. The
+    /// "few users actively disabled it" assumption is the conscious call.
+    private func enableTvOS26IfNeeded() {
+        let key = "tvOS26DefaultMigrationApplied"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        var sources = PrefsVideos.enabledSources
+        if sources["tvOS 26"] != true {
+            sources["tvOS 26"] = true
+            PrefsVideos.enabledSources = sources
+            debugLog("Enabled tvOS 26 source via one-time migration")
+        }
+        UserDefaults.standard.set(true, forKey: key)
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
