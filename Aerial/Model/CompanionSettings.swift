@@ -100,6 +100,15 @@ struct CompanionSettings: Codable {
     /// or `nil` — see `FirstLaunch.shouldShowWizard`.
     var firstLaunchCompleted: Bool?
 
+    // MARK: - Now Playing Settings
+
+    /// Reverse-DNS identifiers of `NowPlayingSource` implementations
+    /// the user has enabled. Empty array = all known sources enabled
+    /// (default for fresh installs and the implicit behavior until the
+    /// user touches the inspector's per-player checkboxes). The
+    /// coordinator restarts itself when this changes.
+    var enabledNowPlayingSources: [String]
+
     // MARK: - Defaults
 
     /// Default settings for fresh install
@@ -122,7 +131,8 @@ struct CompanionSettings: Codable {
         invertColors: false,
         globalShortcutsEnabled: false,
         dismissedNewBadges: [],
-        firstLaunchCompleted: nil
+        firstLaunchCompleted: nil,
+        enabledNowPlayingSources: []
     )
 
     // MARK: - File Location
@@ -167,7 +177,8 @@ struct CompanionSettings: Codable {
          invertColors: Bool = false,
          globalShortcutsEnabled: Bool = false,
          dismissedNewBadges: [String] = [],
-         firstLaunchCompleted: Bool? = nil) {
+         firstLaunchCompleted: Bool? = nil,
+         enabledNowPlayingSources: [String] = []) {
         self.intLaunchMode = intLaunchMode
         self.debugMode = debugMode
         self.firstTimeSetup = firstTimeSetup
@@ -187,6 +198,7 @@ struct CompanionSettings: Codable {
         self.globalShortcutsEnabled = globalShortcutsEnabled
         self.dismissedNewBadges = dismissedNewBadges
         self.firstLaunchCompleted = firstLaunchCompleted
+        self.enabledNowPlayingSources = enabledNowPlayingSources
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -212,5 +224,6 @@ struct CompanionSettings: Codable {
         globalShortcutsEnabled = try container.decodeIfPresent(Bool.self, forKey: .globalShortcutsEnabled) ?? false
         dismissedNewBadges = try container.decodeIfPresent([String].self, forKey: .dismissedNewBadges) ?? []
         firstLaunchCompleted = try container.decodeIfPresent(Bool.self, forKey: .firstLaunchCompleted)
+        enabledNowPlayingSources = try container.decodeIfPresent([String].self, forKey: .enabledNowPlayingSources) ?? []
     }
 }

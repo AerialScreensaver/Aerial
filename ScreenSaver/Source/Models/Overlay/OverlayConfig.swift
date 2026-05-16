@@ -93,7 +93,7 @@ enum OverlayKind: String, Codable, CaseIterable, Identifiable {
         case .message: return "Message"
         case .countdown: return "Countdown"
         case .timer: return "Timer"
-        case .music: return "Music"
+        case .music: return "Now Playing"
         }
     }
 
@@ -123,7 +123,7 @@ enum OverlayKind: String, Codable, CaseIterable, Identifiable {
         case .message: return "Custom text, file, or shell command"
         case .countdown: return "Count down to a specific date"
         case .timer: return "Count down from a set duration"
-        case .music: return "Now playing from Apple Music"
+        case .music: return "Now playing from audio players"
         }
     }
 }

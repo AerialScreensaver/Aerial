@@ -184,6 +184,8 @@
 		F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0012F30000000000001 /* NowPlayingSource.swift */; };
 		F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0032F30000000000001 /* AppleMusicProvider.swift */; };
 		F0MUS0062F30000000000001 /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */; };
+		F0MUS0082F30000000000001 /* SpotifyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0072F30000000000001 /* SpotifyProvider.swift */; };
+		F0MUS00A2F30000000000001 /* NowPlayingSourceRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MUS0092F30000000000001 /* NowPlayingSourceRegistry.swift */; };
 		F0NP10022F3E000000000001 /* SourceThumbnailCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0NP10012F3E000000000001 /* SourceThumbnailCard.swift */; };
 		F0NP10042F3E000000000001 /* NowPlayingSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0NP10032F3E000000000001 /* NowPlayingSectionView.swift */; };
 		F0OVC0012F30000000000001 /* OverlayConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVR0012F30000000000001 /* OverlayConfig.swift */; };
@@ -510,6 +512,8 @@
 		F0MUS0012F30000000000001 /* NowPlayingSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSource.swift; sourceTree = "<group>"; };
 		F0MUS0032F30000000000001 /* AppleMusicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicProvider.swift; sourceTree = "<group>"; };
 		F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
+		F0MUS0072F30000000000001 /* SpotifyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyProvider.swift; sourceTree = "<group>"; };
+		F0MUS0092F30000000000001 /* NowPlayingSourceRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSourceRegistry.swift; sourceTree = "<group>"; };
 		F0NP10012F3E000000000001 /* SourceThumbnailCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceThumbnailCard.swift; sourceTree = "<group>"; };
 		F0NP10032F3E000000000001 /* NowPlayingSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSectionView.swift; sourceTree = "<group>"; };
 		F0OVE0012F30000000000001 /* OverlayEditorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorWindowController.swift; sourceTree = "<group>"; };
@@ -708,6 +712,8 @@
 				F0MUS0012F30000000000001 /* NowPlayingSource.swift */,
 				F0MUS0032F30000000000001 /* AppleMusicProvider.swift */,
 				F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */,
+				F0MUS0072F30000000000001 /* SpotifyProvider.swift */,
+				F0MUS0092F30000000000001 /* NowPlayingSourceRegistry.swift */,
 				F0WPC0012F30000000000001 /* WallpaperContinuity.swift */,
 				F0DRM0012F30000000000001 /* DirectoryMonitor.swift */,
 				F0WCC0012F30000000000001 /* WallpaperCacheCleaner.swift */,
@@ -1592,6 +1598,8 @@
 				F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */,
 				F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */,
 				F0MUS0062F30000000000001 /* NowPlayingCoordinator.swift in Sources */,
+				F0MUS0082F30000000000001 /* SpotifyProvider.swift in Sources */,
+				F0MUS00A2F30000000000001 /* NowPlayingSourceRegistry.swift in Sources */,
 				F0WPC0022F30000000000001 /* WallpaperContinuity.swift in Sources */,
 				F0DRM0022F30000000000001 /* DirectoryMonitor.swift in Sources */,
 				F0WCC0022F30000000000001 /* WallpaperCacheCleaner.swift in Sources */,

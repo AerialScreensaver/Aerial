@@ -21,7 +21,7 @@ class NowPlayingCoordinator {
     private static let filePath = AerialPaths.baseDirectory + "/now-playing.json"
 
     private init() {
-        sources = [AppleMusicProvider()]
+        sources = Self.buildEnabledSources()
     }
 
     /// Idempotent — starts all sources and subscribes to their publishers
@@ -30,17 +30,38 @@ class NowPlayingCoordinator {
         started = true
 
         for source in sources {
-            source.songChanged
-                .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
-                .sink { [weak self] song in
-                    self?.handleSongUpdate(song)
-                }
-                .store(in: &subscriptions)
-
+            subscribe(to: source)
             source.start()
         }
 
         debugLog("🎧 NowPlayingCoordinator started with \(sources.count) source(s)")
+    }
+
+    /// Apply a new enabled-set to the coordinator: stop everything,
+    /// rebuild the source list from `Preferences.enabledNowPlayingSources`,
+    /// re-subscribe, and clear the on-disk JSON so the extension drops
+    /// any lingering song that came from a source the user just unchecked.
+    func reconfigure() {
+        for source in sources {
+            source.stop()
+        }
+        sources.removeAll()
+        subscriptions.removeAll()
+
+        sources = Self.buildEnabledSources()
+
+        // Always clear before restarting — the new source set may not
+        // include the player whose track is currently in the JSON.
+        try? FileManager.default.removeItem(atPath: Self.filePath)
+        songUpdated.send(nil)
+
+        if started {
+            for source in sources {
+                subscribe(to: source)
+                source.start()
+            }
+            debugLog("🎧 NowPlayingCoordinator reconfigured with \(sources.count) source(s)")
+        }
     }
 
     /// One-shot fetch from the first available source (for preview use).
@@ -60,6 +81,29 @@ class NowPlayingCoordinator {
 
     // MARK: - Private
 
+    private func subscribe(to source: NowPlayingSource) {
+        source.songChanged
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .sink { [weak self] song in
+                self?.handleSongUpdate(song)
+            }
+            .store(in: &subscriptions)
+    }
+
+    /// Instantiate one provider per descriptor matching the user's
+    /// enabled set. Empty set = all known sources.
+    private static func buildEnabledSources() -> [NowPlayingSource] {
+        let prefs = Preferences.enabledNowPlayingSources
+        let descriptors: [NowPlayingSourceDescriptor]
+        if prefs.isEmpty {
+            descriptors = NowPlayingSourceRegistry.all
+        } else {
+            let allowed = Set(prefs)
+            descriptors = NowPlayingSourceRegistry.all.filter { allowed.contains($0.identifier) }
+        }
+        return descriptors.map { $0.factory() }
+    }
+
     private func handleSongUpdate(_ song: SongInfo?) {
         songUpdated.send(song)
         writeToDisk(song)
@@ -69,7 +113,6 @@ class NowPlayingCoordinator {
         let path = Self.filePath
 
         guard let song = song, !song.name.isEmpty else {
-            // Remove file when nothing is playing
             try? FileManager.default.removeItem(atPath: path)
             return
         }

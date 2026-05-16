@@ -14,6 +14,7 @@ import SwiftUI
 
 struct VideoBrowserView: View {
     @StateObject private var state = VideoBrowserState()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         NavigationSplitView {
@@ -60,6 +61,21 @@ struct VideoBrowserView: View {
                         .help(state.viewMode == .grid ? "Switch to list" : "Switch to grid")
                         .accessibilityLabel(state.viewMode == .grid ? "Switch to list" : "Switch to grid")
                     }
+                }
+                // Sits immediately to the left of the .searchable field
+                // (search lands trailing-most; primaryAction items
+                // appear before it in declaration order). `Label` with
+                // `.titleAndIcon` forces both icon and text regardless
+                // of the toolbar's display mode.
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        openWindow(id: "aerialSettings")
+                    }) {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .labelStyle(.titleAndIcon)
+                    .help("Open Settings")
+                    .accessibilityLabel("Open Settings")
                 }
             }
         }

@@ -113,6 +113,7 @@ struct SettingsNavItem: View {
 struct SettingsView: View {
     @State private var selectedPanel: SettingsPanel = .screensaver
     @ObservedObject private var screensaverManager = AerialPluginManager.shared
+    @Environment(\.openWindow) private var openWindow
 
     /// Aggregate of the three screensaver-health checks shown on
     /// `ScreensaverSettingsPanel`. Drives the toolbar status icon.
@@ -200,6 +201,20 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Spacer()
+                }
+                // Mirrors the Settings button in the Video Library
+                // toolbar — quick jump between the two windows.
+                // Declared before the health icon so it lands to its
+                // left within the trailing primaryAction group.
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        openWindow(id: "videoBrowser")
+                    }) {
+                        Label("Video Library", systemImage: "film.stack")
+                    }
+                    .labelStyle(.titleAndIcon)
+                    .help("Open Video Library")
+                    .accessibilityLabel("Open Video Library")
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {

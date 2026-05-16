@@ -286,6 +286,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Popover Handling
 
+    // Aerial is a menu-bar app (LSUIElement) so its main user surface
+    // is the popover anchored to the status item. If the user double-
+    // clicks Aerial.app or `open`s it again while it's already running,
+    // macOS forwards a reopen to this process — surface the popover so
+    // the user can actually find us.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !popover.isShown, statusItem.button != nil {
+            showPopover(sender: nil)
+        }
+        return true
+    }
+
     @objc func togglePopover(_ sender: Any?) {
         if popover.isShown {
             closePopover(sender: sender)

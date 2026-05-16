@@ -140,6 +140,16 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.firstLaunchCompleted) }
     }
 
+    // MARK: - Now Playing Sources
+
+    /// Reverse-DNS identifiers of enabled NowPlayingSource providers.
+    /// Empty array = all sources from `NowPlayingSourceRegistry.all`
+    /// are enabled (the implicit default until the user customizes).
+    static var enabledNowPlayingSources: [String] {
+        get { manager.getValue(forKeyPath: \.enabledNowPlayingSources) }
+        set { manager.setValue(newValue, forKeyPath: \.enabledNowPlayingSources) }
+    }
+
 }
 
 extension Notification.Name {
