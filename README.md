@@ -1,5 +1,7 @@
 # Aerial
 
+[![Total downloads](https://img.shields.io/github/downloads/AerialScreensaver/Aerial/total?style=flat-square&color=brightgreen)](https://github.com/AerialScreensaver/Aerial/releases) [![Latest release](https://img.shields.io/github/v/release/AerialScreensaver/Aerial?style=flat-square)](https://github.com/AerialScreensaver/Aerial/releases/latest)
+
 The macOS screensaver and video wallpaper app — Apple's aerial videos and a growing community catalog of high-quality footage, with optional overlays, time-of-day adaptation, and live camera feeds.
 
 Website: [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
