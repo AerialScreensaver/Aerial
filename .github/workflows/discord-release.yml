@@ -1,0 +1,19 @@
+name: Post release to Discord
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  post-to-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send release notes to Discord
+        uses: SethCohen/github-releases-to-discord@v1.19.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          color: "2105893"
+          username: "Aerial Releases"
+          footer_title: "Changelog"
+          footer_timestamp: true
+          reduce_headings: true
