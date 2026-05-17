@@ -10,7 +10,7 @@ For more details, check the website: [aerialscreensaver.github.io](https://aeria
 
 ## App Extension
 
-Starting with version 4, Aerial is now distributed as an App Extension, bundled inside the Aerial.app. This is using the same private API that Apple introduced in macOS 10.15 (yes, Catalina !) but still has not made public. The App Extension API allows to provide full compatibility with Sonoma and Tahoe, sidestepping the longstanding issues with the old outdated `.saver` API and it's terrible `legacyScreenSaver.appex` "compatibility layer". 
+Starting with version 4, Aerial is now distributed as an App Extension, bundled inside the Aerial.app. This is using the same private API that Apple introduced in macOS 10.15 (yes, Catalina !) but still has not made public. The App Extension API allows to provide full compatibility with Sonoma and Tahoe, sidestepping the longstanding issues with the old outdated `.saver` API and it's terrible `legacyScreenSaver.appex` "compatibility layer". If you want to make your own macOS App Extension screensaver, instead of messing with Aerial code, use [AppexSaverMinimal](https://github.com/AerialScreensaver/AppexSaverMinimal) as a much easier to understand starting point !
 
 ## Requirements
 
