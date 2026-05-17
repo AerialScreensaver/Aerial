@@ -273,8 +273,14 @@ final class PlayerCoordinator {
     /// Whether playback has been paused because the desktop is occluded by other windows.
     private var isOcclusionPaused = false
 
+    /// Whether playback has been paused because the system is on battery
+    /// (or low battery, depending on the user's `desktopPauseOnBatteryMode`).
+    /// Distinct from `isPaused` (user) and `isOcclusionPaused` (occlusion)
+    /// so the three signals compose without overwriting each other.
+    private var isBatteryPaused = false
+
     /// Composite: any system-level pause is active.
-    private var isSystemPaused: Bool { isScreensaverPaused || isOcclusionPaused }
+    private var isSystemPaused: Bool { isScreensaverPaused || isOcclusionPaused || isBatteryPaused }
 
     func screensaverPause() {
         guard !isScreensaverPaused else { return }
@@ -302,10 +308,26 @@ final class PlayerCoordinator {
     func occlusionResume() {
         guard isOcclusionPaused else { return }
         isOcclusionPaused = false
-        if !isPaused && !isScreensaverPaused {
+        if !isPaused && !isScreensaverPaused && !isBatteryPaused {
             playAtDesiredSpeed()
         }
-        debugLog("PlayerCoordinator: occlusion resume (playing=\(!isPaused && !isScreensaverPaused))")
+        debugLog("PlayerCoordinator: occlusion resume (playing=\(!isPaused && !isScreensaverPaused && !isBatteryPaused))")
+    }
+
+    func batteryPause() {
+        guard !isBatteryPaused else { return }
+        isBatteryPaused = true
+        player.pause()
+        debugLog("🔋 PlayerCoordinator: battery pause")
+    }
+
+    func batteryResume() {
+        guard isBatteryPaused else { return }
+        isBatteryPaused = false
+        if !isPaused && !isScreensaverPaused && !isOcclusionPaused {
+            playAtDesiredSpeed()
+        }
+        debugLog("🔋 PlayerCoordinator: battery resume (playing=\(!isPaused && !isScreensaverPaused && !isOcclusionPaused))")
     }
 
     func setUserPaused(_ paused: Bool) {

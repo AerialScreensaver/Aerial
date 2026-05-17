@@ -35,6 +35,19 @@ class PlaybackManager: ObservableObject {
     /// Whether playback is paused
     @Published private(set) var isPaused: Bool = false
 
+    /// Whether playback is paused because the system is on battery (or
+    /// low battery, per `Preferences.desktopPauseOnBatteryMode`).
+    /// Distinct from `isPaused` — composes with it so the play/pause
+    /// button can show a battery icon while keeping user-pause state
+    /// intact. Driven by `BatteryStateMonitor` + `evaluateBatteryState`.
+    @Published private(set) var isBatteryPaused: Bool = false
+
+    /// True after the user explicitly clicks "resume" while battery-
+    /// paused. Honoured until the next plug-in (which clears it) — at
+    /// that point any subsequent unplug re-engages battery-pause as
+    /// normal. Single-cycle scope, not persisted.
+    private var batteryOverrideForThisCycle = false
+
     /// Global playback speed (0-100, maps to slider values)
     @Published var globalSpeed: Int {
         didSet {
@@ -96,6 +109,13 @@ class PlaybackManager: ObservableObject {
                 self?.handleScreenConfigurationChange()
             }
         }
+
+        // Battery-aware pause: subscribe to power-source change events,
+        // re-evaluate on system wake (macOS can change battery state
+        // during sleep without firing the IOPS callback), and check
+        // initial state so a launch-on-battery doesn't play for a few
+        // seconds before the first transition.
+        setupBatteryMonitor()
 
         // Restore active screens on launch if preference is enabled
         if Preferences.restartBackground {
@@ -244,18 +264,127 @@ class PlaybackManager: ObservableObject {
     /// Toggle pause/resume
     func togglePause() {
         guard playbackMode != .none else { return }
-        isPaused.toggle()
-        let newPaused = isPaused
 
+        // Click while battery-paused = "play despite battery". Clear
+        // the battery flag, set an override that survives until the
+        // next plug-in, and also clear any user-pause so a single
+        // click reads as expected ("hit play, get video").
+        if isBatteryPaused {
+            debugLog("🔋 User overrode battery-pause via popover button")
+            batteryOverrideForThisCycle = true
+            isPaused = false
+            applyBatteryStateChange(paused: false)
+            broadcastUserPause(false)
+            return
+        }
+
+        isPaused.toggle()
+        broadcastUserPause(isPaused)
+    }
+
+    /// Broadcast a user-pause state to whichever launchers are active.
+    /// Factored out of togglePause so the battery-override path can
+    /// reuse the same dispatch logic.
+    private func broadcastUserPause(_ newPaused: Bool) {
         switch playbackMode {
         case .desktop:
             for launcher in desktopLauncherInstances.values where launcher.isRunning {
                 launcher.setUserPaused(newPaused)
             }
-
         case .monitor:
             SaverLauncher.instance.setUserPaused(newPaused)
+        case .none:
+            break
+        }
+    }
 
+    // MARK: - Battery-aware pause
+
+    /// Wired up once during init. Companion-only; the extension target
+    /// doesn't compile `BatteryStateMonitor`.
+    private func setupBatteryMonitor() {
+        #if COMPANION_APP
+        BatteryStateMonitor.shared.onChange = { [weak self] in
+            Task { @MainActor in self?.evaluateBatteryState() }
+        }
+        BatteryStateMonitor.shared.start()
+
+        // macOS sleep can flip battery state without an IOPS callback
+        // (the canonical case is unplug-while-asleep). Re-evaluate on
+        // wake so we catch transitions that happened off-clock.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.evaluateBatteryState() }
+        }
+
+        // Initial check — if we're launched on battery and the pref is
+        // on, pause the first frame we play rather than waiting for a
+        // state transition.
+        evaluateBatteryState()
+        #endif
+    }
+
+    /// Re-read battery state + pref and apply the resulting pause/resume.
+    /// Called on every IOPS notification, on wake, at startup, and
+    /// whenever the user toggles the pref in Settings.
+    func evaluateBatteryState() {
+        guard Preferences.desktopPauseOnBattery else {
+            // Pref is off — make sure we don't leave anything paused.
+            if isBatteryPaused {
+                applyBatteryStateChange(paused: false)
+            }
+            batteryOverrideForThisCycle = false
+            return
+        }
+
+        let mode = Preferences.desktopPauseOnBatteryMode
+        let shouldPause: Bool
+        switch mode {
+        case "lowBattery":
+            // Only pause when the battery is genuinely depleting. If
+            // it's plugged in and charging-from-low, no need to pause.
+            shouldPause = Battery.isUnplugged() && Battery.isLow()
+        case "anyBattery":
+            fallthrough
+        default:
+            shouldPause = Battery.isUnplugged()
+        }
+
+        // Plug-back-in clears the override so the next unplug
+        // re-engages battery-pause normally.
+        if !shouldPause && batteryOverrideForThisCycle {
+            batteryOverrideForThisCycle = false
+            debugLog("🔋 Battery override cleared (back on AC)")
+        }
+
+        // Honor the user's session override.
+        if shouldPause && batteryOverrideForThisCycle {
+            return
+        }
+
+        if shouldPause != isBatteryPaused {
+            applyBatteryStateChange(paused: shouldPause)
+        }
+    }
+
+    /// Toggle the battery-paused state across all active launchers.
+    /// Called from `evaluateBatteryState` (when the IOPS notification
+    /// or pref change actually flips the rule) and from the override
+    /// path inside `togglePause`.
+    private func applyBatteryStateChange(paused: Bool) {
+        isBatteryPaused = paused
+        debugLog("🔋 PlaybackManager: isBatteryPaused = \(paused)")
+
+        switch playbackMode {
+        case .desktop:
+            for launcher in desktopLauncherInstances.values where launcher.isRunning {
+                paused ? launcher.applyBatteryPause() : launcher.applyBatteryResume()
+            }
+        case .monitor:
+            paused ? SaverLauncher.instance.applyBatteryPause() : SaverLauncher.instance.applyBatteryResume()
         case .none:
             break
         }

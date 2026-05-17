@@ -272,8 +272,6 @@ class VideoList {
                 } else if (force || PrefsVideos.shouldCheckForNewVideos()) && Cache.canNetwork() {
                     debugLog("\(source.name) looking for updated manifest\(force ? " (forced)" : "")...")
                     sourceQueue.append(source)
-                } else {
-                    debugLog("\(source.name) is enabled, cached and up to date")
                 }
             }
         }
@@ -314,8 +312,6 @@ class VideoList {
 
     // This is called when all our files are downloaded
     private func refreshVideoList(fireCallbacks: Bool = true) {
-        debugLog("Refreshing video list")
-
         videos = []
 
         for source in SourceList.list {
@@ -324,7 +320,6 @@ class VideoList {
                 if source.isCached() {
                     let vids = source.getVideos()
                     videos.append(contentsOf: vids)
-                    debugLog("source : \(source.name) contains \(vids.count) new videos (total \(videos.count))")
                 }
             }
         }

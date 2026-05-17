@@ -150,6 +150,22 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.enabledNowPlayingSources) }
     }
 
+    // MARK: - Battery-aware pause
+
+    /// Master switch — when true, desktop wallpaper and fullscreen-window
+    /// playback pauses on battery per `desktopPauseOnBatteryMode`.
+    static var desktopPauseOnBattery: Bool {
+        get { manager.getValue(forKeyPath: \.desktopPauseOnBattery) }
+        set { manager.setValue(newValue, forKeyPath: \.desktopPauseOnBattery) }
+    }
+
+    /// `"anyBattery"` (any time AC is unplugged) or `"lowBattery"`
+    /// (unplugged AND remaining capacity <20%).
+    static var desktopPauseOnBatteryMode: String {
+        get { manager.getValue(forKeyPath: \.desktopPauseOnBatteryMode) }
+        set { manager.setValue(newValue, forKeyPath: \.desktopPauseOnBatteryMode) }
+    }
+
 }
 
 extension Notification.Name {

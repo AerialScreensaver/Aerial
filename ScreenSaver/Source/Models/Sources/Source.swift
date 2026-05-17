@@ -110,7 +110,7 @@ struct Source: Codable {
                 let jsondata = try Data(contentsOf: cacheFileUrl)
 
                 if name.starts(with: "tvOS 13") {
-                    return parseVideoManifest(jsondata) + getMissingVideos()  // Oh, Victoria Harbour 2...
+                    return parseVideoManifest(jsondata)
                 } else if name.starts(with: "macOS") {
                     return parseMacManifest(jsondata)
                 } else {
@@ -136,20 +136,6 @@ struct Source: Codable {
         } else {
             return ""
         }
-    }
-
-    // The things we do for one single missing video (for now) ;)
-    func getMissingVideos() -> [AerialVideo] {
-        // We also need to add the missing videos
-        /*let bundlePath = Bundle(for: Aerial.self).path(forResource: "missingvideos", ofType: "json")!
-        do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: bundlePath), options: .mappedIfSafe)
-            return parseVideoManifest(data)
-        } catch {
-            errorLog("missingvideos.json was not found in the bundle")
-        }*/
-
-        return []
     }
 
     func getSubcategoryFor(_ asset: MacAsset, manifest: MacManifest) -> String {

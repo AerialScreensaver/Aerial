@@ -23,11 +23,16 @@ import UniformTypeIdentifiers
 final class WallpaperCacheCleaner {
     static let shared = WallpaperCacheCleaner()
 
-    // Match Joshua's defaults.
-    private static let oneDay: TimeInterval = 24 * 60 * 60
     private static let oneGB: Int64 = 1_073_741_824
     private static let maxCacheSize: Int64 = 2 * oneGB
     private static let minCleanInterval: TimeInterval = 5
+    /// How recent a file has to be before the cleaner refuses to touch
+    /// it. Lower = more aggressive pruning under high churn; higher =
+    /// stronger protection for Mission Control thumbnails and
+    /// resume-from-sleep continuity. 6h is a compromise — 24h was the
+    /// original value but would leave a heavy-churn session
+    /// permanently over cap (the cleaner would find no eligible files).
+    private static let protectedWindow: TimeInterval = 6 * 60 * 60
 
     private static let containerFolderRelativePath =
         "Library/Containers/com.apple.wallpaper.agent/Data/Library/Caches/"
@@ -207,10 +212,10 @@ final class WallpaperCacheCleaner {
         let watchedURL = containerURL.appendingPathComponent(subpath)
 
         guard var currentSize = DirectoryMonitor.calculateDirectorySize(watchedURL) else { return }
-        debugLog("WallpaperCacheCleaner: cache size \(ByteCountFormatter.string(fromByteCount: currentSize, countStyle: .file))")
+        let startSize = currentSize
 
         guard currentSize > Self.maxCacheSize else {
-            debugLog("WallpaperCacheCleaner: under cap, nothing to prune")
+            debugLog("WallpaperCacheCleaner: cache size \(ByteCountFormatter.string(fromByteCount: currentSize, countStyle: .file)) under cap, no prune")
             return
         }
 
@@ -246,10 +251,10 @@ final class WallpaperCacheCleaner {
         }
         candidates.sort { $0.date < $1.date }
 
-        // Don't touch anything younger than one day — keeps recent
-        // wallpapers around so resume-from-sleep / Mission Control
-        // still finds something fresh to display.
-        let cutoff = Date(timeIntervalSinceNow: -Self.oneDay)
+        // Don't touch anything younger than `protectedWindow` —
+        // keeps recent wallpapers around so resume-from-sleep /
+        // Mission Control still finds something fresh to display.
+        let cutoff = Date(timeIntervalSinceNow: -Self.protectedWindow)
         var removed = 0
         var bytesRemoved: Int64 = 0
         for candidate in candidates {
@@ -264,6 +269,6 @@ final class WallpaperCacheCleaner {
                 warnLog("WallpaperCacheCleaner: failed to remove \(candidate.url.lastPathComponent): \(error)")
             }
         }
-        debugLog("WallpaperCacheCleaner: removed \(removed) files (\(ByteCountFormatter.string(fromByteCount: bytesRemoved, countStyle: .file))); cache now \(ByteCountFormatter.string(fromByteCount: currentSize, countStyle: .file))")
+        debugLog("WallpaperCacheCleaner: cache size \(ByteCountFormatter.string(fromByteCount: startSize, countStyle: .file)) → pruned \(removed) files (\(ByteCountFormatter.string(fromByteCount: bytesRemoved, countStyle: .file))); now \(ByteCountFormatter.string(fromByteCount: currentSize, countStyle: .file))")
     }
 }

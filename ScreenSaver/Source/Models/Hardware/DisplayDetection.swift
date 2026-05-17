@@ -76,7 +76,6 @@ final class DisplayDetection: NSObject {
         var displayCount: UInt32 = 0
 
         _ = CGGetOnlineDisplayList(maxDisplays, &onlineDisplays, &displayCount)
-        debugLog("\(displayCount) display(s) detected")
         var mainID: CGDirectDisplayID?
 
         for currentDisplay in onlineDisplays[0..<Int(displayCount)] {
@@ -87,7 +86,6 @@ final class DisplayDetection: NSObject {
                 let mmsize = CGDisplayScreenSize(currentDisplay)
                 let wide = CGDisplayPixelsWide(currentDisplay)
                 cmInPoints = CGFloat(wide) / CGFloat(mmsize.width) * 10
-                debugLog("1cm = \(cmInPoints) points")
                 mainID = currentDisplay
             }
         }
@@ -142,8 +140,6 @@ final class DisplayDetection: NSObject {
         let orect = getGlobalScreenRect()
 
         for screen in screens {
-            debugLog("src orig : \(screen.bottomLeftFrame.origin)")
-
             let (leftScreens, belowScreens) = detectBorders(forScreen: screen)
 
             if leftScreens > maxLeftScreens {
@@ -212,7 +208,6 @@ final class DisplayDetection: NSObject {
                 belowScreens += 1
             }
         }
-        debugLog("left \(leftScreens) below \(belowScreens)")
 
         return (leftScreens, belowScreens)
     }
@@ -276,10 +271,8 @@ final class DisplayDetection: NSObject {
 
     func markScreenAsUsed(id: CGDirectDisplayID) {
         // remove the screen from the unused list
-        debugLog("pre filter \(unusedScreens.count)")
         let filteredScreens = unusedScreens.filter { $0.id != id }
         unusedScreens = filteredScreens
-        debugLog("post filter \(unusedScreens.count)")
     }
 
     // Calculate the size of the global screen (the composite of all the displays attached)

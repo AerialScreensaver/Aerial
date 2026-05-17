@@ -40,6 +40,15 @@ struct DesktopSettingsPanel: View {
     /// the user hasn't yet approved the NSOpenPanel.
     @State private var hasCacheAccess: Bool = false
 
+    /// Pause desktop wallpaper / fullscreen-window playback on battery.
+    @State private var pauseOnBattery: Bool = false
+    /// `"anyBattery"` or `"lowBattery"`.
+    @State private var pauseOnBatteryMode: String = "anyBattery"
+    /// Snapshot of `Battery.hasBattery()` at load time. Drives the
+    /// "no battery detected" warning when the user enables the toggle
+    /// on a Mac that doesn't have a battery (Mac mini, Studio, etc.).
+    @State private var hasBatteryHardware: Bool = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -48,6 +57,8 @@ struct DesktopSettingsPanel: View {
                     .padding(.bottom, 8)
 
                 autoPauseSection
+
+                pauseOnBatterySection
 
                 restartAtLaunchSection
 
@@ -164,6 +175,74 @@ struct DesktopSettingsPanel: View {
             .padding(12)
         } label: {
             Label("Auto-Pause", systemImage: "pause.circle")
+                .font(Font.title3.bold())
+                .padding(4)
+        }
+    }
+
+    // MARK: - Pause on Battery Section
+
+    private var pauseOnBatterySection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 16) {
+                Toggle("Pause on battery", isOn: $pauseOnBattery)
+                    .font(.system(size: 14))
+                    .onChange(of: pauseOnBattery) { newValue in
+                        Preferences.desktopPauseOnBattery = newValue
+                        PlaybackManager.shared.evaluateBatteryState()
+                    }
+
+                Text("Automatically pauses wallpaper and fullscreen playback when this Mac is running on battery, saving energy. Click the popover's play button to override for the current session.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+
+                if pauseOnBattery {
+                    Divider()
+
+                    Picker("When to pause", selection: $pauseOnBatteryMode) {
+                        Text("On any battery power").tag("anyBattery")
+                        Text("Only when battery is low").tag("lowBattery")
+                    }
+                    .pickerStyle(.menu)
+                    .font(.system(size: 14))
+                    .onChange(of: pauseOnBatteryMode) { newValue in
+                        Preferences.desktopPauseOnBatteryMode = newValue
+                        PlaybackManager.shared.evaluateBatteryState()
+                    }
+
+                    Text("\"On any battery power\" pauses as soon as the charger is unplugged. \"Only when battery is low\" waits until the remaining capacity drops below 20%.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+
+                    if !hasBatteryHardware {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("No battery detected on this Mac")
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("The setting is only available for syncing your preferences to other Macs.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.orange.opacity(0.08))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
+                        )
+                    }
+                }
+            }
+            .padding(12)
+        } label: {
+            Label("Pause on Battery", systemImage: "battery.25percent")
                 .font(Font.title3.bold())
                 .padding(4)
         }
@@ -317,6 +396,9 @@ struct DesktopSettingsPanel: View {
         cleanWallpaperCache = Preferences.cleanWallpaperCache
         videoFormat = PrefsVideos.videoFormat
         hasCacheAccess = WallpaperCacheCleaner.shared.hasBookmark
+        pauseOnBattery = Preferences.desktopPauseOnBattery
+        pauseOnBatteryMode = Preferences.desktopPauseOnBatteryMode
+        hasBatteryHardware = Battery.hasBattery()
     }
 
     private func startCoveragePolling() {

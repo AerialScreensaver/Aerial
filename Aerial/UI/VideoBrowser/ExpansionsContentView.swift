@@ -334,7 +334,7 @@ struct ExpansionsContentView: View {
                 Divider()
 
                 Button {
-                    if let url = URL(string: "https://aerialscreensaver.github.io/expansions/") {
+                    if let url = URL(string: "https://aerialscreensaver.github.io/expansions/Save") {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {

@@ -9,21 +9,63 @@
 import Cocoa
 
 class SwiftAerialWindow: NSWindowController {
-    @IBOutlet weak var mainView: NSView!
+    private weak var mainView: NSView!
 
     private var aerialView: AerialSaverView?
 
-    override var windowNibName: NSNib.Name? {
-        return NSNib.Name("AerialWindow")
+    init() {
+        // Build the fullscreen-capable window here so `self.window` is
+        // non-nil from the moment the controller exists. Frame is
+        // cosmetic — `toggleFullScreen(nil)` immediately replaces it
+        // with the screen's frame — but we keep 1280×720 to match the
+        // old XIB's pre-fullscreen size in case any log mentions it.
+        //
+        // Programmatic construction via super.init(window:). NSWindow-
+        // Controller's lazy-load path only fires for non-nil
+        // `windowNibName`, so the override-loadWindow approach can't
+        // work for a no-nib controller — construct eagerly instead.
+        let frame = NSRect(x: 196, y: 240, width: 1280, height: 720)
+        let window = NSWindow(
+            contentRect: frame,
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Aerial"
+        window.hasShadow = false
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.collectionBehavior = [.fullScreenPrimary]
+        window.allowsToolTipsWhenApplicationIsInactive = false
+        window.autorecalculatesKeyViewLoop = false
+        window.animationBehavior = .none
+
+        // contentView serves as the `mainView` anchor for the
+        // auto-laid-out AerialSaverView added in setupWindowMode().
+        let contentView = NSView(frame: NSRect(origin: .zero, size: frame.size))
+        contentView.autoresizesSubviews = true
+        window.contentView = contentView
+
+        super.init(window: window)
+        self.mainView = contentView
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        window?.contentView?.autoresizesSubviews = true
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported — SwiftAerialWindow is constructed programmatically")
     }
 
-    override func windowDidLoad() {
-        super.windowDidLoad()
+    /// Replaces the old `windowDidLoad()`. Re-runnable on every
+    /// `windowMode()` call — the controller and window persist across
+    /// close/reopen cycles but the AerialSaverView is torn down by
+    /// `stopScreensaver()` and must be rebuilt. Tears down any
+    /// previous view first.
+    func setupWindowMode() {
+        // Tear down any previous AerialSaverView. `aerialView` is
+        // already nil after stopScreensaver, but be defensive in case
+        // setup is called twice without an intervening stop.
+        aerialView?.stopAnimation()
+        aerialView?.removeFromSuperview()
+        aerialView = nil
 
         guard let window = window else {
             errorLog("SwiftAerialWindow: No window available")
@@ -62,6 +104,14 @@ class SwiftAerialWindow: NSWindowController {
 
     func setUserPaused(_ paused: Bool) {
         aerialView?.setUserPaused(paused)
+    }
+
+    func batteryPause() {
+        aerialView?.batteryPause()
+    }
+
+    func batteryResume() {
+        aerialView?.batteryResume()
     }
 
     func skipTo(playlistIndex: Int) {

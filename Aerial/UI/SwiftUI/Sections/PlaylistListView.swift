@@ -71,10 +71,18 @@ struct PlaylistListView: View {
                     .frame(width: 80, height: 45)
                 }
 
-                // Play/pause overlay
+                // Play/pause overlay — three visual states (battery-
+                // paused, user-paused, playing) mirroring PlaylistStripView.
                 if isCurrent && playbackManager.playbackMode != .none {
+                    let isBatteryPaused = playbackManager.isBatteryPaused
+                    let icon: String = isBatteryPaused
+                        ? "battery.25percent"
+                        : (playbackManager.isPaused ? "play.fill" : "pause.fill")
+                    let label: String = isBatteryPaused
+                        ? "Resume (paused on battery)"
+                        : (playbackManager.isPaused ? "Resume" : "Pause")
                     Button(action: { playbackManager.togglePause() }) {
-                        Image(systemName: playbackManager.isPaused ? "play.fill" : "pause.fill")
+                        Image(systemName: icon)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(width: 28, height: 28)
@@ -82,8 +90,8 @@ struct PlaylistListView: View {
                     }
                     .buttonStyle(.borderless)
                     .frame(width: 80, height: 45)
-                    .help(playbackManager.isPaused ? "Resume" : "Pause")
-                    .accessibilityLabel(playbackManager.isPaused ? "Resume" : "Pause")
+                    .help(label)
+                    .accessibilityLabel(label)
                     .keyboardShortcut(.space, modifiers: [])
                 }
             }

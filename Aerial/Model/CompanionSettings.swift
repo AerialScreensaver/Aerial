@@ -109,6 +109,17 @@ struct CompanionSettings: Codable {
     /// coordinator restarts itself when this changes.
     var enabledNowPlayingSources: [String]
 
+    // MARK: - Battery-aware pause
+
+    /// Auto-pause desktop wallpaper and fullscreen-window playback when
+    /// the system is on battery (or low battery, per `desktopPauseOnBatteryMode`).
+    /// Default off — opt-in for users who want to preserve battery life.
+    var desktopPauseOnBattery: Bool
+
+    /// `"anyBattery"`: pause whenever AC is unplugged.
+    /// `"lowBattery"`: pause only when on battery AND remaining capacity is below 20%.
+    var desktopPauseOnBatteryMode: String
+
     // MARK: - Defaults
 
     /// Default settings for fresh install
@@ -132,7 +143,9 @@ struct CompanionSettings: Codable {
         globalShortcutsEnabled: false,
         dismissedNewBadges: [],
         firstLaunchCompleted: nil,
-        enabledNowPlayingSources: []
+        enabledNowPlayingSources: [],
+        desktopPauseOnBattery: false,
+        desktopPauseOnBatteryMode: "anyBattery"
     )
 
     // MARK: - File Location
@@ -178,7 +191,9 @@ struct CompanionSettings: Codable {
          globalShortcutsEnabled: Bool = false,
          dismissedNewBadges: [String] = [],
          firstLaunchCompleted: Bool? = nil,
-         enabledNowPlayingSources: [String] = []) {
+         enabledNowPlayingSources: [String] = [],
+         desktopPauseOnBattery: Bool = false,
+         desktopPauseOnBatteryMode: String = "anyBattery") {
         self.intLaunchMode = intLaunchMode
         self.debugMode = debugMode
         self.firstTimeSetup = firstTimeSetup
@@ -199,6 +214,8 @@ struct CompanionSettings: Codable {
         self.dismissedNewBadges = dismissedNewBadges
         self.firstLaunchCompleted = firstLaunchCompleted
         self.enabledNowPlayingSources = enabledNowPlayingSources
+        self.desktopPauseOnBattery = desktopPauseOnBattery
+        self.desktopPauseOnBatteryMode = desktopPauseOnBatteryMode
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -225,5 +242,7 @@ struct CompanionSettings: Codable {
         dismissedNewBadges = try container.decodeIfPresent([String].self, forKey: .dismissedNewBadges) ?? []
         firstLaunchCompleted = try container.decodeIfPresent(Bool.self, forKey: .firstLaunchCompleted)
         enabledNowPlayingSources = try container.decodeIfPresent([String].self, forKey: .enabledNowPlayingSources) ?? []
+        desktopPauseOnBattery = try container.decodeIfPresent(Bool.self, forKey: .desktopPauseOnBattery) ?? false
+        desktopPauseOnBatteryMode = try container.decodeIfPresent(String.self, forKey: .desktopPauseOnBatteryMode) ?? "anyBattery"
     }
 }

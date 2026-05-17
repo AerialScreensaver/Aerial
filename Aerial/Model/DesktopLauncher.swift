@@ -52,29 +52,23 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
             PlaylistManager.shared.consumeExtensionProgressIfAvailable()
             PlaylistManager.shared.markForResume()
 
-            var topLevelObjects: NSArray? = NSArray()
-            if !Bundle.main.loadNibNamed(NSNib.Name("AerialDesktop"),
-                                         owner: aerialDesktopController,
-                                         topLevelObjects: &topLevelObjects) {
-                errorLog("Could not load nib for AerialDesktop, please report")
-            }
+            // Set the authoritative target screen, then run the
+            // wallpaper-mode setup. `setupWallpaperMode()` reads
+            // `targetScreen` to derive screen.frame and the
+            // AerialSaverView's UUID, so the assignment must come
+            // first. The setup method is idempotent.
+            aerialDesktopController.targetScreen = self.targetScreen
+            aerialDesktopController.setupWallpaperMode()
 
-            // Must be called before windowDidLoad so the created window has the correct size
+            // The window was constructed in SwiftAerialDesktop.init,
+            // so .window is guaranteed non-nil here.
             aerialDesktopController.window!.setFrameOrigin(self.targetScreen.visibleFrame.origin)
 
-            // Suppress AppKit's default appear/disappear animations.
-            // Without this, the wallpaper-level window scales/fades
-            // back in every time the system screensaver releases the
-            // display — looks wrong for something that's supposed to
-            // be "always there" desktop content.
+            // Belt-and-braces — `init` and `setupWallpaperMode` both
+            // set this, but re-assert in case AppKit defaults flipped
+            // somewhere between.
             aerialDesktopController.window!.animationBehavior = .none
 
-            // Pass the authoritative target screen so windowDidLoad
-            // derives the UUID from it rather than from window.screen
-            // (which can lag at hot-plug time).
-            aerialDesktopController.targetScreen = self.targetScreen
-
-            aerialDesktopController.windowDidLoad()
             aerialDesktopController.showWindow(self)
             aerialDesktopController.window!.delegate = self
             aerialDesktopController.window!.toggleFullScreen(nil)
@@ -414,6 +408,20 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
     func applyOcclusionResume() {
         debugLog("🖥️ Desktop visible — resuming and ramping up (\(rampDuration))")
         aerialDesktopController.resumeAndRampUp(duration: rampDuration)
+    }
+
+    /// Battery-driven pause. Direct (no ramp) because battery state
+    /// changes are user-initiated events (plug/unplug, threshold cross)
+    /// where an immediate state change reads as "Aerial noticed and
+    /// reacted" rather than abrupt.
+    func applyBatteryPause() {
+        debugLog("🔋 Desktop battery pause — pausing playback")
+        aerialDesktopController.batteryPause()
+    }
+
+    func applyBatteryResume() {
+        debugLog("🔋 Desktop battery resume — resuming playback")
+        aerialDesktopController.batteryResume()
     }
 
 }

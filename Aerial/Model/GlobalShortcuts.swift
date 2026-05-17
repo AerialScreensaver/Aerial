@@ -31,6 +31,11 @@ extension KeyboardShortcuts.Name {
         "aerialNextVideo",
         default: .init(.rightArrow, modifiers: [.control, .option, .command])
     )
+    /// Launch the system screensaver (locks the screen). Mirrors the
+    /// first action button in the popover. No default key combo — user
+    /// assigns one in Settings → Accessibility.
+    static let launchScreensaver = Self("aerialLaunchScreensaver")
+
     /// Toggle fullscreen mode on the currently active screen. Default
     /// is F15 with no modifiers — uncommon enough on modern keyboards
     /// that it shouldn't trample other apps' shortcuts.
@@ -38,6 +43,14 @@ extension KeyboardShortcuts.Name {
         "aerialToggleFullscreen",
         default: .init(.f15)
     )
+
+    #if DEBUG
+    /// DEBUG-only: cycle the simulated battery state (off → on battery
+    /// → on battery low → off) so pause-on-battery can be exercised on
+    /// Macs without a battery. No default key — user assigns one in
+    /// Settings → Accessibility. Stripped from Release builds.
+    static let cycleBatterySimulation = Self("aerialDebugCycleBatterySimulation")
+    #endif
 }
 
 enum GlobalShortcutsManager {
@@ -62,8 +75,22 @@ enum GlobalShortcutsManager {
         KeyboardShortcuts.onKeyDown(for: .nextVideo) {
             Task { @MainActor in PlaybackManager.shared.nextVideo() }
         }
+        KeyboardShortcuts.onKeyDown(for: .launchScreensaver) {
+            Task { @MainActor in PlaybackManager.shared.startScreensaver() }
+        }
         KeyboardShortcuts.onKeyDown(for: .toggleFullscreen) {
             Task { @MainActor in PlaybackManager.shared.toggleFullscreen() }
         }
+
+        #if DEBUG
+        // Debug-only: cycle simulated battery state, then re-evaluate
+        // the pause rule so the new state takes effect immediately.
+        KeyboardShortcuts.onKeyDown(for: .cycleBatterySimulation) {
+            Task { @MainActor in
+                Battery.cycleSimulationState()
+                PlaybackManager.shared.evaluateBatteryState()
+            }
+        }
+        #endif
     }
 }

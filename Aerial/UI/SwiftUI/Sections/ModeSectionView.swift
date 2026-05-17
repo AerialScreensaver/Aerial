@@ -19,7 +19,7 @@ struct ModeSectionView: View {
                 playbackManager.startScreensaver()
                 onDismiss()
             }) {
-                modeLabel(icon: "lock.display", title: "Lock Screen")
+                modeLabel(icon: "lock.display", title: "Screensaver")
             }
             .buttonStyle(.plain)
             .help("Start the screensaver now")
@@ -137,6 +137,12 @@ struct ModeSectionView: View {
         .foregroundColor(.aerial)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
+        // Lock min-height so the SwiftUI Menu wrapper (on multi-monitor
+        // Wallpaper) and the chevron HStack title don't shift intrinsic
+        // sizing vs. the plain Button siblings. minHeight (not exact
+        // height) lets the button grow under Dynamic Type, but never
+        // drop below the shared baseline.
+        .frame(minHeight: 64)
         .background(Color.aerial.opacity(isActive ? 0.25 : 0.1))
         .cornerRadius(8)
         .contentShape(Rectangle())

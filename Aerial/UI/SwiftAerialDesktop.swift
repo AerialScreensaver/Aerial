@@ -18,12 +18,58 @@ class SwiftAerialDesktop: NSWindowController {
     /// mismatched UUID in `AerialSaverView` and the wrong playlist.
     var targetScreen: NSScreen?
 
-    override var windowNibName: NSNib.Name? {
-        return NSNib.Name("AerialDesktop")
+    /// True after the screen-parameters observer is installed. The
+    /// observer should only be registered once per controller
+    /// lifetime; `setupWallpaperMode()` is re-runnable for relaunches
+    /// but the observer registration is gated on this flag.
+    private var didRegisterScreenObserver = false
+
+    init() {
+        // Build the wallpaper-mode window here so `self.window` is
+        // non-nil from the moment the controller exists. Geometry,
+        // level, contentView, and behavior get rewritten in
+        // `setupWallpaperMode()` once `targetScreen` is assigned.
+        //
+        // We construct programmatically (no XIB) via super.init(window:).
+        // NSWindowController's lazy-load (`loadWindow` via `.window`
+        // getter) only fires when `windowNibName` is non-nil, so the
+        // override-loadWindow path can't work for a no-nib controller —
+        // construct eagerly instead.
+        let placeholderFrame = NSRect(x: 0, y: 0, width: 800, height: 600)
+        let window = NSWindow(
+            contentRect: placeholderFrame,
+            styleMask: [.closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Aerial desktop"
+        window.hasShadow = false
+        // NSWindow defaults to `isReleasedWhenClosed = true`. The old
+        // XIB had it false; preserve that so the wallpaper window can
+        // be closed and reopened without the controller dangling.
+        window.isReleasedWhenClosed = false
+        window.isRestorable = false
+        window.allowsToolTipsWhenApplicationIsInactive = false
+        window.autorecalculatesKeyViewLoop = false
+        window.animationBehavior = .none
+        super.init(window: window)
     }
 
-    override func windowDidLoad() {
-        super.windowDidLoad()
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported — SwiftAerialDesktop is constructed programmatically")
+    }
+
+    /// Replaces the old `windowDidLoad()`. Re-runnable on every
+    /// relaunch — the controller and window persist across
+    /// toggleLauncher() cycles but the AerialSaverView (and its
+    /// underlying AVPlayer) is torn down by `stopScreensaver()` and
+    /// must be rebuilt fresh. Tears down any previous view first.
+    func setupWallpaperMode() {
+        // Tear down any previous AerialSaverView. `aerialView` is
+        // already nil after stopScreensaver, but be defensive in case
+        // setup is called twice without an intervening stop.
+        aerialView?.stopAnimation()
+        aerialView = nil
 
         guard let window = window, let screen = targetScreen ?? window.screen else {
             errorLog("SwiftAerialDesktop: No window or screen available")
@@ -99,6 +145,9 @@ class SwiftAerialDesktop: NSWindowController {
 
         // Refresh the dock-aware overlay shift when the screen layout changes
         // (user moves dock, toggles autohide, plugs/unplugs displays).
+        // Gated so we don't register twice across relaunches.
+        guard !didRegisterScreenObserver else { return }
+        didRegisterScreenObserver = true
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(screenParametersChanged),
@@ -135,6 +184,14 @@ class SwiftAerialDesktop: NSWindowController {
 
     func occlusionPause() {
         aerialView?.occlusionPause()
+    }
+
+    func batteryPause() {
+        aerialView?.batteryPause()
+    }
+
+    func batteryResume() {
+        aerialView?.batteryResume()
     }
 
     func skipTo(playlistIndex: Int) {

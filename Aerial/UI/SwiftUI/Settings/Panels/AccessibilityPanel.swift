@@ -94,8 +94,19 @@ struct AccessibilityPanel: View {
                         KeyboardShortcuts.Recorder("Toggle pause / resume:", name: .togglePause)
                         KeyboardShortcuts.Recorder("Previous video:", name: .previousVideo)
                         KeyboardShortcuts.Recorder("Next video:", name: .nextVideo)
+                        KeyboardShortcuts.Recorder("Launch screensaver:", name: .launchScreensaver)
                         KeyboardShortcuts.Recorder("Toggle fullscreen:", name: .toggleFullscreen)
+                        #if DEBUG
+                        KeyboardShortcuts.Recorder("Cycle simulated battery (DEBUG):", name: .cycleBatterySimulation)
+                        #endif
                     }
+
+                    #if DEBUG
+                    Text("Debug build only — cycles Battery.simulationState through off → on battery → on battery low. Lets you test pause-on-battery on Macs without a battery. Stripped from Release builds.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    #endif
                 }
             }
             .padding(12)

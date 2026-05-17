@@ -359,7 +359,6 @@ struct SourceList {
         }
 
         let folderName = url.lastPathComponent
-        debugLog("processing url for videos : \(url)")
 
         do {
             let urls = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
@@ -504,7 +503,6 @@ struct SourceList {
         do {
             let jsonData = try Data(contentsOf: url.appendingPathComponent("manifest.json"))
             if let manifest = try? newJSONDecoder().decode(Manifest.self, from: jsonData) {
-                debugLog("Manifest opened, going to parsing")
                 return parseSourceFromManifest(manifest, url: nil)
             }
         } catch {

@@ -303,10 +303,19 @@ struct PlaylistSectionView: View {
                     .frame(width: 96, height: 54)
                 }
 
-                // Pause/play toggle overlay on current thumbnail
+                // Pause/play toggle overlay on current thumbnail.
+                // Three visual states: battery-paused (battery icon),
+                // user-paused (play icon), playing (pause icon).
                 if isCurrent && playbackManager.playbackMode != .none {
+                    let isBatteryPaused = playbackManager.isBatteryPaused
+                    let icon: String = isBatteryPaused
+                        ? "battery.25percent"
+                        : (playbackManager.isPaused ? "play.fill" : "pause.fill")
+                    let label: String = isBatteryPaused
+                        ? "Resume (paused on battery)"
+                        : (playbackManager.isPaused ? "Resume" : "Pause")
                     Button(action: { playbackManager.togglePause() }) {
-                        Image(systemName: playbackManager.isPaused ? "play.fill" : "pause.fill")
+                        Image(systemName: icon)
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(width: 36, height: 36)
@@ -314,8 +323,8 @@ struct PlaylistSectionView: View {
                     }
                     .buttonStyle(.borderless)
                     .frame(width: 96, height: 54)
-                    .help(playbackManager.isPaused ? "Resume" : "Pause")
-                    .accessibilityLabel(playbackManager.isPaused ? "Resume" : "Pause")
+                    .help(label)
+                    .accessibilityLabel(label)
                     .keyboardShortcut(.space, modifiers: [])
                 }
             }

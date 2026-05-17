@@ -344,7 +344,6 @@ struct NowPlayingSectionView: View {
 
     private func reloadState() {
         let effectiveUUID = playbackManager.effectiveScreenUUID
-        debugLog("🔎 NowPlaying: reloadState — effectiveScreenUUID=\(effectiveUUID ?? "nil") isPerScreen=\(isPerScreen)")
 
         // Detect active user playlist → show playlists view
         if PlaylistManager.shared.isUserPlaylistActive(for: effectiveUUID) {
@@ -357,10 +356,8 @@ struct NowPlayingSectionView: View {
                     setCategorySilently(.filter(info.mode))
                 }
                 selectedItems = Set(info.filterStrings)
-                debugLog("🔎 NowPlaying: reloadState — per-screen with existing filter: mode=\(info.mode) filterStrings(\(info.filterStrings.count))=\(info.filterStrings)")
             } else {
                 // No per-screen playlist yet — seed from global prefs
-                debugLog("🔎 NowPlaying: reloadState — per-screen but no playlist existed, seeding from global")
                 if !showingPlaylists {
                     setCategorySilently(.filter(PrefsVideos.newShouldPlay))
                 }
@@ -368,7 +365,6 @@ struct NowPlayingSectionView: View {
                 PlaylistManager.shared.regenerate(for: screenUUID, mode: selectedCategory, filterStrings: Array(selectedItems))
             }
         } else {
-            debugLog("🔎 NowPlaying: reloadState — global path: newShouldPlay=\(PrefsVideos.newShouldPlay) newShouldPlayString=\(PrefsVideos.newShouldPlayString)")
             if !showingPlaylists {
                 setCategorySilently(.filter(PrefsVideos.newShouldPlay))
             }

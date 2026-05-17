@@ -582,7 +582,6 @@ final class AerialSaverView: ScreenSaverView {
 
     override func layout() {
         super.layout()
-        debugLog("AerialSaverView.layout() - bounds: \(self.bounds.size.width)x\(self.bounds.size.height)")
 
         // Update player layer frame based on viewing mode
         CATransaction.begin()
@@ -910,6 +909,15 @@ final class AerialSaverView: ScreenSaverView {
         #endif
     }
     func occlusionResume()             { coordinator?.occlusionResume() }
+    func batteryPause() {
+        coordinator?.batteryPause()
+        #if COMPANION_APP
+        if isUnderCompanion {
+            WallpaperContinuity.shared.refreshDesktopWallpaper(view: self)
+        }
+        #endif
+    }
+    func batteryResume()               { coordinator?.batteryResume() }
 
     func skipTo(playlistIndex: Int) {
         ExtensionVideoLoader.shared.seekPlaylist(to: playlistIndex, screenUUID: coordinator?.screenUUID)

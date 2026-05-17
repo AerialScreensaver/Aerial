@@ -13,22 +13,32 @@ class SaverLauncher : NSObject, NSWindowDelegate {
 
     let aerialWindowController = SwiftAerialWindow()
     func windowMode() {
-        var topLevelObjects: NSArray? = NSArray()
-        if !Bundle.main.loadNibNamed(NSNib.Name("AerialWindow"),
-                            owner: aerialWindowController,
-                            topLevelObjects: &topLevelObjects) {
-            errorLog("Could not load nib for AerialWindow, please report")
-        }
-        
-        aerialWindowController.windowDidLoad()
+        // Window was built in SwiftAerialWindow.init; setupWindowMode
+        // installs AerialSaverView as a constrained subview of the
+        // window's contentView. Idempotent.
+        aerialWindowController.setupWindowMode()
         aerialWindowController.showWindow(self)
         aerialWindowController.window!.delegate = self
         aerialWindowController.window!.toggleFullScreen(nil)
         aerialWindowController.window!.makeKeyAndOrderFront(nil)
-        
+
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    /// Forces the menubar (and dock) to auto-hide while the
+    /// fullscreen window is up, overriding the system pref
+    /// "Automatically hide and show the menu bar in full screen". By
+    /// returning these as a SUPERSET of the AppKit-proposed options
+    /// we preserve whatever defaults AppKit would have applied,
+    /// plus our hide-affordances. Scope is per-window — when the
+    /// window leaves fullscreen, presentation reverts automatically.
+    func window(
+        _ window: NSWindow,
+        willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions
+    ) -> NSApplication.PresentationOptions {
+        proposedOptions.union([.autoHideMenuBar, .autoHideDock])
+    }
+
     func windowWillClose(_ notification: Notification) {
         if let window = notification.object as? NSWindow,
            window == aerialWindowController.window {
@@ -44,6 +54,18 @@ class SaverLauncher : NSObject, NSWindowDelegate {
     func stopScreensaver() {
         aerialWindowController.stopScreensaver()
         aerialWindowController.close()
+    }
+
+    /// Battery-driven pause. Single-instance variant — only one
+    /// window-mode controller exists.
+    func applyBatteryPause() {
+        debugLog("🔋 Window mode battery pause — pausing playback")
+        aerialWindowController.batteryPause()
+    }
+
+    func applyBatteryResume() {
+        debugLog("🔋 Window mode battery resume — resuming playback")
+        aerialWindowController.batteryResume()
     }
     
     func setUserPaused(_ paused: Bool) {
