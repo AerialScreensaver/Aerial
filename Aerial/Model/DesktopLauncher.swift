@@ -56,17 +56,21 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
             // wallpaper-mode setup. `setupWallpaperMode()` reads
             // `targetScreen` to derive screen.frame and the
             // AerialSaverView's UUID, so the assignment must come
-            // first. The setup method is idempotent.
+            // first. The setup method is idempotent and internally
+            // calls `window.setFrame(screen.frame, ...)` which gives
+            // the correct full-screen origin AND size for the target
+            // screen — no further setFrameOrigin needed afterwards
+            // (a prior `setFrameOrigin(visibleFrame.origin)` here was
+            // a leftover from the XIB flow where it ran BEFORE
+            // windowDidLoad and got harmlessly overwritten; in the
+            // programmatic flow it runs AFTER setupWallpaperMode and
+            // would offset the window by the dock strip).
             aerialDesktopController.targetScreen = self.targetScreen
             aerialDesktopController.setupWallpaperMode()
 
-            // The window was constructed in SwiftAerialDesktop.init,
-            // so .window is guaranteed non-nil here.
-            aerialDesktopController.window!.setFrameOrigin(self.targetScreen.visibleFrame.origin)
-
-            // Belt-and-braces — `init` and `setupWallpaperMode` both
-            // set this, but re-assert in case AppKit defaults flipped
-            // somewhere between.
+            // Belt-and-braces — init and setupWallpaperMode both
+            // set animationBehavior, but re-assert in case AppKit
+            // defaults flipped somewhere between.
             aerialDesktopController.window!.animationBehavior = .none
 
             aerialDesktopController.showWindow(self)
