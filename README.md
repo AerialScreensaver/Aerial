@@ -21,7 +21,7 @@ For earlier macOS Versions, check the [old saver repository](https://github.com/
 
 - If you only want the `.saver`, [version 3.6.3](https://github.com/JohnCoates/Aerial/releases/tag/v3.6.3) is the latest available.
 
-- If you want to use the old desktop mode from Companion, [version 1.5.3beta1](https://github.com/AerialScreensaver/Aerial/releases/download/v1.5.3beta1/Aerial.Companion.zip) is the latest : you *will need* to disable the update checks as you will be prompted to upgrade to version 4 ! It will automatically donload version 3.6.3 at first launch. 
+- If you want to use the old desktop mode from Companion, [version 1.5.3beta1](https://github.com/AerialScreensaver/Aerial/releases/download/v1.5.3beta1/Aerial.Companion.zip) is the latest : you *will need* to disable the update checks as you will be prompted to upgrade to version 4 ! It will automatically download version 3.6.3 at first launch. 
 
 ## Build from source
 
@@ -40,6 +40,14 @@ Note that `ScreenSaver/Source/Models/API/APISecrets.swift` ships with a blank Op
 Weather overlays are provided thanks to [Openweather](https://openweathermap.org) who has offerred free support for Aerial for many years now ! Many thanks to them !
 
 <a href="https://openweathermap.org"><img src="ScreenSaver/Resources/openweather_logo.png" alt="OpenWeather" width="200"></a>
+
+Aerial relies on a few great open source projects, you should check them out : 
+- [Sparkle](https://sparkle-project.org) for auto-updates
+- [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) by Sindre Sorhus for global shortcuts handling
+- [Github releases to discord](https://github.com/SethCohen/github-releases-to-discord) by Seth Cohen for release notes in the community Discord
+- [Swift Argument parser](https://github.com/apple/swift-argument-parser) by Apple (not used directly by Aerial, but [PaperSaver](https://github.com/AerialScreensaver/PaperSaver) does use it)
+
+Many thanks to those maintainers and their contributors !
 
 ## Contributing
 
