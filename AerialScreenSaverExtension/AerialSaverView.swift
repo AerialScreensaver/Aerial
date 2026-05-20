@@ -451,14 +451,23 @@ final class AerialSaverView: ScreenSaverView {
         let changed = beforeID != afterID
         debugLog("🔁 [\(ptr)] windowDidChangeScreen — now id=\(afterID) zorig=\(afterOrigin) changed=\(changed)")
 
-        if changed {
-            if let layer = playerLayer {
-                CATransaction.begin()
-                CATransaction.setDisableActions(true)
-                configurePlayerLayerFrame(layer)
-                CATransaction.commit()
-            }
+        // Always reconfigure on a screen-change notification, even when
+        // `changed` is false. detectScreen() can return the same screen ID
+        // before and after the migration when both passes fell to a fallback
+        // that mis-matched the same wrong screen — gating layer
+        // reconfiguration on `changed` then prevents recovery once detection
+        // starts working (e.g. once window.screen becomes set on the new
+        // screen). The spanned-mode layer frame depends on the detected
+        // screen, so reconfiguring whenever the window's screen ownership
+        // changes is the safe thing to do.
+        if let layer = playerLayer {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            configurePlayerLayerFrame(layer)
+            CATransaction.commit()
+        }
 
+        if changed {
             // Re-resolve the per-screen overlay layout. macOS sometimes
             // moves a window to its real target screen after
             // viewDidMoveToWindow has already fired setupOverlays() —
@@ -496,12 +505,39 @@ final class AerialSaverView: ScreenSaverView {
         let winFrameDesc = self.window.map { "\($0.frame)" } ?? "nil"
         debugLog("[\(ptr)] w: \(self.window) wf:\(winFrameDesc) s:\(self.window?.screen)");
 
-        // 1. Match by the window's global midpoint. `window.frame` is in
-        //    global coordinates, so the midpoint always lands inside exactly
-        //    one screen. This is preferred over the bridge UUID below because
-        //    the bridge protocol assigns UUIDs by request order, which doesn't
-        //    necessarily match the window→screen pairing macOS chose — a
-        //    mismatch produces left/right inversion in spanned mode.
+        // 1. Match window.frame.origin to a display's CGDisplayBounds origin.
+        //    Empirically on macOS 15+ the legacyScreenSaver/AppExtension
+        //    framework positions each screensaver window at its target
+        //    display's CG top-left (top-left origin, y-down) — not the
+        //    NSScreen bottom-left origin Apple's NSWindow.frame docs
+        //    describe. So the window frame origin is a reliable per-window
+        //    identifier of the target display, even when the windows are
+        //    sized to the main display's frame (which they always are —
+        //    AerialViewController.loadView() uses NSScreen.main?.frame for
+        //    every view).
+        //
+        //    Note that this also handles a separate failure mode: window.screen
+        //    is reported as the main display for every view at initial
+        //    viewDidMoveToWindow and is nil during the
+        //    NSWindow.didChangeScreenNotification — neither point lets us
+        //    disambiguate windows by NSScreen lookup.
+        if let win = self.window {
+            let winOrigin = win.frame.origin
+            for screen in displayDetection.screens {
+                let cgOrigin = CGDisplayBounds(screen.id).origin
+                if abs(cgOrigin.x - winOrigin.x) < 0.5 && abs(cgOrigin.y - winOrigin.y) < 0.5 {
+                    foundScreen = screen
+                    displayDetection.markScreenAsUsed(id: screen.id)
+                    debugLog("📺 Screen detected via window.frame CG-origin \(winOrigin) → \(screen.description)")
+                    return
+                }
+            }
+        }
+
+        // 2. Match by the window's global midpoint. `window.frame` is in
+        //    global coordinates, so the midpoint usually lands inside
+        //    exactly one screen. Kept as a fallback for single-display
+        //    setups or arrangements where CG origins don't disambiguate.
         if let win = self.window {
             let probe = CGPoint(x: win.frame.midX, y: win.frame.midY)
             if let screen = displayDetection.findScreenContaining(globalPoint: probe) {
@@ -512,7 +548,7 @@ final class AerialSaverView: ScreenSaverView {
             }
         }
 
-        // 2. Companion-mode UUID. When the view runs under the Companion app
+        // 3. Companion-mode UUID. When the view runs under the Companion app
         //    (desktop wallpaper mode), the screen UUID is passed in at init
         //    and we can resolve it directly. This branch never fires in the
         //    extension — it only has effect when companionDisplayUUID is set.
@@ -542,13 +578,13 @@ final class AerialSaverView: ScreenSaverView {
             }
         }
 
-        // 3. Fallback: FIFO depletion by size. Helps when window.frame is
+        // 4. Fallback: FIFO depletion by size. Helps when window.frame is
         //    nil (rare) and we have no other signal.
         if let screen = displayDetection.alternateFindScreenWith(frame: self.frame) {
             foundScreen = screen
             debugLog("📺 Screen detected (FIFO fallback): \(screen.description)")
         } else if let screen = displayDetection.findScreenWith(frame: self.frame) {
-            // 4. Last-resort: exact frame match. Known-broken on multi-display
+            // 5. Last-resort: exact frame match. Known-broken on multi-display
             //    setups (matches only screens at origin (0,0)), kept solely so
             //    single-display users keep working if everything above missed.
             foundScreen = screen
