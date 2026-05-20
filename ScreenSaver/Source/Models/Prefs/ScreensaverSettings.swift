@@ -146,6 +146,7 @@ extension VideoSettings {
 struct CacheSettings: Codable {
     var enableManagement: Bool
     var cacheLimit: Double
+    var unlimitedCache: Bool
     var intCachePeriodicity: Int
     var restrictOnWiFi: Bool
     var allowedNetworks: [String]
@@ -156,6 +157,7 @@ struct CacheSettings: Codable {
     static let `default` = CacheSettings(
         enableManagement: true,
         cacheLimit: 20,
+        unlimitedCache: false,
         intCachePeriodicity: 1,  // CachePeriodicity.weekly
         restrictOnWiFi: false,
         allowedNetworks: [],
@@ -168,7 +170,22 @@ struct CacheSettings: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         enableManagement = try container.decode(Bool.self, forKey: .enableManagement)
-        cacheLimit = try container.decode(Double.self, forKey: .cacheLimit)
+        let storedLimit = try container.decode(Double.self, forKey: .cacheLimit)
+        // Migration: pre-`unlimitedCache` builds used `cacheLimit = 500` (or 101)
+        // as the unlimited sentinel. When upgrading, recognize that and split it
+        // into the new explicit flag + the default GB budget. Any subsequent
+        // GB value above the slider's max (60) was the panel's heuristic
+        // misinterpretation and is also treated as unlimited.
+        if let storedFlag = try container.decodeIfPresent(Bool.self, forKey: .unlimitedCache) {
+            unlimitedCache = storedFlag
+            cacheLimit = storedLimit
+        } else if storedLimit > 60 {
+            unlimitedCache = true
+            cacheLimit = 20  // restore to default so the sentinel doesn't leak
+        } else {
+            unlimitedCache = false
+            cacheLimit = storedLimit
+        }
         intCachePeriodicity = try container.decode(Int.self, forKey: .intCachePeriodicity)
         restrictOnWiFi = try container.decode(Bool.self, forKey: .restrictOnWiFi)
         allowedNetworks = try container.decode([String].self, forKey: .allowedNetworks)
@@ -177,11 +194,12 @@ struct CacheSettings: Codable {
         lastRotationRun = try container.decodeIfPresent(Date.self, forKey: .lastRotationRun)
     }
 
-    init(enableManagement: Bool, cacheLimit: Double, intCachePeriodicity: Int,
+    init(enableManagement: Bool, cacheLimit: Double, unlimitedCache: Bool, intCachePeriodicity: Int,
          restrictOnWiFi: Bool, allowedNetworks: [String],
          overrideCache: Bool, cachePath: String?, lastRotationRun: Date?) {
         self.enableManagement = enableManagement
         self.cacheLimit = cacheLimit
+        self.unlimitedCache = unlimitedCache
         self.intCachePeriodicity = intCachePeriodicity
         self.restrictOnWiFi = restrictOnWiFi
         self.allowedNetworks = allowedNetworks

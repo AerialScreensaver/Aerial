@@ -85,7 +85,6 @@ struct VideoBrowserCardView: View {
                             })
                             .font(.system(size: 12, weight: .semibold))
                             .textFieldStyle(.plain)
-                            .fixedSize()
                             .lineLimit(1)
                             .onAppear { editingTitle = video.secondaryName }
                             Image(systemName: "pencil.line")

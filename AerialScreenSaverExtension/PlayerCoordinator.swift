@@ -144,7 +144,12 @@ final class PlayerCoordinator {
     private let isVertical: Bool
 
     /// Screen UUID for per-screen playlist resolution (independent mode).
-    let screenUUID: String?
+    /// Mutable so `AerialSaverView` can update it when macOS migrates the
+    /// view's window to a different screen (independent mode each-view-own-
+    /// coord scenario). Only `playNextVideo` / `playPreviousVideo` consult
+    /// this — there's no derived state to invalidate when it changes; the
+    /// next loader call simply uses the new UUID.
+    var screenUUID: String?
 
     /// True when this coordinator drives desktop playback (Companion). Used
     /// to suppress position-driven opacity fades — desktop transitions are

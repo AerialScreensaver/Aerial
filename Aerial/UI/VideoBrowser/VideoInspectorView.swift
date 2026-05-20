@@ -55,13 +55,13 @@ struct VideoInspectorView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if !video.secondaryName.isEmpty {
                         if state.isMyVideos {
-                            HStack(spacing: 4) {
-                                TextField("Title", text: $editingTitle, onCommit: {
-                                    updateMyVideoTitle(newTitle: editingTitle)
-                                })
-                                .font(.system(size: 16, weight: .bold))
-                                .textFieldStyle(.plain)
-                                .fixedSize()
+                            HStack(alignment: .top, spacing: 4) {
+                                TextField("Title", text: $editingTitle, axis: .vertical)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .textFieldStyle(.plain)
+                                    .onSubmit {
+                                        updateMyVideoTitle(newTitle: editingTitle)
+                                    }
                                 Image(systemName: "pencil.line")
                                     .font(.system(size: 13))
                                     .foregroundColor(.secondary)
@@ -69,6 +69,7 @@ struct VideoInspectorView: View {
                         } else {
                             Text(video.secondaryName)
                                 .font(.system(size: 16, weight: .bold))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     Text(video.name)

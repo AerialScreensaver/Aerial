@@ -483,9 +483,24 @@ class DownloadCoordinator {
     }
 
     private func ensureSpace() {
-        if !Cache.hasSomeFreeSpace() {
-            Cache.freeCache()
+        guard !Cache.hasSomeFreeSpace() else { return }
+        // Respect the user's Replace cadence. If they chose Never, or the
+        // cadence window hasn't elapsed since the last rotation, don't
+        // trim opportunistically — the download loops fall through via
+        // their `continue` checks, and the .critical path has its own
+        // single-video forceEvictOneForCritical() escape hatch. Without
+        // this gate, any download trigger could wipe outdated-but-in-
+        // rotation videos far ahead of the user's chosen schedule.
+        guard PrefsCache.cachePeriodicity != .never else {
+            debugLog("DownloadCoordinator: ensureSpace skipped (Replace=Never)")
+            return
         }
+        guard cadenceElapsedSinceLastRotation() else {
+            debugLog("DownloadCoordinator: ensureSpace skipped (cadence not elapsed)")
+            return
+        }
+        Cache.freeCache()
+        PrefsCache.lastRotationRun = Date()
     }
 
     private func onDownloadBatchComplete() {

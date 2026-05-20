@@ -318,14 +318,7 @@ struct CacheSettingsPanel: View {
                     Toggle("Unlimited cache", isOn: $unlimitedCache)
                         .font(.system(size: 14))
                         .onChange(of: unlimitedCache) { newValue in
-                            if newValue {
-                                // Sentinel value treated as "unlimited" in UI. The eviction
-                                // code in Cache.swift still enforces it as a real GB cap, so
-                                // pick a number a user realistically can't fill up.
-                                PrefsCache.cacheLimit = 500
-                            } else {
-                                PrefsCache.cacheLimit = cacheLimit
-                            }
+                            PrefsCache.unlimitedCache = newValue
                         }
 
                     if !unlimitedCache {
@@ -336,9 +329,7 @@ struct CacheSettingsPanel: View {
                             Slider(value: $cacheLimit, in: 5...150, step: 5)
                                 .frame(width: 360)
                                 .onChange(of: cacheLimit) { newValue in
-                                    if !unlimitedCache {
-                                        PrefsCache.cacheLimit = newValue
-                                    }
+                                    PrefsCache.cacheLimit = newValue
                                 }
                             Text("\(Int(cacheLimit)) GB")
                                 .font(.system(size: 14))
@@ -498,12 +489,12 @@ struct CacheSettingsPanel: View {
 
     private func loadSettings() {
         enableManagement = PrefsCache.enableManagement
-        let limit = PrefsCache.cacheLimit
-        // Any stored value above the slider max (60 GB) is treated as
-        // "unlimited" — catches both the current sentinel (500) and the
-        // legacy one (101) so users on older builds keep their toggle.
-        unlimitedCache = limit > 60
-        cacheLimit = unlimitedCache ? 60 : limit
+        // `unlimitedCache` is now its own boolean preference; no more
+        // overloading the cacheLimit GB value as a sentinel. The Codable
+        // migration in ScreensaverSettings.init(from:) handles users
+        // upgrading from the old `cacheLimit = 500` representation.
+        unlimitedCache = PrefsCache.unlimitedCache
+        cacheLimit = PrefsCache.cacheLimit
         cachePeriodicity = PrefsCache.cachePeriodicity
         restrictOnWiFi = PrefsCache.restrictOnWiFi
         allowedNetworks = PrefsCache.allowedNetworks

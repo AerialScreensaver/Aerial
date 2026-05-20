@@ -27,6 +27,15 @@ struct NowPlayingSectionView: View {
     /// commit branch — only real user picker changes should regenerate.
     @State private var suppressCategoryOnChange: Bool = false
 
+    /// Bumped by `reloadState()` to force a SwiftUI body re-evaluation when
+    /// `PlaylistManager` state changes (e.g. user activates a playlist).
+    /// `PlaylistManager` and `UserPlaylistManager` aren't observed here —
+    /// they're plain singletons whose state changes via NotificationCenter —
+    /// so without this tick the `userPlaylistList`'s read of
+    /// `activeUserPlaylistId(...)` wouldn't trigger a re-render and the
+    /// row's selection indicator would stay stale.
+    @State private var playlistActivationTick: Int = 0
+
     /// The current filter category (extracted from popoverCategory)
     private var selectedCategory: NewShouldPlay {
         if case .filter(let mode) = popoverCategory { return mode }
@@ -343,11 +352,31 @@ struct NowPlayingSectionView: View {
     }
 
     private func reloadState() {
+        // Force a body re-render — covers the case where the only relevant
+        // change is the active user playlist (PlaylistManager isn't observed,
+        // and `setCategorySilently(.playlists)` below is a no-op when already
+        // on `.playlists`).
+        playlistActivationTick &+= 1
+
         let effectiveUUID = playbackManager.effectiveScreenUUID
+        let userPlaylistActive = PlaylistManager.shared.isUserPlaylistActive(for: effectiveUUID)
 
         // Detect active user playlist → show playlists view
-        if PlaylistManager.shared.isUserPlaylistActive(for: effectiveUUID) {
+        if userPlaylistActive {
             setCategorySilently(.playlists)
+        }
+
+        // When a user playlist is active for this screen, the persisted
+        // playlist has filterMode = -1 — which filterInfo() can't parse
+        // (NewShouldPlay only covers 0...6). Bailing out here is critical:
+        // the else-branch of the screenUUID block below would call
+        // regenerate(for: screenUUID, ...), wiping the just-activated user
+        // playlist with a filter-derived one. That's what produced both the
+        // "click does nothing" symptom and the "always resets to Sources >
+        // My Videos on relaunch" symptom.
+        guard !userPlaylistActive else {
+            loadThumbnails()
+            return
         }
 
         if let screenUUID = effectiveUUID {
@@ -453,34 +482,42 @@ struct NowPlayingSectionView: View {
     // MARK: - User Playlist List
 
     private var userPlaylistList: some View {
+        // Touch `playlistActivationTick` so SwiftUI registers this computed
+        // view as dependent on it. Without this read, the tick bumps inside
+        // `reloadState()` invalidate `NowPlayingSectionView` overall, but
+        // SwiftUI's diff doesn't propagate into this sub-view's ForEach —
+        // the row content is treated as stable across subsequent activations
+        // and the highlight stays on the first-clicked playlist.
+        _ = playlistActivationTick
         let summaries = UserPlaylistManager.shared.allSummaries()
         let activeId = PlaylistManager.shared.activeUserPlaylistId(for: playbackManager.effectiveScreenUUID)
 
         return VStack(alignment: .leading, spacing: 4) {
             ForEach(summaries) { summary in
+                let isActive = summary.id == activeId
                 HStack(spacing: 8) {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 14))
-                        .foregroundColor(summary.id == activeId ? .aerial : .secondary)
+                        .foregroundColor(isActive ? .aerial : .secondary)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(summary.name)
-                            .font(.system(size: 13))
-                            .foregroundColor(.primary)
+                            .font(.system(size: 13, weight: isActive ? .semibold : .regular))
+                            .foregroundColor(isActive ? .aerial : .primary)
                             .lineLimit(1)
                         Text("\(summary.entryCount) video\(summary.entryCount == 1 ? "" : "s")")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
                     Spacer()
-                    if summary.id == activeId {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .semibold))
+                    if isActive {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.aerial)
                     }
                 }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .background(summary.id == activeId ? Color.aerial.opacity(0.1) : Color.clear)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .background(isActive ? Color.aerial.opacity(0.25) : Color.clear)
                 .cornerRadius(6)
                 .contentShape(Rectangle())
                 .onTapGesture {

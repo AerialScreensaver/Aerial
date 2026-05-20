@@ -271,39 +271,49 @@ final class AerialSaverView: ScreenSaverView {
         // Start video playback, fall back to color animation if no videos
         if ExtensionVideoLoader.shared.hasCachedVideos {
             setupPlayerLayer()
-
-            // Get or create the coordinator for this viewing mode
-            let isVertical = (foundScreen != nil) ? foundScreen!.height > foundScreen!.width : false
-            // Under Companion, companionDisplayUUID is authoritative (set at
-            // init from the target screen). Using it directly avoids a
-            // round-trip through foundScreen → display ID → UUID, which
-            // can fail on hot-plug when DisplayDetection is stale. The
-            // extension path still derives from foundScreen.
-            var screenUUID: String? = isUnderCompanion ? companionDisplayUUID : nil
-            if screenUUID == nil, let screen = foundScreen {
-                let cfUUID = CGDisplayCreateUUIDFromDisplayID(screen.id)
-                if let uuid = cfUUID?.takeRetainedValue() {
-                    screenUUID = CFUUIDCreateString(nil, uuid) as String
-                    debugLog("📺 Derived screenUUID: \(screenUUID!) for display \(screen.id)")
-                }
-            }
-            let coord = PlayerCoordinator.forCurrentMode(isVerticalScreen: isVertical, screenUUID: screenUUID, isDesktop: isUnderCompanion)
-            coordinator = coord
-
-            // Register first so isLeader() can find us in the delegates list
-            let player = coord.register(delegate: self)
-            playerLayer?.player = player
-
-            let amLeader = coord.isLeader(self)
-            debugLog("Coordinator mode: leader=\(amLeader)")
-
-            // Only the leader resets the playlist cache and starts playback
-            if amLeader {
-                ExtensionVideoLoader.shared.resetPlaylistCache()
-                coord.playNextVideo()
-            }
+            bindCoordinatorAndStartPlayback()
         } else {
             startColorAnimation()
+        }
+    }
+
+    /// Wire this view to a `PlayerCoordinator` for its currently-detected
+    /// screen and start playback. Extracted so `windowDidChangeScreen` can
+    /// rebind after macOS migrates the window to a different screen — the
+    /// initial extension setup commonly places both views on the main
+    /// display first, then migrates one of them to its real target screen
+    /// a few frames later. Without rebinding here the migrated view stays
+    /// tied to the wrong-screen coordinator (and its wrong-screen
+    /// playlist), producing the "both screens play the same playlist" bug.
+    private func bindCoordinatorAndStartPlayback() {
+        // Under Companion, companionDisplayUUID is authoritative (set at
+        // init from the target screen). Using it directly avoids a
+        // round-trip through foundScreen → display ID → UUID, which
+        // can fail on hot-plug when DisplayDetection is stale. The
+        // extension path still derives from foundScreen.
+        let isVertical = (foundScreen != nil) ? foundScreen!.height > foundScreen!.width : false
+        var screenUUID: String? = isUnderCompanion ? companionDisplayUUID : nil
+        if screenUUID == nil, let screen = foundScreen {
+            let cfUUID = CGDisplayCreateUUIDFromDisplayID(screen.id)
+            if let uuid = cfUUID?.takeRetainedValue() {
+                screenUUID = CFUUIDCreateString(nil, uuid) as String
+                debugLog("📺 Derived screenUUID: \(screenUUID!) for display \(screen.id)")
+            }
+        }
+        let coord = PlayerCoordinator.forCurrentMode(isVerticalScreen: isVertical, screenUUID: screenUUID, isDesktop: isUnderCompanion)
+        coordinator = coord
+
+        // Register first so isLeader() can find us in the delegates list
+        let player = coord.register(delegate: self)
+        playerLayer?.player = player
+
+        let amLeader = coord.isLeader(self)
+        debugLog("Coordinator mode: leader=\(amLeader)")
+
+        // Only the leader resets the playlist cache and starts playback
+        if amLeader {
+            ExtensionVideoLoader.shared.resetPlaylistCache()
+            coord.playNextVideo()
         }
     }
 
@@ -483,6 +493,39 @@ final class AerialSaverView: ScreenSaverView {
                                                                     isDesktop: isUnderCompanion)
                     state.replaceLayout(layout)
                     debugLog("🔁 [\(ptr)] overlay layout reapplied for new screen \(newUUID) (\(layout.allInstances.count) overlays)")
+                }
+            }
+
+            // Rebind the coordinator's screen UUID so the next
+            // loader.getNextVideo / popPreviousFromPlaylist call resolves
+            // the right per-screen playlist. We deliberately do NOT
+            // unregister + create a new coordinator here: a previous
+            // attempt at that shape produced a player-nil moment and a
+            // coord cleanup() during the layer transition, which
+            // legacyScreenSaver interpreted as a failed view and tore
+            // down the controller within ~1ms — visible to the user as
+            // constant blinking.
+            //
+            // In independent mode each view has its own coordinator
+            // (PlayerCoordinator.forCurrentMode always creates a fresh
+            // one), so mutating screenUUID on this coord is 1:1 with
+            // "this view's screen changed". The coord caches no derived
+            // state from screenUUID — both call sites read it at call
+            // time. Triggering playNextVideo with skipFade=true after
+            // the swap cuts to a video from the new playlist; no
+            // unregister, no player-nilling, no host tear-down signal.
+            if !isUnderCompanion, let coord = coordinator, ExtensionVideoLoader.shared.hasCachedVideos {
+                var newScreenUUID: String? = nil
+                if let screen = foundScreen {
+                    let cfUUID = CGDisplayCreateUUIDFromDisplayID(screen.id)
+                    if let uuid = cfUUID?.takeRetainedValue() {
+                        newScreenUUID = CFUUIDCreateString(nil, uuid) as String
+                    }
+                }
+                if coord.screenUUID != newScreenUUID {
+                    debugLog("🔁 [\(ptr)] coordinator screenUUID \(coord.screenUUID ?? "nil") → \(newScreenUUID ?? "nil"); swapping playlist")
+                    coord.screenUUID = newScreenUUID
+                    coord.playNextVideo(skipFade: true)
                 }
             }
         }

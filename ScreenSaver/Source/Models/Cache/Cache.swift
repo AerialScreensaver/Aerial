@@ -208,8 +208,12 @@ struct Cache {
 
     /**
      Do we still have a bit of free space (0.5 GB)
+
+     Returns `true` unconditionally when `PrefsCache.unlimitedCache` is set,
+     so eviction paths short-circuit and `freeCache()` becomes a no-op.
      */
     static func hasSomeFreeSpace() -> Bool {
+        if PrefsCache.unlimitedCache { return true }
         return size() < PrefsCache.cacheLimit - 0.5
     }
 

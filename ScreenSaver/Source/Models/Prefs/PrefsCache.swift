@@ -24,10 +24,19 @@ struct PrefsCache {
         set { manager.setValue(newValue, forKeyPath: \.cache.enableManagement) }
     }
 
-    // Cache limit (in GiB)
+    // Cache limit (in GiB). Ignored when `unlimitedCache` is true.
     static var cacheLimit: Double {
         get { manager.getValue(forKeyPath: \.cache.cacheLimit) }
         set { manager.setValue(newValue, forKeyPath: \.cache.cacheLimit) }
+    }
+
+    // When true, the cache has no size cap — `Cache.hasSomeFreeSpace()`
+    // short-circuits to `true` and `freeCache()` becomes a no-op. Replaces
+    // the legacy "cacheLimit > 60" sentinel that conflated a real GB budget
+    // with an unlimited toggle.
+    static var unlimitedCache: Bool {
+        get { manager.getValue(forKeyPath: \.cache.unlimitedCache) }
+        set { manager.setValue(newValue, forKeyPath: \.cache.unlimitedCache) }
     }
 
     // How often should cache gets refreshed
