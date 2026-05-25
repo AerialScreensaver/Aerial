@@ -402,20 +402,28 @@ struct DesktopSettingsPanel: View {
     }
 
     private func startCoveragePolling() {
-        // Snapshot screen list (index + name + frame) on main thread
-        let screens = NSScreen.screens.enumerated().map { (index, screen) in
-            (index, screen.localizedName, screen.frame)
+        // Snapshot screen list as (index + name + displayID) on main
+        // thread. Capturing the displayID rather than the CG bounds
+        // lets the timer below re-fetch current bounds via
+        // CGDisplayBounds on every tick, so a System Settings →
+        // Displays rearrange is reflected without closing+reopening
+        // the panel.
+        let screens = NSScreen.screens.enumerated().compactMap { (index, screen) -> (Int, String, CGDirectDisplayID)? in
+            guard let did = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+                return nil
+            }
+            return (index, screen.localizedName, did)
         }
 
         coverageTimer = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
             .sink { _ in
                 DispatchQueue.global(qos: .utility).async {
-                    let results = screens.map { (index, name, frame) in
+                    let results = screens.map { (index, name, did) in
                         ScreenCoverageInfo(
                             id: index,
                             name: name,
-                            coverage: DesktopOcclusionMonitor.coverage(for: frame)
+                            coverage: DesktopOcclusionMonitor.coverage(for: CGDisplayBounds(did))
                         )
                     }
                     DispatchQueue.main.async {

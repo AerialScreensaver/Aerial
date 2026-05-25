@@ -32,10 +32,32 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
     /// `targetScreen`'s CGDirectDisplayID. Exposed (not `private`) so
     /// PlaybackManager can key its per-screen occlusion map by it.
     var screenUUID: String? {
-        guard let screenNumber = targetScreen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else { return nil }
-        let cfUUID = CGDisplayCreateUUIDFromDisplayID(screenNumber)
+        guard let did = targetDisplayID else { return nil }
+        let cfUUID = CGDisplayCreateUUIDFromDisplayID(did)
         guard let uuid = cfUUID?.takeRetainedValue() else { return nil }
         return CFUUIDCreateString(nil, uuid) as String
+    }
+
+    /// CGDirectDisplayID for this launcher's screen. Used to query the
+    /// screen's CURRENT CG bounds via `CGDisplayBounds(_:)` — important
+    /// because `targetScreen.cgBounds` returns a cached value, while
+    /// `CGDisplayBounds` reflects any rearrange/resolution change done
+    /// in System Settings → Displays since launcher start.
+    var targetDisplayID: CGDirectDisplayID? {
+        targetScreen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+    }
+
+    /// Same as `screenUUID` in independent mode; nil in shared modes
+    /// (cloned / spanned / mirrored). Mirrors `PlaybackManager.effective
+    /// ScreenUUID` semantics. Use this for any `PlaylistManager` call that
+    /// keys by screen, so that shared-mode reads/writes resolve to
+    /// `sharedPlaylist` instead of creating a stray `screenPlaylists[uuid]`
+    /// copy the extension never reads. The extension's shared-mode
+    /// coordinator queries with `screenUUID = nil`; matching that here
+    /// keeps the two sides on the same key.
+    var effectivePlaylistScreenUUID: String? {
+        guard PrefsDisplays.viewingMode == .independent else { return nil }
+        return screenUUID
     }
     
     init(screen: NSScreen = NSScreen.main!) {
@@ -264,8 +286,8 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
         // on next extension activation
         JSONPreferencesStore.shared.delete(at: PlaylistProgressState.fileURL)
 
-        let extensionTimestamp = PlaylistManager.shared.currentPlaybackTimestamp(for: screenUUID)
-        let extensionEntry = PlaylistManager.shared.currentEntry(for: screenUUID)
+        let extensionTimestamp = PlaylistManager.shared.currentPlaybackTimestamp(for: effectivePlaylistScreenUUID)
+        let extensionEntry = PlaylistManager.shared.currentEntry(for: effectivePlaylistScreenUUID)
         let desktopVideoId = aerialDesktopController.getCurrentVideoId()
 
         let tsText = extensionTimestamp.map { String(format: "%.1fs", $0) } ?? "nil"
@@ -287,7 +309,13 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
         // screens, so a covered neighbour pauses us too.
         let isCurrentlyOccluded: Bool
         if Preferences.desktopAutoPause {
-            let coverage = DesktopOcclusionMonitor.coverage(for: targetScreen.frame)
+            // Use live CG bounds from CGDisplayBounds(displayID): the
+            // screen may have been rearranged in System Settings since
+            // this launcher was created, in which case targetScreen's
+            // cached frame is stale. CG window bounds intersected
+            // against the wrong rect always return 0 coverage.
+            let did = targetDisplayID ?? 0
+            let coverage = DesktopOcclusionMonitor.coverage(for: CGDisplayBounds(did))
             let localOccluded = coverage >= Preferences.desktopAutoPauseThreshold
             // PlaybackManager is @MainActor; this call site runs from a
             // notification handler on the main thread (screensaver
@@ -327,7 +355,7 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
             }
         }
         if isCurrentlyOccluded {
-            debugLog("Desktop occluded (\(Int(DesktopOcclusionMonitor.coverage(for: targetScreen.frame) * 100))%) — ramping 1.0 → 0 then applying occlusion pause")
+            debugLog("Desktop occluded (\(Int(DesktopOcclusionMonitor.coverage(for: CGDisplayBounds(targetDisplayID ?? 0)) * 100))%) — ramping 1.0 → 0 then applying occlusion pause")
         }
 
         // Restart monitor with correct initial state + cooldown to prevent
@@ -343,7 +371,7 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
 
     private func saveDesktopPosition() {
         let position = aerialDesktopController.getCurrentPosition()
-        PlaylistManager.shared.updatePlaybackTimestamp(position, for: screenUUID)
+        PlaylistManager.shared.updatePlaybackTimestamp(position, for: effectivePlaylistScreenUUID)
         // Desktop just wrote the authoritative position into
         // playlists.json. Drop any leftover sidecar so the next
         // extension activation doesn't override our fresh timestamp
@@ -357,7 +385,10 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
 
     private func startOcclusionMonitorIfNeeded(initialOccluded: Bool = false) {
         guard Preferences.desktopAutoPause else { return }
-        let monitor = DesktopOcclusionMonitor(screenFrame: targetScreen.frame, initialOccluded: initialOccluded)
+        // Pass displayID — the monitor resolves CGDisplayBounds on
+        // every poll so display rearranges in System Settings are
+        // picked up automatically (no need to recreate the launcher).
+        let monitor = DesktopOcclusionMonitor(displayID: targetDisplayID ?? 0, initialOccluded: initialOccluded)
         monitor.delegate = self
         monitor.start()
         occlusionMonitor = monitor

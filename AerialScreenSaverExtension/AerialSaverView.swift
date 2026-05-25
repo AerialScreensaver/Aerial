@@ -56,6 +56,24 @@ final class AerialSaverView: ScreenSaverView {
     /// The detected screen for this view
     private var foundScreen: Screen?
 
+    /// True once `runSettledSetup()` has run for the current window.
+    /// Gates against running setup twice — both
+    /// `windowDidChangeScreen` (multi-display, common case) and the
+    /// fallback timer (single-display or stalled notification) race to
+    /// trigger initial setup; whichever fires first wins, the other
+    /// short-circuits. Reset whenever a new window is attached or the
+    /// current window is detached.
+    private var didRunSettledSetup: Bool = false
+
+    /// Fallback timer scheduled in `viewDidMoveToWindow`. If
+    /// `windowDidChangeScreen` doesn't fire within the timeout (e.g.
+    /// single-display setup where nothing migrates), this work item
+    /// runs `runSettledSetup()` so the view doesn't sit blank forever.
+    /// Cancelled whenever the notification fires first, the view
+    /// detaches from its window, or a duplicate `viewDidMoveToWindow`
+    /// arrives.
+    private var settledFallbackTimer: DispatchWorkItem?
+
     /// Weak set of all live instantiated views (for multi-monitor coordination —
     /// keyboard skip, mirrored-mode flip, nextVideo/previousVideo broadcasts).
     /// Weak so views aren't retained past their windows' teardown. Use
@@ -224,27 +242,78 @@ final class AerialSaverView: ScreenSaverView {
                 object: win)
         }
 
+        // New window → reset the settled-setup state for the next round.
+        settledFallbackTimer?.cancel()
+        settledFallbackTimer = nil
+        didRunSettledSetup = false
+
         if window != nil {
-            // Window appeared - detect screen and setup playback.
-            // This is the main entry point for the extension since
-            // startAnimation() is not reliably called.
+            // Don't run detection / gating / video setup here — macOS
+            // initially places every screensaver window on the main
+            // display and migrates each one to its real target screen
+            // ~30-200 ms later via NSWindow.didChangeScreenNotification.
+            // Deciding "play on this screen?" before the migration sees
+            // every view as "main" and breaks .mainOnly / .secondaryOnly /
+            // .selection display modes.
             //
-            // The previous "advanced screen detection" path queried Companion
-            // over a TCP loopback bridge to disambiguate same-size displays.
-            // It's been replaced by the window.frame midpoint detection in
-            // detectScreen() + the NSWindow.didChangeScreenNotification
-            // observer above, which together handle the case where macOS
-            // initially places both windows on the primary then migrates one.
-            continueWindowSetup()
+            // Paint a black background immediately (so the view doesn't
+            // flash whatever was previously here) and schedule a fallback
+            // timer. The real setup runs in `runSettledSetup()`, triggered
+            // either by `windowDidChangeScreen` (the common multi-display
+            // path) or by this fallback timer (single-display setups
+            // where nothing migrates, or stalled notifications).
+            paintInitialBlackBackground()
+            scheduleSettledFallback()
         } else {
-            // Window disappeared - stop playback
+            // Window disappeared - stop playback. The settled state was
+            // already reset above; nothing else to do.
             stopPlayback()
         }
     }
 
-    /// Second half of `viewDidMoveToWindow`, called once the Companion
-    /// bridge query has returned (or immediately when the bridge isn't used).
-    private func continueWindowSetup() {
+    /// Solid black behind the (yet-to-be-set-up) player layer so the
+    /// view doesn't show framework-default white / leftover content
+    /// during the brief settle window.
+    private func paintInitialBlackBackground() {
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.black.cgColor
+    }
+
+    /// Schedule the settled-setup fallback. ~250 ms covers the empirical
+    /// upper bound of legacyScreenSaver's window-migration delay
+    /// (~30-200 ms) plus a small margin. The settled-setup runs
+    /// idempotently — whichever of (timer, notification) fires first
+    /// wins; the other short-circuits via `didRunSettledSetup`.
+    private func scheduleSettledFallback() {
+        settledFallbackTimer?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            guard !self.didRunSettledSetup, self.window != nil else { return }
+            let ptr = Unmanaged.passUnretained(self).toOpaque()
+            debugLog("⏱ [\(ptr)] settled-setup fallback fired (no windowDidChangeScreen within 250 ms)")
+            self.runSettledSetup()
+        }
+        settledFallbackTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: item)
+    }
+
+    /// Settled-setup: runs once per window, after the window's screen
+    /// has settled. Triggered by whichever fires first —
+    /// `windowDidChangeScreen` (multi-display common path) or the
+    /// `settledFallbackTimer` (single-display / stalled notifications).
+    /// Idempotent via `didRunSettledSetup`.
+    ///
+    /// Previously this was `continueWindowSetup()` called directly from
+    /// `viewDidMoveToWindow` — but at that point the window is still on
+    /// the main display before macOS migrates it, so every view's
+    /// `detectScreen()` resolved "main" and the .mainOnly / .secondaryOnly
+    /// / .selection display modes all gated against the wrong screen.
+    private func runSettledSetup() {
+        guard !didRunSettledSetup else { return }
+        didRunSettledSetup = true
+        settledFallbackTimer?.cancel()
+        settledFallbackTimer = nil
+
         // Detect which screen this view is on
         detectScreen()
 
@@ -268,7 +337,10 @@ final class AerialSaverView: ScreenSaverView {
             setupOverlays()
         }
 
-        // Start video playback, fall back to color animation if no videos
+        // Start video playback, fall back to color animation if no videos.
+        // The previous secondary 200 ms wait for `bindCoordinator…` in
+        // independent multi-display mode is gone — the settled-setup
+        // gate already waited for migration, so we can bind directly.
         if ExtensionVideoLoader.shared.hasCachedVideos {
             setupPlayerLayer()
             bindCoordinatorAndStartPlayback()
@@ -449,6 +521,20 @@ final class AerialSaverView: ScreenSaverView {
     /// mode tracks the new screen.
     @objc private func windowDidChangeScreen(_ notification: Notification) {
         let ptr = Unmanaged.passUnretained(self).toOpaque()
+
+        // First migration — this is the moment the window has settled
+        // onto its real target screen, which is the trigger we've been
+        // waiting for. Run the deferred setup (detect + gate +
+        // overlays + playback) instead of the late-migration reconfig
+        // path below. The fallback timer is cancelled inside
+        // runSettledSetup.
+        if !didRunSettledSetup {
+            let winFrameDesc = self.window.map { "\($0.frame)" } ?? "nil"
+            debugLog("🔁 [\(ptr)] windowDidChangeScreen (initial settle) — wf:\(winFrameDesc)")
+            runSettledSetup()
+            return
+        }
+
         let beforeID = foundScreen?.id.description ?? "nil"
         let beforeOrigin = foundScreen.map { "\($0.zeroedOrigin)" } ?? "nil"
         let winFrameDesc = self.window.map { "\($0.frame)" } ?? "nil"
@@ -514,7 +600,22 @@ final class AerialSaverView: ScreenSaverView {
             // time. Triggering playNextVideo with skipFade=true after
             // the swap cuts to a video from the new playlist; no
             // unregister, no player-nilling, no host tear-down signal.
-            if !isUnderCompanion, let coord = coordinator, ExtensionVideoLoader.shared.hasCachedVideos {
+            // INDEPENDENT MODE ONLY. In shared modes (cloned / spanned /
+            // mirrored), all views drive a single shared PlayerCoordinator
+            // whose screenUUID is intentionally nil (forCurrentMode line
+            // 41-46). The shared playlist is screen-agnostic, so a
+            // per-view screen migration must not trigger a playlist swap
+            // — doing so calls playNextVideo on the shared coord, which
+            // advances every view past the current video (e.g. wallpaper-
+            // to-screensaver handoff lands on Aqueduct, view B migrates,
+            // we advance to Mendocino — visible on BOTH screens because
+            // they share the same player). The per-screen-playlist bug
+            // only exists in independent mode where each view has its
+            // own coord.
+            if PrefsDisplays.viewingMode == .independent,
+               !isUnderCompanion,
+               let coord = coordinator,
+               ExtensionVideoLoader.shared.hasCachedVideos {
                 var newScreenUUID: String? = nil
                 if let screen = foundScreen {
                     let cfUUID = CGDisplayCreateUUIDFromDisplayID(screen.id)

@@ -14,14 +14,26 @@ protocol DesktopOcclusionDelegate: AnyObject {
 
 class DesktopOcclusionMonitor {
     weak var delegate: DesktopOcclusionDelegate?
-    let screenFrame: CGRect
+
+    /// Stable identifier for the screen we're watching. We resolve the
+    /// screen's current CG bounds via `CGDisplayBounds(displayID)` on
+    /// every poll instead of snapshotting at construction — so any
+    /// display-arrangement change in macOS System Settings → Displays
+    /// (rearrange, resolution change, scale-factor change) heals
+    /// itself within the next 1-second tick.
+    ///
+    /// If `displayID` becomes invalid (display unplugged before the
+    /// disconnect handler in PlaybackManager has torn us down),
+    /// `CGDisplayBounds` returns `.null`, which `coverage(for:)`
+    /// safely treats as 0% — no crash, no spurious pause.
+    let displayID: CGDirectDisplayID
 
     private var timer: DispatchSourceTimer?
     private var isOccluded = false
     private var isCoolingDown = false
 
-    init(screenFrame: CGRect, initialOccluded: Bool = false) {
-        self.screenFrame = screenFrame
+    init(displayID: CGDirectDisplayID, initialOccluded: Bool = false) {
+        self.displayID = displayID
         self.isOccluded = initialOccluded
     }
 
@@ -40,7 +52,7 @@ class DesktopOcclusionMonitor {
         }
         source.resume()
         timer = source
-        debugLog("🖥️ OcclusionMonitor started for screen \(screenFrame)")
+        debugLog("🖥️ OcclusionMonitor started for display=\(displayID) bounds=\(CGDisplayBounds(displayID))")
     }
 
     func stop() {
@@ -78,7 +90,14 @@ class DesktopOcclusionMonitor {
 
     // MARK: - Coverage Calculation
 
-    /// Compute current window coverage for an arbitrary screen frame.
+    /// Compute current window coverage for a screen.
+    ///
+    /// `screenFrame` MUST be in CG global coordinates (top-left origin,
+    /// Y down) — pass `NSScreen.cgBounds`, not `NSScreen.frame`. Window
+    /// bounds from `CGWindowListCopyWindowInfo` are CG-space; passing
+    /// an AppKit `frame` makes the intersection silently return empty
+    /// for any non-main screen.
+    ///
     /// Only counts normal app windows (level 0 up to but excluding the Dock level).
     /// Excludes: desktop background, Dock, menu bar, status bar, Aerial's own windows.
     /// Can be called from any thread.
@@ -134,6 +153,10 @@ class DesktopOcclusionMonitor {
     }
 
     private func computeCoverage() -> Double {
-        return Self.coverage(for: screenFrame)
+        // Fetch the screen's current CG bounds on every poll. macOS
+        // System Settings → Displays rearranges (drag a tile, change
+        // resolution) update what CGDisplayBounds returns; snapshotting
+        // at init would leave us polling against the stale rect.
+        return Self.coverage(for: CGDisplayBounds(displayID))
     }
 }
