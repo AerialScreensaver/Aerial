@@ -61,14 +61,25 @@ struct PlaylistListView: View {
                     .clipped()
                     .cornerRadius(4)
 
-                // Progress bar
+                // Progress bar pinned to the bottom edge of the 80×45
+                // list thumbnail. Same shape as PlaylistStripView's bar
+                // (Aerial-color fill on a faint Aerial track), scaled to
+                // the list thumbnail's narrower 80 pt width.
                 if isCurrent {
-                    GeometryReader { geo in
-                        Rectangle()
-                            .fill(Color.aerial.opacity(0.8))
-                            .frame(width: 3, height: geo.size.height * playbackManager.playbackProgress)
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.aerial.opacity(0.25))
+                                .frame(height: 6)
+                            Rectangle()
+                                .fill(Color.aerial)
+                                .frame(width: 80 * CGFloat(playbackManager.playbackProgress),
+                                       height: 6)
+                        }
                     }
                     .frame(width: 80, height: 45)
+                    .allowsHitTesting(false)
                 }
 
                 // Play/pause overlay — three visual states (battery-
@@ -95,10 +106,6 @@ struct PlaylistListView: View {
                     .keyboardShortcut(.space, modifiers: [])
                 }
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(isCurrent ? Color.aerial : Color.clear, lineWidth: 2)
-            )
 
             // Text + metadata
             VStack(alignment: .leading, spacing: 2) {

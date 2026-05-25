@@ -93,11 +93,19 @@ class PlaybackManager: ObservableObject {
     /// drives the actual pause/resume call in shared viewing modes.
     private var perScreenOcclusion: [String: Bool] = [:]
 
+    /// 1 Hz timer that refreshes `playbackProgress` for the popover's
+    /// thumbnail progress bar. Sourced from the desktop AVPlayer when
+    /// the wallpaper is running, from `PlaylistManager`'s persisted
+    /// timestamp otherwise. Trivial cost — one CMTime read + one
+    /// dictionary lookup per tick — so we leave it running always.
+    private var progressTimer: DispatchSourceTimer?
+
     // MARK: - Initialization
 
     private init() {
         self.globalSpeed = Preferences.globalSpeed
         refreshScreenList()
+        startProgressTimer()
 
         // Listen for screen configuration changes
         NotificationCenter.default.addObserver(
@@ -147,6 +155,7 @@ class PlaybackManager: ObservableObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        progressTimer?.cancel()
     }
 
     // MARK: - Screen Management
@@ -472,6 +481,70 @@ class PlaybackManager: ObservableObject {
         case .none:
             break
         }
+    }
+
+    // MARK: - Playback Progress
+
+    /// Start the 1 Hz timer that pushes `playbackProgress` updates into
+    /// the popover's thumbnail progress bar. Called from `init` and runs
+    /// for the lifetime of the singleton.
+    private func startProgressTimer() {
+        let source = DispatchSource.makeTimerSource(queue: .main)
+        source.schedule(deadline: .now() + 1.0, repeating: 1.0)
+        source.setEventHandler { [weak self] in
+            self?.refreshPlaybackProgress()
+        }
+        source.resume()
+        progressTimer = source
+    }
+
+    /// Recompute the current playback fraction (0...1) from the
+    /// authoritative source for the current state:
+    ///   - `.desktop` mode + a running launcher → live AVPlayer time
+    ///     (`launcher.currentPosition`).
+    ///   - Anything else → last persisted timestamp from
+    ///     `PlaylistManager.currentPlaybackTimestamp(for:)`.
+    /// In both cases the denominator is the current video's
+    /// `AerialVideo.duration` (cached via `PrefsVideos.durationCache`
+    /// + AVAsset probe). When duration is unknown or zero (e.g. live
+    /// streams), progress is reported as 0 — the bar then hides.
+    ///
+    /// Only assigns `playbackProgress` when the new value differs by
+    /// more than ~0.5 %. At a 1 Hz tick that's enough resolution for
+    /// a 96 pt wide bar (≈0.5 pt of motion per tick) while avoiding
+    /// pointless SwiftUI re-renders.
+    @MainActor
+    private func refreshPlaybackProgress() {
+        let screenUUID = effectiveScreenUUID
+        let progress: Double = {
+            guard let video = PlaylistManager.shared.currentVideo(for: screenUUID),
+                  video.duration > 0 else {
+                return 0
+            }
+            let position: Double
+            if playbackMode == .desktop,
+               let launcher = activeLauncherForProgress(screenUUID: screenUUID),
+               let live = launcher.currentPosition {
+                position = live
+            } else {
+                position = PlaylistManager.shared.currentPlaybackTimestamp(for: screenUUID) ?? 0
+            }
+            return max(0, min(1, position / video.duration))
+        }()
+        if abs(progress - playbackProgress) > 0.005 {
+            playbackProgress = progress
+        }
+    }
+
+    /// Pick a launcher whose `currentPosition` should drive the progress
+    /// bar. Independent mode: the launcher for the popover's screen.
+    /// Shared modes: any running launcher will do (all play the same
+    /// content) — pick the first stable one.
+    private func activeLauncherForProgress(screenUUID: String?) -> DesktopLauncher? {
+        if let screenUUID, let launcher = desktopLauncherInstances[screenUUID], launcher.isRunning {
+            return launcher
+        }
+        return desktopLauncherInstances.values.first(where: { $0.isRunning })
     }
 
     // MARK: - Occlusion Coordination

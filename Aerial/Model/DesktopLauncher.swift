@@ -47,6 +47,14 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
         targetScreen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
     }
 
+    /// Current AVPlayer position in seconds, or nil when not running.
+    /// Polled by `PlaybackManager` to drive the popover's progress bar
+    /// for the current video.
+    var currentPosition: Double? {
+        guard isRunning else { return nil }
+        return aerialDesktopController.getCurrentPosition()
+    }
+
     /// Same as `screenUUID` in independent mode; nil in shared modes
     /// (cloned / spanned / mirrored). Mirrors `PlaybackManager.effective
     /// ScreenUUID` semantics. Use this for any `PlaylistManager` call that

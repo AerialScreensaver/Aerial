@@ -290,17 +290,28 @@ struct PlaylistSectionView: View {
                         )
                 }
 
-                // Progress bar overlay on current video (left edge, fills top-to-bottom)
+                // Progress bar on the current video — 6 pt tall strip
+                // pinned to the bottom edge, fills left → right per
+                // `playbackProgress`. Faint Aerial-color track behind the
+                // fill keeps it visible at low progress against a dark
+                // thumbnail. Driven by PlaybackManager's 1 Hz refresh:
+                // live AVPlayer position when wallpaper is running, last
+                // persisted timestamp otherwise.
                 if isCurrent {
-                    GeometryReader { geo in
-                        Rectangle()
-                            .fill(Color.aerial.opacity(0.8))
-                            .frame(
-                                width: 3,
-                                height: geo.size.height * playbackManager.playbackProgress
-                            )
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.aerial.opacity(0.25))
+                                .frame(height: 6)
+                            Rectangle()
+                                .fill(Color.aerial)
+                                .frame(width: 96 * CGFloat(playbackManager.playbackProgress),
+                                       height: 6)
+                        }
                     }
                     .frame(width: 96, height: 54)
+                    .allowsHitTesting(false)
                 }
 
                 // Pause/play toggle overlay on current thumbnail.
@@ -328,10 +339,6 @@ struct PlaylistSectionView: View {
                     .keyboardShortcut(.space, modifiers: [])
                 }
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(isCurrent ? Color.aerial : Color.clear, lineWidth: 2)
-            )
             .shadow(color: isCurrent ? Color.aerial.opacity(0.3) : .clear, radius: 4)
 
             // Label
