@@ -32,7 +32,7 @@ struct BottomBarView: View {
 
             // Settings button
             Button(action: {
-                openWindow(id: "aerialSettings")
+                SettingsWindowController.show(via: openWindow)
                 onOpenSettings()
             }) {
                 chipLabel(icon: "gear")
@@ -44,7 +44,7 @@ struct BottomBarView: View {
 
             // Video Browser button
             Button(action: {
-                openWindow(id: "videoBrowser")
+                VideoBrowserWindowController.show(via: openWindow)
                 onOpenVideoBrowser()
             }) {
                 chipLabel(icon: "film.stack")

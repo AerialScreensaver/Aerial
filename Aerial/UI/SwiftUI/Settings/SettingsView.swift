@@ -208,7 +208,7 @@ struct SettingsView: View {
                 // left within the trailing primaryAction group.
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
-                        openWindow(id: "videoBrowser")
+                        VideoBrowserWindowController.show(via: openWindow)
                     }) {
                         Label("Video Library", systemImage: "film.stack")
                     }

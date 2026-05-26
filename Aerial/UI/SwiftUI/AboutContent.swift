@@ -150,18 +150,7 @@ struct AboutContent: View {
     /// init lands directly on Expansions; the matching notification
     /// covers the case where the window is already open.
     private func browseExpansions() {
-        VideoBrowserState.pendingInitialCategory = .expansions
-        openWindow(id: "videoBrowser")
-        // Defer to the next runloop tick so a brand-new window's
-        // SwiftUI body has time to mount its `.onReceive` observer
-        // before we post — otherwise an already-open path is the
-        // only path covered.
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(
-                name: VideoBrowserState.openCategoryRequest,
-                object: BrowseCategory.expansions
-            )
-        }
+        VideoBrowserWindowController.show(category: .expansions, via: openWindow)
     }
 }
 

@@ -69,7 +69,7 @@ struct VideoBrowserView: View {
                 // of the toolbar's display mode.
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
-                        openWindow(id: "aerialSettings")
+                        SettingsWindowController.show(via: openWindow)
                     }) {
                         Label("Settings", systemImage: "gear")
                     }
