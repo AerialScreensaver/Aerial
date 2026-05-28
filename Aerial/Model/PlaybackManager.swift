@@ -118,6 +118,21 @@ class PlaybackManager: ObservableObject {
             }
         }
 
+        // Orphan-detect signal from AerialSaverView (Companion mode only).
+        // Posted when a view's window has settled on a screen whose UUID
+        // doesn't match the launcher's target. We drop the launcher and let
+        // the deferred reconcile pass try again on a hopefully-settled OS.
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("com.glouel.aerial.launcherOrphanDetected"),
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let uuid = note.object as? String else { return }
+            Task { @MainActor in
+                self?.handleLauncherOrphanDetected(uuid: uuid)
+            }
+        }
+
         // Battery-aware pause: subscribe to power-source change events,
         // re-evaluate on system wake (macOS can change battery state
         // during sleep without firing the IOPS callback), and check
@@ -213,6 +228,16 @@ class PlaybackManager: ObservableObject {
             launcher.toggleLauncher()
             launcher.changeSpeed(globalSpeed)
             isRunning = launcher.isRunning
+        }
+
+        // Resync per-screen occlusion bookkeeping with this launcher's running
+        // state. Without this, a stale `true` from a prior life of the same UUID
+        // pins the shared-mode aggregate and silently suppresses auto-pause /
+        // auto-resume after viewing-mode flips or stop/start cycles.
+        if isRunning {
+            perScreenOcclusion[screenUuid] = false
+        } else {
+            perScreenOcclusion.removeValue(forKey: screenUuid)
         }
 
         // Update active screens set
@@ -679,8 +704,58 @@ class PlaybackManager: ObservableObject {
             debugLog("🖥️ Screen connected: \(uuid)")
         }
 
+        // Catch enabled screens that are present in the OS but have no
+        // launcher — handles the case where a prior orphan-detect dropped
+        // a launcher and we need to recreate it.
+        reconcileLaunchersWithScreens()
+
         // Refresh UI list last
         refreshScreenList()
+    }
+
+    /// Called by the orphan-detect notification from `AerialSaverView`. The
+    /// view's window has settled on a screen whose UUID doesn't match the
+    /// launcher's target; the launcher is misrouted and unrecoverable in
+    /// place. Drop it cleanly; the deferred reconcile will rebuild once the
+    /// OS's NSScreen / UUID mapping has stabilised. Intentionally does NOT
+    /// touch `Preferences.enabledWallpaperScreenUuids` — the user still
+    /// wants this screen running, we just need to retry the placement.
+    private func handleLauncherOrphanDetected(uuid: String) {
+        debugLog("🖥️ Launcher orphan detected for \(uuid) — tearing down and queueing reconcile")
+        if let launcher = desktopLauncherInstances[uuid] {
+            launcher.cleanupForDisconnect()
+        }
+        desktopLauncherInstances.removeValue(forKey: uuid)
+        perScreenOcclusion.removeValue(forKey: uuid)
+        activeScreenUuids.remove(uuid)
+
+        // Defer the recreate so the OS has a chance to finish its display
+        // reconfigure pass — if we recreate immediately while NSScreen state
+        // is still volatile, the new launcher can land on the wrong screen
+        // again, fire orphan-detect, and we loop. 0.5 s is enough to ride
+        // out the typical hot-plug / lid-close transient without being
+        // user-visible.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            Task { @MainActor in
+                self?.reconcileLaunchersWithScreens()
+            }
+        }
+    }
+
+    /// Walks `enabledWallpaperScreenUuids` and creates a launcher for any
+    /// enabled screen that is currently present in `NSScreen.screens` but
+    /// has no entry in `desktopLauncherInstances`. Idempotent — does
+    /// nothing in the steady state where every enabled screen has a
+    /// launcher. Called at the end of `handleScreenConfigurationChange`
+    /// and from the deferred orphan-recovery path.
+    private func reconcileLaunchersWithScreens() {
+        guard playbackMode == .desktop else { return }
+        let currentScreenUuids = Set(NSScreen.screens.map { $0.screenUuid })
+        for uuid in Preferences.enabledWallpaperScreenUuids
+            where currentScreenUuids.contains(uuid) && desktopLauncherInstances[uuid] == nil {
+            debugLog("🖥️ Reconcile: \(uuid) is enabled and present but unattached — starting launcher")
+            toggleDesktopLauncher(for: uuid)
+        }
     }
 
     private func updateActiveScreens(_ uuid: String, isActive: Bool) {

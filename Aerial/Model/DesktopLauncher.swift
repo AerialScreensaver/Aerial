@@ -158,6 +158,20 @@ class DesktopLauncher : NSObject, NSWindowDelegate, DesktopOcclusionDelegate {
         DistributedNotificationCenter.default().removeObserver(self)
         aerialDesktopController.stopScreensaver()
         if let window = aerialDesktopController.window {
+            // Detach the view chain so AerialSaverView's ARC reference drops
+            // with the launcher rather than getting pinned by AppKit's
+            // window-list / content-view retention.
+            window.contentView = nil
+            window.contentViewController = nil
+            window.orderOut(nil)
+            // Force ARC deallocation on close. The window was created with
+            // isReleasedWhenClosed=false so it could survive the popover's
+            // stop/restart cycles; disconnect is different — the screen it
+            // was anchored to is gone, so the window has nothing to do but
+            // die. Without this flip the OS keeps the NSWindow alive in its
+            // window list, and the next display reconfig re-routes it onto a
+            // surviving screen as an invisible orphan.
+            window.isReleasedWhenClosed = true
             window.close()
         }
         isRunning = false

@@ -317,6 +317,13 @@ final class AerialSaverView: ScreenSaverView {
         // Detect which screen this view is on
         detectScreen()
 
+        // Orphan detect under Companion — if the view landed on a screen
+        // whose UUID doesn't match the launcher's `companionDisplayUUID`,
+        // bail before binding overlays/playback. See helper for context.
+        if checkForCompanionOrphanAndCloseIfNeeded() {
+            return
+        }
+
         // Compute dark mode (after screen detection)
         Aerial.helper.computeDarkMode(view: self)
         debugLog("📺 Dark mode: \(Aerial.helper.darkMode)")
@@ -547,6 +554,17 @@ final class AerialSaverView: ScreenSaverView {
         let changed = beforeID != afterID
         debugLog("🔁 [\(ptr)] windowDidChangeScreen — now id=\(afterID) zorig=\(afterOrigin) changed=\(changed)")
 
+        // Orphan detect: under Companion, the view's companionDisplayUUID is
+        // authoritative. If detectScreen() resolved to a CGDisplay whose UUID
+        // doesn't match, the view's window has migrated onto the wrong
+        // physical screen (orphan from a prior disconnect that didn't fully
+        // tear down, or fresh launcher built against transient NSScreen
+        // state). Signal PlaybackManager to drop the launcher and close the
+        // window — reconciliation will rebuild on the correct screen.
+        if checkForCompanionOrphanAndCloseIfNeeded() {
+            return
+        }
+
         // Always reconfigure on a screen-change notification, even when
         // `changed` is false. detectScreen() can return the same screen ID
         // before and after the migration when both passes fell to a fallback
@@ -630,6 +648,38 @@ final class AerialSaverView: ScreenSaverView {
                 }
             }
         }
+    }
+
+    /// Companion-only: if the view's window has settled on a screen whose
+    /// CGDisplay UUID doesn't match `companionDisplayUUID`, this view is
+    /// misrouted — either an orphan from a previous launcher that didn't
+    /// fully tear down, or a fresh launcher that built against an unstable
+    /// NSScreen-UUID mapping mid-reconfigure. Signal PlaybackManager to drop
+    /// the launcher, close the window, and return `true` so the caller can
+    /// short-circuit. Returns `false` when the view is correctly routed (or
+    /// not running under Companion).
+    ///
+    /// Identifier "com.glouel.aerial.launcherOrphanDetected" is duplicated
+    /// in `PlaybackManager` — the file is shared with the .appex target so
+    /// we can't reach `PlaybackManager` directly, but the .appex never sets
+    /// `isUnderCompanion=true`, so the post path is dead code there.
+    private func checkForCompanionOrphanAndCloseIfNeeded() -> Bool {
+        guard isUnderCompanion,
+              let companionUUID = companionDisplayUUID,
+              let screen = foundScreen else { return false }
+        let cfUUID = CGDisplayCreateUUIDFromDisplayID(screen.id)
+        guard let uuid = cfUUID?.takeRetainedValue() else { return false }
+        let currentUUID = CFUUIDCreateString(nil, uuid) as String
+        if currentUUID == companionUUID { return false }
+
+        let ptr = Unmanaged.passUnretained(self).toOpaque()
+        debugLog("⚠️ [\(ptr)] Companion view orphan-detect: created for \(companionUUID) but window now on \(currentUUID). Closing.")
+        NotificationCenter.default.post(
+            name: Notification.Name("com.glouel.aerial.launcherOrphanDetected"),
+            object: companionUUID
+        )
+        self.window?.close()
+        return true
     }
 
     // MARK: - Display Detection
