@@ -73,6 +73,11 @@ struct CompanionSettings: Codable {
     /// if the bookmark goes stale at resolve time.
     var wallpaperCacheBookmark: Data?
 
+    /// Optional, opt-in: when on, delete macOS's own downloaded wallpaper
+    /// aerial videos (~/Library/Application Support/com.apple.wallpaper/
+    /// aerials/videos) at launch to reclaim disk space. Default off.
+    var reclaimMacOSWallpaperVideosAtStartup: Bool
+
     // MARK: - Accessibility Settings
 
     /// Use a solid (opaque) popover background instead of the default translucent vibrancy
@@ -138,6 +143,7 @@ struct CompanionSettings: Codable {
         replaceWallpaper: false,
         cleanWallpaperCache: true,
         wallpaperCacheBookmark: nil,
+        reclaimMacOSWallpaperVideosAtStartup: false,
         popoverSolidBackground: false,
         invertColors: false,
         globalShortcutsEnabled: false,
@@ -186,6 +192,7 @@ struct CompanionSettings: Codable {
          replaceWallpaper: Bool = false,
          cleanWallpaperCache: Bool = true,
          wallpaperCacheBookmark: Data? = nil,
+         reclaimMacOSWallpaperVideosAtStartup: Bool = false,
          popoverSolidBackground: Bool = false,
          invertColors: Bool = false,
          globalShortcutsEnabled: Bool = false,
@@ -208,6 +215,7 @@ struct CompanionSettings: Codable {
         self.replaceWallpaper = replaceWallpaper
         self.cleanWallpaperCache = cleanWallpaperCache
         self.wallpaperCacheBookmark = wallpaperCacheBookmark
+        self.reclaimMacOSWallpaperVideosAtStartup = reclaimMacOSWallpaperVideosAtStartup
         self.popoverSolidBackground = popoverSolidBackground
         self.invertColors = invertColors
         self.globalShortcutsEnabled = globalShortcutsEnabled
@@ -236,6 +244,7 @@ struct CompanionSettings: Codable {
         replaceWallpaper = try container.decodeIfPresent(Bool.self, forKey: .replaceWallpaper) ?? false
         cleanWallpaperCache = try container.decodeIfPresent(Bool.self, forKey: .cleanWallpaperCache) ?? true
         wallpaperCacheBookmark = try container.decodeIfPresent(Data.self, forKey: .wallpaperCacheBookmark)
+        reclaimMacOSWallpaperVideosAtStartup = try container.decodeIfPresent(Bool.self, forKey: .reclaimMacOSWallpaperVideosAtStartup) ?? false
         popoverSolidBackground = try container.decodeIfPresent(Bool.self, forKey: .popoverSolidBackground) ?? false
         invertColors = try container.decodeIfPresent(Bool.self, forKey: .invertColors) ?? false
         globalShortcutsEnabled = try container.decodeIfPresent(Bool.self, forKey: .globalShortcutsEnabled) ?? false

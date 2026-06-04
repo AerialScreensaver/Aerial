@@ -47,6 +47,14 @@ class LocationProvider: NSObject {
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             guard let self = self, self.isRunning else { return }
+            // Don't ping CoreLocation / NightShift during sleep — this hourly
+            // Timer fires on Power Nap dark wakes too. Cached coords and solar
+            // times are effectively static across a sleep; the next tick after
+            // a real wake refreshes them.
+            guard !SystemSleepState.shared.isAsleep else {
+                debugLog("LocationProvider: hourly refresh skipped (system asleep)")
+                return
+            }
             debugLog("LocationProvider: hourly refresh")
             if self.needsCoordinates() {
                 self.locationManager.requestLocation()

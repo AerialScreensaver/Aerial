@@ -124,6 +124,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // No-op at runtime when Preferences.replaceWallpaper is OFF.
         WallpaperContinuity.shared.start()
 
+        // Track system sleep/wake so background maintenance (downloads,
+        // location refresh) stands down during sleep — including the
+        // periodic dark wakes macOS performs under Power Nap.
+        SystemSleepState.shared.start()
+
+        // Optional, opt-in: reclaim macOS's own downloaded wallpaper-video
+        // cache at launch. Off by default; silent (logs only).
+        if Preferences.reclaimMacOSWallpaperVideosAtStartup {
+            DispatchQueue.global(qos: .utility).async {
+                MacOSWallpaperVideoCache.reclaim()
+            }
+        }
+
         // Register system-wide hotkeys when the master pref is on.
         // Idempotent — same call fires from the toggle's onChange.
         GlobalShortcutsManager.refresh()

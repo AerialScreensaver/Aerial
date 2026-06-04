@@ -31,6 +31,11 @@ class DownloadCoordinator {
     private var debounceTimer: DispatchWorkItem?
     private var isEvaluating = false
 
+    /// Set true once `ensureSpaceOnce()` has freed cache in the current
+    /// evaluation cycle so further per-candidate calls are no-ops. Reset at
+    /// the top of `evaluateAndDownload()`. Confined to `workQueue`.
+    private var freedThisCycle = false
+
     /// Debounce interval for selection changes (seconds)
     private let debounceInterval: TimeInterval = 3.0
 
@@ -135,13 +140,11 @@ class DownloadCoordinator {
             self?.startScheduledChecks()
         }
 
-        // Long sleeps would skew the hourly cadence; tick again immediately on wake.
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(handleSystemWake),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
+        // System sleep/wake handling — including the catch-up that re-runs
+        // this hourly check on the next *full* wake — now lives in
+        // SystemSleepState, which calls performScheduledCheck() on wake.
+        // The scheduled check itself bails while the system is asleep, so the
+        // hourly Timer firing during a Power Nap dark wake is a cheap no-op.
     }
 
     // MARK: - Public API
@@ -205,17 +208,22 @@ class DownloadCoordinator {
         }
     }
 
-    @objc private func handleSystemWake() {
-        debugLog("DownloadCoordinator: system woke, running scheduled check")
-        performScheduledCheck()
-    }
-
     /// The hourly check. Two phases:
     ///   1. Fill — cache has room → let `evaluateAndDownload` queue more videos
     ///   2. Rotate — cache is full and cadence has elapsed → evict outdated,
     ///      queue replacements, stamp `lastRotationRun`
     /// In both phases, refresh source manifests so newly released videos surface.
     private func runScheduledCheck() {
+        // Stand down while the Mac is asleep. The hourly Timer's fire date
+        // elapses during sleep and gets serviced on a Power Nap dark wake
+        // (when didWakeNotification does NOT fire), so without this guard the
+        // check would hit the network and evaluate downloads mid-sleep.
+        // SystemSleepState re-runs this on the next full wake.
+        guard !SystemSleepState.shared.isAsleep else {
+            debugLog("DownloadCoordinator: scheduled check skipped (system asleep / dark wake)")
+            return
+        }
+
         guard PrefsCache.enableManagement, Cache.canNetwork() else {
             debugLog("DownloadCoordinator: scheduled check skipped (management off or offline)")
             return
@@ -269,7 +277,18 @@ class DownloadCoordinator {
         isEvaluating = true
         defer { isEvaluating = false }
 
+        // Defense-in-depth for the debounced path: a reloadSources() kicked
+        // just before sleep could land its callback (→ selectionDidChange →
+        // here) after the sleep flag was set. Guard A covers the Timer path.
+        guard !SystemSleepState.shared.isAsleep else {
+            debugLog("DownloadCoordinator: evaluate skipped (system asleep)")
+            return
+        }
+
         guard PrefsCache.enableManagement, Cache.canNetwork() else { return }
+
+        // New cycle — allow ensureSpaceOnce() to free cache once more.
+        freedThisCycle = false
 
         // Union the matching videos across every active playlist filter
         // (shared + per-screen). A per-screen selection change in independent
@@ -303,13 +322,23 @@ class DownloadCoordinator {
 
         debugLog("DownloadCoordinator: priority=\(priority) cached=\(cached.count) uncached=\(uncached.count) filters=\(filters.count)")
 
+        // Whether this cycle may make room for cacheable downloads. Computed
+        // once — it depends only on free space + the global Replace cadence,
+        // never on the individual video — so the strategy loops don't re-check
+        // (and re-log) it per candidate. This is what eliminated the ~120
+        // "ensureSpace skipped" lines we saw every cycle.
+        let canFree = Cache.hasSomeFreeSpace() || canFreeSpaceThisCycle()
+        if !canFree {
+            debugLog("DownloadCoordinator: cache full, cadence not elapsed — skipping space-gated downloads this cycle")
+        }
+
         switch priority {
         case .critical:
             downloadCritical(uncached: uncached)
         case .coverage:
-            downloadCoverage(cached: cached, uncached: uncached)
+            downloadCoverage(cached: cached, uncached: uncached, canFree: canFree)
         case .variety:
-            downloadVariety(uncached: uncached)
+            downloadVariety(uncached: uncached, canFree: canFree)
         case .maintenance:
             // Nothing urgent, just regenerate playlist
             break
@@ -355,7 +384,7 @@ class DownloadCoordinator {
         // non-cacheable Expansion downloads when the global cache
         // happens to be full and nothing's evictable.
         if smallest.source.isCachable {
-            ensureSpace()
+            ensureSpaceOnce()
 
             // If the cadence-aware eviction didn't free anything (e.g. Replace =
             // Never, or nothing is outdated yet), force one eviction anyway. The
@@ -415,7 +444,7 @@ class DownloadCoordinator {
     }
 
     /// Coverage: ensure at least one cached video per location/group.
-    private func downloadCoverage(cached: [AerialVideo], uncached: [AerialVideo]) {
+    private func downloadCoverage(cached: [AerialVideo], uncached: [AerialVideo], canFree: Bool) {
         let cachedLocations = Set(cached.map { $0.name })
 
         // Group uncached by location, pick one from each uncovered
@@ -426,11 +455,13 @@ class DownloadCoordinator {
 
         for (location, videos) in byLocation {
             if !cachedLocations.contains(location), let video = videos.first {
-                if video.source.isCachable {
-                    ensureSpace()
-                    // Use `continue` (not `break`) so later non-cacheable
-                    // videos in the loop can still be queued even when
-                    // the global cache is saturated.
+                if video.source.isCachable, !Cache.hasSomeFreeSpace() {
+                    // `continue` (not `break`) so later non-cacheable videos
+                    // in the loop can still be queued even when the global
+                    // cache is saturated. `canFree` short-circuits the global
+                    // cadence decision without re-deriving it per candidate.
+                    guard canFree else { continue }
+                    ensureSpaceOnce()
                     guard Cache.hasSomeFreeSpace() else { continue }
                 }
                 debugLog("DownloadCoordinator: coverage download \(video.secondaryName) for \(location)")
@@ -440,7 +471,7 @@ class DownloadCoordinator {
     }
 
     /// Variety: shuffle uncached, download up to N, weighted toward uncovered locations.
-    private func downloadVariety(uncached: [AerialVideo]) {
+    private func downloadVariety(uncached: [AerialVideo], canFree: Bool) {
         var shuffled = uncached.shuffled()
 
         // Weight toward locations with 0 cached videos
@@ -459,11 +490,13 @@ class DownloadCoordinator {
         var queued = 0
         for video in shuffled {
             guard queued < varietyBatchSize else { break }
-            if video.source.isCachable {
-                ensureSpace()
-                // `continue` rather than `break` — non-cacheable
-                // videos later in the shuffle still get a chance
-                // when the global cache is saturated.
+            if video.source.isCachable, !Cache.hasSomeFreeSpace() {
+                // `continue` rather than `break` — non-cacheable videos later
+                // in the shuffle still get a chance when the global cache is
+                // saturated. `canFree` short-circuits the per-candidate global
+                // cadence re-check (and the log spam it produced).
+                guard canFree else { continue }
+                ensureSpaceOnce()
                 guard Cache.hasSomeFreeSpace() else { continue }
             }
             debugLog("DownloadCoordinator: variety download \(video.secondaryName)")
@@ -482,25 +515,35 @@ class DownloadCoordinator {
         }
     }
 
-    private func ensureSpace() {
+    /// Whether the user's Replace cadence permits freeing cache this cycle.
+    /// Global per evaluation — depends only on prefs + `lastRotationRun`,
+    /// never on an individual video — so callers compute it once and pass it
+    /// down rather than re-deriving (and re-logging) it per candidate.
+    ///
+    /// Respect the user's Replace cadence: if they chose Never, or the cadence
+    /// window hasn't elapsed since the last rotation, don't trim
+    /// opportunistically — the download loops fall through via their
+    /// `continue` checks, and the .critical path has its own single-video
+    /// forceEvictOneForCritical() escape hatch. Without this gate, any
+    /// download trigger could wipe outdated-but-in-rotation videos far ahead
+    /// of the user's chosen schedule.
+    private func canFreeSpaceThisCycle() -> Bool {
+        guard PrefsCache.cachePeriodicity != .never else { return false }
+        return cadenceElapsedSinceLastRotation()
+    }
+
+    /// Free cache at most once per evaluation cycle. The download strategies
+    /// call this per cacheable candidate, but `Cache.freeCache()` evicts
+    /// everything outdated in one pass, so later calls would be wasted
+    /// directory walks — `freedThisCycle` collapses them to a no-op. Callers
+    /// gate on `canFree` first, so this only runs when freeing is permitted.
+    private func ensureSpaceOnce() {
+        guard !freedThisCycle else { return }
         guard !Cache.hasSomeFreeSpace() else { return }
-        // Respect the user's Replace cadence. If they chose Never, or the
-        // cadence window hasn't elapsed since the last rotation, don't
-        // trim opportunistically — the download loops fall through via
-        // their `continue` checks, and the .critical path has its own
-        // single-video forceEvictOneForCritical() escape hatch. Without
-        // this gate, any download trigger could wipe outdated-but-in-
-        // rotation videos far ahead of the user's chosen schedule.
-        guard PrefsCache.cachePeriodicity != .never else {
-            debugLog("DownloadCoordinator: ensureSpace skipped (Replace=Never)")
-            return
-        }
-        guard cadenceElapsedSinceLastRotation() else {
-            debugLog("DownloadCoordinator: ensureSpace skipped (cadence not elapsed)")
-            return
-        }
+        guard canFreeSpaceThisCycle() else { return }
         Cache.freeCache()
         PrefsCache.lastRotationRun = Date()
+        freedThisCycle = true
     }
 
     private func onDownloadBatchComplete() {

@@ -236,6 +236,13 @@ class PlaybackManager: ObservableObject {
         // auto-resume after viewing-mode flips or stop/start cycles.
         if isRunning {
             perScreenOcclusion[screenUuid] = false
+            // A freshly-(re)created launcher's coordinator starts un-paused.
+            // evaluateBatteryState() can't fix this — its `shouldPause !=
+            // isBatteryPaused` guard no-ops when we're already battery-paused —
+            // so re-assert the current decision directly onto the new launcher.
+            if isBatteryPaused {
+                desktopLauncherInstances[screenUuid]?.applyBatteryPause()
+            }
         } else {
             perScreenOcclusion.removeValue(forKey: screenUuid)
         }

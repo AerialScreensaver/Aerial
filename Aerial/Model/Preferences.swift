@@ -100,6 +100,11 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.wallpaperCacheBookmark) }
     }
 
+    static var reclaimMacOSWallpaperVideosAtStartup: Bool {
+        get { manager.getValue(forKeyPath: \.reclaimMacOSWallpaperVideosAtStartup) }
+        set { manager.setValue(newValue, forKeyPath: \.reclaimMacOSWallpaperVideosAtStartup) }
+    }
+
     // MARK: - Accessibility Settings
 
     static var popoverSolidBackground: Bool {

@@ -213,6 +213,8 @@
 		F0LF00182F30000000000001 /* LiveFeedThumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00172F30000000000001 /* LiveFeedThumbnailer.swift */; };
 		F0LF001A2F30000000000001 /* LiveFeedCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LF00192F30000000000001 /* LiveFeedCredentialStore.swift */; };
 		F0LOC0022F30000000000001 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LOC0012F30000000000001 /* LocationProvider.swift */; };
+		F0SLP0022F30000000000001 /* SystemSleepState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SLP0012F30000000000001 /* SystemSleepState.swift */; };
+		F0MWV0022F30000000000001 /* MacOSWallpaperVideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MWV0012F30000000000001 /* MacOSWallpaperVideoCache.swift */; };
 		F0LSP0012F30000000000001 /* LayoutSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LSP0002F30000000000001 /* LayoutSettingsPane.swift */; };
 		F0MD500022F30000000000001 /* MD5Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MD500012F30000000000001 /* MD5Verifier.swift */; };
 		F0MD500032F30000000000001 /* MD5Verifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MD500012F30000000000001 /* MD5Verifier.swift */; };
@@ -509,6 +511,8 @@
 		F0LF00172F30000000000001 /* LiveFeedThumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedThumbnailer.swift; sourceTree = "<group>"; };
 		F0LF00192F30000000000001 /* LiveFeedCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedCredentialStore.swift; sourceTree = "<group>"; };
 		F0LOC0012F30000000000001 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
+		F0SLP0012F30000000000001 /* SystemSleepState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSleepState.swift; sourceTree = "<group>"; };
+		F0MWV0012F30000000000001 /* MacOSWallpaperVideoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSWallpaperVideoCache.swift; sourceTree = "<group>"; };
 		F0LSP0002F30000000000001 /* LayoutSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutSettingsPane.swift; sourceTree = "<group>"; };
 		F0MD500012F30000000000001 /* MD5Verifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MD5Verifier.swift; sourceTree = "<group>"; };
 		F0MUS0012F30000000000001 /* NowPlayingSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSource.swift; sourceTree = "<group>"; };
@@ -678,6 +682,8 @@
 				F0COR00022F30000000000001 /* CacheOrphanReaper.swift */,
 				F0C5B42E2E8EDA9F00AEC15C /* AerialPluginManager.swift */,
 				F0LOC0012F30000000000001 /* LocationProvider.swift */,
+				F0SLP0012F30000000000001 /* SystemSleepState.swift */,
+				F0MWV0012F30000000000001 /* MacOSWallpaperVideoCache.swift */,
 				F0MUS0012F30000000000001 /* NowPlayingSource.swift */,
 				F0MUS0032F30000000000001 /* AppleMusicProvider.swift */,
 				F0MUS0052F30000000000001 /* NowPlayingCoordinator.swift */,
@@ -1523,6 +1529,8 @@
 				F0PL000C2F30000000000001 /* DownloadTracker.swift in Sources */,
 				F0COR00012F30000000000001 /* CacheOrphanReaper.swift in Sources */,
 				F0LOC0022F30000000000001 /* LocationProvider.swift in Sources */,
+				F0SLP0022F30000000000001 /* SystemSleepState.swift in Sources */,
+				F0MWV0022F30000000000001 /* MacOSWallpaperVideoCache.swift in Sources */,
 				F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */,
 				F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */,
 				F0MUS0062F30000000000001 /* NowPlayingCoordinator.swift in Sources */,
@@ -1854,7 +1862,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.0.8;
+				MARKETING_VERSION = 4.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1885,7 +1893,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.0.8;
+				MARKETING_VERSION = 4.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1926,7 +1934,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 4.0.8;
+				MARKETING_VERSION = 4.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1968,7 +1976,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 4.0.8;
+				MARKETING_VERSION = 4.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

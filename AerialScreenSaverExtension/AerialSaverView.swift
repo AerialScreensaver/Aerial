@@ -20,6 +20,20 @@ final class AerialSaverView: ScreenSaverView {
     /// The PlayerCoordinator managing the AVQueuePlayer
     private var coordinator: PlayerCoordinator?
 
+    /// Last speed Companion asked us to use (desktop mode). Coordinator
+    /// binding is deferred (settled-setup), so the speed pushed at launcher
+    /// creation can land before `coordinator` exists; we memoize it here and
+    /// re-assert it in `bindCoordinatorAndStartPlayback`. Stays nil in the
+    /// .appex (which never calls `setGlobalSpeed`), so behavior is unchanged there.
+    private var lastRequestedGlobalSpeed: Float?
+
+    /// Whether Companion currently wants this view battery-paused (desktop
+    /// mode). Same deferred-bind problem as `lastRequestedGlobalSpeed`: the
+    /// pause pushed when a launcher is (re)created lands before `coordinator`
+    /// exists, so we memoize it and re-assert at bind. Stays false in the
+    /// .appex (which drives battery via `shouldPlayOnBattery()` instead).
+    private var pendingBatteryPaused = false
+
     /// The AVPlayerLayer that displays the video
     private var playerLayer: AVPlayerLayer?
 
@@ -385,6 +399,25 @@ final class AerialSaverView: ScreenSaverView {
         // Register first so isLeader() can find us in the delegates list
         let player = coord.register(delegate: self)
         playerLayer?.player = player
+
+        // Re-assert the speed Companion requested before this coordinator
+        // existed. Launcher creation pushes the saved speed synchronously,
+        // but coordinator binding is deferred (settled-setup), so that early
+        // push lands on a nil coordinator and is lost — leaving the fresh
+        // coordinator at its 1.0 default. Apply it now, before playNextVideo()
+        // starts the first video (idempotent; also covers rebinds).
+        if let speed = lastRequestedGlobalSpeed {
+            coord.setPlaybackSpeed(speed)
+        }
+
+        // Likewise re-assert battery pause: a launcher (re)created while on
+        // battery pushes the pause before this coordinator existed. Apply it
+        // before playNextVideo() so the first frame loads paused (isSystemPaused
+        // makes playAtDesiredSpeed self-suppress). Direct coord call avoids a
+        // premature continuity capture via self.batteryPause().
+        if pendingBatteryPaused {
+            coord.batteryPause()
+        }
 
         let amLeader = coord.isLeader(self)
         debugLog("Coordinator mode: leader=\(amLeader)")
@@ -1140,6 +1173,7 @@ final class AerialSaverView: ScreenSaverView {
     }
     func occlusionResume()             { coordinator?.occlusionResume() }
     func batteryPause() {
+        pendingBatteryPaused = true
         coordinator?.batteryPause()
         #if COMPANION_APP
         if isUnderCompanion {
@@ -1147,7 +1181,10 @@ final class AerialSaverView: ScreenSaverView {
         }
         #endif
     }
-    func batteryResume()               { coordinator?.batteryResume() }
+    func batteryResume() {
+        pendingBatteryPaused = false
+        coordinator?.batteryResume()
+    }
 
     func skipTo(playlistIndex: Int) {
         ExtensionVideoLoader.shared.seekPlaylist(to: playlistIndex, screenUUID: coordinator?.screenUUID)
@@ -1169,7 +1206,10 @@ final class AerialSaverView: ScreenSaverView {
     }
 
     func getGlobalSpeed() -> Float  { coordinator?.getPlaybackSpeed() ?? 1.0 }
-    func setGlobalSpeed(_ speed: Float) { coordinator?.setPlaybackSpeed(speed) }
+    func setGlobalSpeed(_ speed: Float) {
+        lastRequestedGlobalSpeed = speed
+        coordinator?.setPlaybackSpeed(speed)
+    }
     func setPlaybackRate(_ rate: Float) { coordinator?.setPlaybackRate(rate) }
     func getVideoFrameRate() -> Float { coordinator?.currentVideoFrameRate ?? 24.0 }
 
