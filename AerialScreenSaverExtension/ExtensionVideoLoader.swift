@@ -35,6 +35,11 @@ class ExtensionVideoLoader {
     /// Used as a side-channel since the override returns (AerialVideo?, Bool) without timestamp.
     var pendingResumeTimestamp: Double?
 
+    /// Per-video play-duration override set by PlaylistManager's override closure
+    /// (Companion only). Side-channel mirroring `pendingResumeTimestamp`: the override
+    /// returns (AerialVideo?, Bool) and can't carry the popped entry's playDuration.
+    var pendingPlayDuration: Double?
+
     private init() {
         // Explicitly trigger video list loading after VideoList.instance is initialized.
         // Cannot happen during VideoList.init() due to dispatch_once re-entrancy
@@ -46,28 +51,42 @@ class ExtensionVideoLoader {
 
     // MARK: - Video Selection
 
+    /// Result of a next-video selection. Carries the per-pop metadata that can't
+    /// ride the `nextVideoOverride` closure return (which is only (AerialVideo?, Bool)):
+    /// the resume timestamp and the entry's optional play-duration override.
+    struct LoaderResult {
+        let video: AerialVideo?
+        let shouldLoop: Bool
+        let resumeTimestamp: Double?
+        let playDuration: Double?
+    }
+
     /// Get the next video to play, respecting persisted playlist if available.
-    /// Returns (video, shouldLoop, resumeTimestamp) — resumeTimestamp is non-nil only on first video resume.
-    func getNextVideo(isVertical: Bool, screenUUID: String? = nil) -> (AerialVideo?, Bool, Double?) {
+    /// resumeTimestamp is non-nil only on first video resume; playDuration is the
+    /// popped entry's optional per-video play-duration override (nil otherwise).
+    func getNextVideo(isVertical: Bool, screenUUID: String? = nil) -> LoaderResult {
         // In Companion mode (override installed), PlaylistManager is the single source of truth.
         // Skip tryPersistedPlaylist() so we go through videoList.randomVideo() → the override.
         if videoList.nextVideoOverride != nil {
             pendingResumeTimestamp = nil
+            pendingPlayDuration = nil
             let (video, loop) = videoList.randomVideo(excluding: [], isVertical: isVertical, screenUUID: screenUUID)
             let timestamp = pendingResumeTimestamp
+            let playDuration = pendingPlayDuration
             pendingResumeTimestamp = nil
-            return (video, loop, timestamp)
+            pendingPlayDuration = nil
+            return LoaderResult(video: video, shouldLoop: loop, resumeTimestamp: timestamp, playDuration: playDuration)
         }
 
         // Extension mode: use persisted playlist directly from disk
-        if let (video, shouldLoop, resumeTimestamp) = tryPersistedPlaylist(screenUUID: screenUUID) {
-            debugLog("ExtensionVideoLoader: Using persisted playlist → \(video.secondaryName), shouldLoop=\(shouldLoop), resumeAt=\(resumeTimestamp.map { String(format: "%.1fs", $0) } ?? "nil")")
-            return (video, shouldLoop, resumeTimestamp)
+        if let pop = tryPersistedPlaylist(screenUUID: screenUUID) {
+            debugLog("ExtensionVideoLoader: Using persisted playlist → \(pop.video.secondaryName), shouldLoop=\(pop.shouldLoop), resumeAt=\(pop.resumeTimestamp.map { String(format: "%.1fs", $0) } ?? "nil"), playFor=\(pop.playDuration.map { String(format: "%.0fs", $0) } ?? "nil")")
+            return LoaderResult(video: pop.video, shouldLoop: pop.shouldLoop, resumeTimestamp: pop.resumeTimestamp, playDuration: pop.playDuration)
         }
 
         debugLog("ExtensionVideoLoader: No persisted playlist, falling back to VideoList")
         let (video, loop) = videoList.randomVideo(excluding: [], isVertical: isVertical)
-        return (video, loop, nil)
+        return LoaderResult(video: video, shouldLoop: loop, resumeTimestamp: nil, playDuration: nil)
     }
 
     /// Get the local file path for a video
@@ -77,7 +96,7 @@ class ExtensionVideoLoader {
 
     // MARK: - Persisted Playlist
 
-    private func tryPersistedPlaylist(screenUUID: String?) -> (AerialVideo, Bool, Double?)? {
+    private func tryPersistedPlaylist(screenUUID: String?) -> (video: AerialVideo, shouldLoop: Bool, resumeTimestamp: Double?, playDuration: Double?)? {
         loadPlaylistIfNeeded()
 
         guard var playlist = resolvePlaylist(screenUUID) else { return nil }
@@ -134,10 +153,14 @@ class ExtensionVideoLoader {
         }
 
         isFirstVideoThisActivation = false
+        // The popped entry is at playlist.currentIndex (popNextVideo set it). Read its
+        // optional per-video play-duration override directly from the (freshly-loaded) entry.
+        let playDuration = playlist.entries.indices.contains(playlist.currentIndex)
+            ? playlist.entries[playlist.currentIndex].playDuration : nil
         debugLog("ExtensionVideoLoader: Selected \(pop.video.secondaryName) at index \(playlist.currentIndex)")
         setPlaylist(playlist, for: screenUUID)
         writeProgressSidecar(index: playlist.currentIndex, timestamp: resumeTimestamp, screenUUID: screenUUID)
-        return (pop.video, pop.shouldLoop, resumeTimestamp)
+        return (video: pop.video, shouldLoop: pop.shouldLoop, resumeTimestamp: resumeTimestamp, playDuration: playDuration)
     }
 
     private func resolvePlaylist(_ screenUUID: String?) -> PersistedPlaylist? {
@@ -268,7 +291,7 @@ class ExtensionVideoLoader {
 
     /// Pop the previous video from the persisted playlist, scanning backward.
     /// Returns (video, shouldLoop), or nil if no playlist or no valid entry found.
-    func popPreviousFromPlaylist(screenUUID: String?) -> (AerialVideo, Bool)? {
+    func popPreviousFromPlaylist(screenUUID: String?) -> (video: AerialVideo, shouldLoop: Bool, playDuration: Double?)? {
         // Companion mode: PlaylistManager owns the in-memory currentIndex
         // and persists it. Defer to its override so backward navigation
         // stays in sync with `nextVideoOverride`. Without this, the two
@@ -276,9 +299,12 @@ class ExtensionVideoLoader {
         // next / previous and we get "skipped two ahead" / "refuses to
         // skip" symptoms.
         if let override = videoList.previousVideoOverride {
+            pendingPlayDuration = nil
             let (video, shouldLoop) = override(screenUUID)
+            let playDuration = pendingPlayDuration
+            pendingPlayDuration = nil
             if let video = video {
-                return (video, shouldLoop)
+                return (video: video, shouldLoop: shouldLoop, playDuration: playDuration)
             }
             return nil
         }
@@ -313,10 +339,12 @@ class ExtensionVideoLoader {
             return nil
         }
 
+        let playDuration = playlist.entries.indices.contains(playlist.currentIndex)
+            ? playlist.entries[playlist.currentIndex].playDuration : nil
         debugLog("ExtensionVideoLoader: Previous → \(pop.video.secondaryName) at index \(playlist.currentIndex)")
         setPlaylist(playlist, for: screenUUID)
         writeProgressSidecar(index: playlist.currentIndex, timestamp: nil, screenUUID: screenUUID)
-        return (pop.video, pop.shouldLoop)
+        return (video: pop.video, shouldLoop: pop.shouldLoop, playDuration: playDuration)
     }
 
     /// Reset loaded state (call on each screensaver activation to pick up fresh playlist)

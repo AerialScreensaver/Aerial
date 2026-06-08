@@ -93,7 +93,8 @@ struct UserPlaylistContentView: View {
     }
 
     private func entryRow(entry: PlaylistEntry, index: Int) -> some View {
-        HStack(spacing: 10) {
+        let isLive = VideoList.instance.videos.first(where: { $0.id == entry.videoId })?.isLive ?? false
+        return HStack(spacing: 10) {
             Text("\(index + 1)")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(.secondary)
@@ -121,6 +122,19 @@ struct UserPlaylistContentView: View {
                 Text(formatDuration(dur))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
+                    .frame(width: 44, alignment: .trailing)
+            }
+
+            // Per-video play-duration override: loop this clip for a set time
+            // before advancing. Hidden for live feeds (they self-advance).
+            if !isLive {
+                PlayDurationField(
+                    seconds: entry.playDuration,
+                    onCommit: { newValue in
+                        guard let id = playlistId else { return }
+                        UserPlaylistManager.shared.setPlayDuration(newValue, forEntryAt: index, in: id)
+                    }
+                )
             }
 
             Button(action: {
@@ -212,5 +226,71 @@ struct UserPlaylistContentView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Play Duration Field
+
+/// Inline `m:ss` editor for a playlist entry's optional play-duration override.
+/// Empty field = "play once" (nil). Accepts "90" or "1:30"; commits on Enter or
+/// when focus leaves. When set on a multi-video playlist, the player loops this
+/// clip for that many seconds of playtime before advancing.
+private struct PlayDurationField: View {
+    let seconds: Double?
+    let onCommit: (Double?) -> Void
+
+    @State private var text: String = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("once", text: $text)
+            .font(.system(size: 11, design: .monospaced))
+            .multilineTextAlignment(.center)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 56)
+            .focused($focused)
+            .onAppear { text = Self.format(seconds) }
+            .onChange(of: seconds) { newValue in
+                // Reflect external changes (reload / reorder) only when not editing.
+                if !focused { text = Self.format(newValue) }
+            }
+            .onChange(of: focused) { isFocused in
+                if !isFocused { commit() }
+            }
+            .onSubmit { commit() }
+            .help("Loop this video for this long (m:ss of playtime), then advance. Leave empty to play once.")
+    }
+
+    private func commit() {
+        let parsed = Self.parse(text)
+        onCommit(parsed)
+        text = Self.format(parsed)   // normalize ("90" → "1:30", invalid → "")
+    }
+
+    /// nil / ≤0 → "" (placeholder shows "once"); else `m:ss`.
+    static func format(_ seconds: Double?) -> String {
+        guard let s = seconds, s > 0 else { return "" }
+        let total = Int(s.rounded())
+        return "\(total / 60):\(String(format: "%02d", total % 60))"
+    }
+
+    /// "" → nil, "90" → 90, "1:30" → 90. nil for invalid or ≤0. Clamps to 24h.
+    static func parse(_ raw: String) -> Double? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        let parts = trimmed.split(separator: ":", omittingEmptySubsequences: false)
+        let totalSeconds: Int
+        switch parts.count {
+        case 1:
+            guard let s = Int(parts[0]) else { return nil }
+            totalSeconds = s
+        case 2:
+            guard let m = Int(parts[0]), let s = Int(parts[1]), s >= 0, s < 60 else { return nil }
+            totalSeconds = m * 60 + s
+        default:
+            return nil
+        }
+        guard totalSeconds > 0 else { return nil }
+        return Double(min(totalSeconds, 24 * 3600))
     }
 }

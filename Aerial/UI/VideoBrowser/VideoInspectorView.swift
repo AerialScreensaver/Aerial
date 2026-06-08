@@ -84,6 +84,13 @@ struct VideoInspectorView: View {
 
                 Divider()
 
+                // Scene (My Videos only — edits entries.json directly)
+                if state.isMyVideos {
+                    SceneEditorView(video: video, state: state)
+
+                    Divider()
+                }
+
                 // Toggles
                 togglesSection
 
@@ -243,7 +250,10 @@ struct VideoInspectorView: View {
             }
             infoRow("Duration", video.duration > 0 ? formatDuration(video.duration) : "Unknown")
             infoRow("Source", video.sourceFor(format: effectiveFormat).name)
-            infoRow("Scene", video.scene.rawValue.capitalized)
+            // My Videos shows an editable Scene picker above, so skip the read-only row.
+            if !state.isMyVideos {
+                infoRow("Scene", video.scene.rawValue.capitalized)
+            }
             infoRow("Orientation", video.isVertical ? "Vertical" : "Horizontal")
 
             if video.contentLength > 0 {

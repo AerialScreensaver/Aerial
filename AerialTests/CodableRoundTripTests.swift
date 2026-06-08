@@ -87,6 +87,33 @@ struct CodableRoundTripTests {
         #expect(decoded.screenPlaylists.isEmpty)
     }
 
+    @Test("PlaylistEntry playDuration round-trips and is omitted from JSON when nil")
+    func playlistEntryPlayDurationRoundTrip() throws {
+        // Set → same value back; native duration preserved independently.
+        let withOverride = PlaylistEntry(videoId: "v", videoName: "V", secondaryName: "", duration: 10, playDuration: 120)
+        let decoded = try roundTrip(withOverride)
+        #expect(decoded.playDuration == 120)
+        #expect(decoded.duration == 10)
+
+        // Unset → key omitted, decodes back to nil.
+        let noOverride = PlaylistEntry(videoId: "v", videoName: "V", secondaryName: "", duration: 10)
+        let data = try JSONEncoder().encode(noOverride)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["playDuration"] == nil)
+        #expect(try roundTrip(noOverride).playDuration == nil)
+    }
+
+    @Test("PlaylistEntry decodes old JSON without playDuration (back-compat)")
+    func playlistEntryBackCompatMissingPlayDuration() throws {
+        let json = """
+        { "videoId": "v1", "videoName": "V1", "secondaryName": "sub", "duration": 60 }
+        """
+        let decoded = try JSONDecoder().decode(PlaylistEntry.self, from: json.data(using: .utf8)!)
+        #expect(decoded.playDuration == nil)
+        #expect(decoded.duration == 60)
+        #expect(decoded.videoId == "v1")
+    }
+
     // MARK: - OverlayConfig
 
     @Test("OverlayConfig round-trip preserves all fields")

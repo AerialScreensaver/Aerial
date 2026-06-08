@@ -196,3 +196,55 @@ struct PlaylistStateMachineTests {
         }
     }
 }
+
+// MARK: - Bounded Loop Accumulator
+
+/// Tests for the pure playtime-accumulator math behind the per-video
+/// play-duration override (PlayerCoordinator.boundedLoopAdvanceDelta).
+@Suite("Bounded Loop Accumulator")
+struct BoundedLoopAccumulatorTests {
+
+    @Test("Playtime delta scales by player rate (speed-factored)")
+    func deltaScalesByRate() {
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 1.0) == 1.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 2.0) == 2.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.5, rate: 2.0) == 1.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.5) == 0.5)
+    }
+
+    @Test("Non-positive rate or wallDelta yields zero (pause-safe)")
+    func deltaZeroGuards() {
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: -1.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: -0.1, rate: 1.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.0, rate: 1.0) == 0)
+    }
+
+    @Test("A large wall gap is clamped (resume from suspension can't overshoot)")
+    func deltaClampsLargeGap() {
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 300, rate: 1.0, maxWallDelta: 1.0) == 1.0)
+        // Clamp applies before the rate multiply.
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 300, rate: 2.0, maxWallDelta: 1.0) == 2.0)
+    }
+
+    @Test("Accumulating 0.1s ticks crosses the target; 2x needs ~half the ticks")
+    func accumulationCrossesTarget() {
+        let target = 30.0
+
+        var acc = 0.0, ticks = 0
+        while acc < target {
+            acc += PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 1.0)
+            ticks += 1
+        }
+        #expect(acc >= target)
+        #expect(ticks >= 299 && ticks <= 302)   // 30s / 0.1s ≈ 300 (±float)
+
+        var acc2 = 0.0, ticks2 = 0
+        while acc2 < target {
+            acc2 += PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 2.0)
+            ticks2 += 1
+        }
+        #expect(acc2 >= target)
+        #expect(ticks2 >= 148 && ticks2 <= 152)  // twice the playtime per tick → ~half the ticks
+    }
+}

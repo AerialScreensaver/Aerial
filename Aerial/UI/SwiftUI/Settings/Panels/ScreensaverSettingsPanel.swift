@@ -141,6 +141,14 @@ struct ScreensaverSettingsPanel: View {
                             }
                         }
 
+                        // Duplicate-registration warning. A known cause of the
+                        // screensaver initialising then never starting (black
+                        // screen until a macOS restart). Debug-mode only for now.
+                        if PrefsAdvanced.debugMode && !screensaverManager.staleRegistrations.isEmpty {
+                            Divider()
+                            duplicateRegistrationsWarning
+                        }
+
                         Divider()
 
                         // Timeline
@@ -224,10 +232,48 @@ struct ScreensaverSettingsPanel: View {
         }
     }
 
+    // MARK: - Duplicate Registrations (debug)
+
+    private var duplicateRegistrationsWarning: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(screensaverManager.staleRegistrations.count) duplicate screensaver registration(s) found")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Duplicate registrations of the extension can stop the screensaver from starting — it initialises, then shows a black screen until a restart. Removing the stale ones usually fixes it.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+            }
+
+            ForEach(screensaverManager.staleRegistrations) { reg in
+                Text("• \(reg.version) — \(reg.path)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+            }
+
+            Button("Remove duplicate registration(s)") {
+                screensaverManager.removeStaleRegistrations()
+            }
+        }
+    }
+
     // MARK: - Private Methods
 
     private func loadSettings() async {
         isLoading = true
+
+        // Refresh the duplicate-registration scan when the panel opens so the
+        // warning reflects the current state (registrations can change between
+        // launch and now). Fast pluginkit query; safe on the main actor.
+        screensaverManager.scanScreensaverRegistrations()
 
         // Load activation time
         let activationMinutes = await Task.detached {

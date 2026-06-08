@@ -117,6 +117,14 @@ class UserPlaylistManager {
         saveManifest(manifest)
     }
 
+    /// Set (or clear, with nil) the per-video play-duration override for one entry.
+    func setPlayDuration(_ seconds: Double?, forEntryAt index: Int, in playlistId: UUID) {
+        guard var manifest = playlist(id: playlistId),
+              manifest.entries.indices.contains(index) else { return }
+        manifest.entries[index].playDuration = seconds
+        saveManifest(manifest)
+    }
+
     // MARK: - Helpers
 
     private func saveManifest(_ manifest: UserPlaylistManifest) {

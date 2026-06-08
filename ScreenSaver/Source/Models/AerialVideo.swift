@@ -20,7 +20,7 @@ final class AerialVideo: CustomStringConvertible, Equatable {
     let type: String
     var timeOfDay: String
     let manifestTimeOfDay: String  // The value from the manifest, before any override
-    let scene: SourceScene
+    var scene: SourceScene
 
     var urls: [VideoFormat: String]
 

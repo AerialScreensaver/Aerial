@@ -121,6 +121,10 @@ class PlaylistManager {
             }
             needsResume = false
             ExtensionVideoLoader.shared.pendingResumeTimestamp = savedTimestamp
+            // Mirror the resume side-channel for the popped entry's play-duration override.
+            // Written on every pop (incl. nil) so a later video never inherits a stale value.
+            ExtensionVideoLoader.shared.pendingPlayDuration = playlist.entries.indices.contains(playlist.currentIndex)
+                ? playlist.entries[playlist.currentIndex].playDuration : nil
             setPlaylist(playlist, for: screenUUID)
             persist()
             debugLog("📋 Playlist pop: [\(playlist.currentIndex + 1)/\(playlist.entries.count)] \"\(pop.video.name)\" (loop=\(pop.shouldLoop), mode=\(playlist.cycleMode))")
@@ -174,6 +178,8 @@ class PlaylistManager {
             // we're explicitly jumping somewhere new, not resuming.
             needsResume = false
             ExtensionVideoLoader.shared.pendingResumeTimestamp = nil
+            ExtensionVideoLoader.shared.pendingPlayDuration = playlist.entries.indices.contains(playlist.currentIndex)
+                ? playlist.entries[playlist.currentIndex].playDuration : nil
             setPlaylist(playlist, for: screenUUID)
             persist()
             debugLog("📋 Playlist popPrevious: [\(playlist.currentIndex + 1)/\(playlist.entries.count)] \"\(pop.video.name)\" (loop=\(pop.shouldLoop))")
@@ -333,6 +339,49 @@ class PlaylistManager {
         }
 
         NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+    }
+
+    /// Immediately reshuffle every playlist's order, keeping the currently
+    /// playing video at the front so live playback isn't interrupted and the
+    /// strip highlight stays in sync. Called when the user switches the popover
+    /// into shuffle mode. Unlike `regenerateAll()` (which preserves order and is
+    /// fired on every download completion), this produces a visible, immediate
+    /// reshuffle.
+    func reshuffleAll() {
+        queue.sync(flags: .barrier) {
+            if mergeExtensionProgress() {
+                store.delete(at: PlaylistProgressState.fileURL)
+            }
+
+            if let shared = state.sharedPlaylist {
+                state.sharedPlaylist = reshufflePreservingCurrent(shared)
+            }
+
+            for (uuid, playlist) in state.screenPlaylists {
+                state.screenPlaylists[uuid] = reshufflePreservingCurrent(playlist)
+            }
+
+            persist()
+        }
+
+        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+    }
+
+    /// Shuffle a playlist's entries while keeping the current video at the
+    /// front (currentIndex 0) and setting cycleMode to `.shuffle`.
+    /// Must be called inside the barrier queue.
+    private func reshufflePreservingCurrent(_ playlist: PersistedPlaylist) -> PersistedPlaylist {
+        var p = playlist
+        p.cycleMode = .shuffle
+        guard p.entries.count > 1 else { return p }
+        let idx = p.entries.indices.contains(p.currentIndex) ? p.currentIndex : 0
+        let current = p.entries[idx]
+        var rest = p.entries
+        rest.remove(at: idx)
+        rest.shuffle()
+        p.entries = [current] + rest
+        p.currentIndex = 0
+        return p
     }
 
     // MARK: - User Playlist Activation

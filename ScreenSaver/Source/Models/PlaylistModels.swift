@@ -60,7 +60,11 @@ struct PlaylistEntry: Codable {
     var videoId: String
     var videoName: String            // For display without needing full AerialVideo
     var secondaryName: String
-    var duration: Double?            // Cached for UI (progress bar calculation)
+    var duration: Double?            // Native video length, cached for UI (progress bar calculation)
+    var playDuration: Double? = nil  // Optional per-video play-duration override, in seconds of PLAYTIME.
+                                     // When set on a multi-entry playlist, the player loops this video
+                                     // until playDuration of (speed-factored) playtime elapses, then
+                                     // advances. nil = current behavior (play once / rotation).
 }
 
 // MARK: - Shared Playlist Iteration

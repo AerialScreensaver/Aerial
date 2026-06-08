@@ -13,6 +13,7 @@
 import AVFoundation
 import CoreImage
 import AppKit
+import QuartzCore
 
 // MARK: - Delegate Protocol
 
@@ -97,6 +98,29 @@ final class PlayerCoordinator {
 
     /// Duration of the current video (for fade calculations).
     private var currentVideoDuration: Double = 0
+
+    // MARK: Bounded loop (per-video play-duration override)
+
+    /// Periodic time observer driving the bounded-loop playtime accumulator.
+    /// Separate from `fadeObserverToken` so teardown is independent. Installed
+    /// only when an entry carries a `playDuration` override (multi-entry playlists).
+    private var boundedLoopObserverToken: Any?
+
+    /// Target playtime (video-content seconds) for the current bounded loop, or
+    /// nil when the current video isn't bound-looping.
+    private var boundedLoopTargetPlaytime: Double?
+
+    /// Accumulated playtime (speed-factored video-content seconds) for the
+    /// current bounded loop. Runtime-only; never persisted. Reset per video.
+    private var boundedLoopAccumulatedPlaytime: Double = 0
+
+    /// Monotonic timestamp (CACurrentMediaTime) of the previous accumulator
+    /// tick. 0 means "seed on next tick" (also re-seeded across pauses).
+    private var boundedLoopLastTick: CFTimeInterval = 0
+
+    /// Guards against a re-entrant advance when the threshold is crossed on
+    /// consecutive ticks before teardown runs.
+    private var boundedLoopAdvancing = false
 
     /// Timer that advances to the next video when a live-stream entry
     /// has been playing for its configured duration. Live streams are
@@ -236,35 +260,35 @@ final class PlayerCoordinator {
     func playNextVideo(skipFade: Bool = false, resumeTimestamp: Double? = nil) {
         let loader = ExtensionVideoLoader.shared
 
-        let (video, loop, loaderTimestamp) = loader.getNextVideo(isVertical: isVertical, screenUUID: screenUUID)
-        shouldLoop = loop
+        let result = loader.getNextVideo(isVertical: isVertical, screenUUID: screenUUID)
+        shouldLoop = result.shouldLoop
 
-        guard let video = video else {
+        guard let video = result.video else {
             debugLog("PlayerCoordinator: No video returned from loader")
             for wrapper in delegates { wrapper.value?.coordinatorDidFailToFindVideo() }
             return
         }
 
         // Prefer explicit timestamp (handoff), fall back to loader's (auto-resume)
-        let effectiveTimestamp = resumeTimestamp ?? loaderTimestamp
+        let effectiveTimestamp = resumeTimestamp ?? result.resumeTimestamp
 
-        debugLog("PlayerCoordinator: Next video: \(video.secondaryName), shouldLoop=\(loop), resumeAt=\(effectiveTimestamp.map { String(format: "%.1fs", $0) } ?? "nil")")
-        playVideo(video, skipFade: skipFade, resumeTimestamp: effectiveTimestamp)
+        debugLog("PlayerCoordinator: Next video: \(video.secondaryName), shouldLoop=\(result.shouldLoop), resumeAt=\(effectiveTimestamp.map { String(format: "%.1fs", $0) } ?? "nil")")
+        playVideo(video, skipFade: skipFade, resumeTimestamp: effectiveTimestamp, playDuration: result.playDuration)
     }
 
     /// Select and play the previous video from the playlist (scans backward).
     func playPreviousVideo(skipFade: Bool = false) {
         let loader = ExtensionVideoLoader.shared
 
-        guard let (video, loop) = loader.popPreviousFromPlaylist(screenUUID: screenUUID) else {
+        guard let prev = loader.popPreviousFromPlaylist(screenUUID: screenUUID) else {
             debugLog("PlayerCoordinator: No playlist for previous, falling back to next")
             playNextVideo(skipFade: skipFade)
             return
         }
-        shouldLoop = loop
+        shouldLoop = prev.shouldLoop
 
-        debugLog("PlayerCoordinator: Previous video: \(video.secondaryName), shouldLoop=\(loop)")
-        playVideo(video, skipFade: skipFade)
+        debugLog("PlayerCoordinator: Previous video: \(prev.video.secondaryName), shouldLoop=\(prev.shouldLoop)")
+        playVideo(prev.video, skipFade: skipFade, playDuration: prev.playDuration)
     }
 
     // MARK: - Pause / Resume / Speed
@@ -390,6 +414,12 @@ final class PlayerCoordinator {
     func cleanup() {
         // Remove fade observer
         removeFadeObserver()
+
+        // Remove bounded-loop accumulator
+        removeBoundedLoopObserver()
+        boundedLoopTargetPlaytime = nil
+        boundedLoopAccumulatedPlaytime = 0
+        boundedLoopAdvancing = false
 
         // Remove end observer
         if let observer = playerEndObserver {
@@ -634,7 +664,7 @@ final class PlayerCoordinator {
 
     // MARK: - Private: Video Playback
 
-    private func playVideo(_ video: AerialVideo, skipFade: Bool = false, resumeTimestamp: Double? = nil) {
+    private func playVideo(_ video: AerialVideo, skipFade: Bool = false, resumeTimestamp: Double? = nil, playDuration: Double? = nil) {
         currentVideo = video
 
         // Live streams: use the URL directly (remote HLS / loopback HTTP).
@@ -709,6 +739,15 @@ final class PlayerCoordinator {
         playerLooper?.disableLooping()
         playerLooper = nil
 
+        // Tear down any previous bounded-loop accumulator BEFORE arming the
+        // next video. playVideo is the funnel for every transition, so doing
+        // this here guarantees a stale accumulator can't fire on the next
+        // (possibly non-bounded) video.
+        removeBoundedLoopObserver()
+        boundedLoopTargetPlaytime = nil
+        boundedLoopAccumulatedPlaytime = 0
+        boundedLoopAdvancing = false
+
         // Remove previous end observer
         if let observer = playerEndObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -756,6 +795,26 @@ final class PlayerCoordinator {
             } else {
                 debugLog("PlayerCoordinator: Looping mode for \(video.secondaryName)")
             }
+        } else if let target = playDuration, target > 0 {
+            // Bounded loop: an entry-level play-duration override on a
+            // multi-entry playlist. Loop the video seamlessly (same machinery
+            // as the forever-loop) but advance to the next entry once `target`
+            // seconds of PLAYTIME (speed-factored video-content time) elapse.
+            // (isLive is excluded by branch order — live wins above.)
+            playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
+            boundedLoopTargetPlaytime = target
+            boundedLoopAccumulatedPlaytime = 0
+            if isResuming, let timestamp = resumeTimestamp {
+                // Resume the picture where we left off (reusing the seamless-loop
+                // resume seek); the play-duration budget restarts from 0.
+                let seekTime = CMTime(seconds: timestamp, preferredTimescale: 600)
+                debugLog("PlayerCoordinator: Bounded loop for \(video.secondaryName) (play \(Int(target))s, resume \(timestamp)s, deferred)")
+                scheduleLooperResumeSeek(to: seekTime)
+                deferredPlay = true
+            } else {
+                debugLog("PlayerCoordinator: Bounded loop for \(video.secondaryName) (play \(Int(target))s)")
+            }
+            installBoundedLoopObserver()
         } else {
             // Normal rotation — `player.insert` sets currentItem
             // synchronously, so a straight seek right below works.
@@ -778,10 +837,10 @@ final class PlayerCoordinator {
             debugLog("PlayerCoordinator: Rotation mode for \(video.secondaryName)\(isResuming ? " (resume)" : "")")
         }
 
-        // Seek to resume position in the rotation branch only — the
-        // looper branch handles its own seek asynchronously above, and
-        // live streams ignore resume.
-        if !video.isLive && !shouldLoop, let timestamp = resumeTimestamp, timestamp > 1.0 {
+        // Seek to resume position in the rotation branch only — the looper
+        // branches (forever-loop AND bounded loop) handle their own seek
+        // asynchronously above, and live streams ignore resume.
+        if !video.isLive && !shouldLoop && (playDuration ?? 0) <= 0, let timestamp = resumeTimestamp, timestamp > 1.0 {
             let seekTime = CMTime(seconds: timestamp, preferredTimescale: 600)
             player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
         }
@@ -790,7 +849,7 @@ final class PlayerCoordinator {
         // fades are disabled, we're looping, or we're streaming a live
         // feed. All of those paths skip the fade observer entirely.
         let skipInitialFade = isResuming || skipFade || effectiveFadeDuration == 0
-            || shouldLoop || video.isLive
+            || shouldLoop || video.isLive || (playDuration ?? 0) > 0
         notifyFadeOpacity(skipInitialFade ? 1.0 : 0)
 
         // Start playback. Skip when the looper-resume path has taken
@@ -826,6 +885,57 @@ final class PlayerCoordinator {
     private func handleVideoEnd() {
         debugLog("PlayerCoordinator: Video ended, playing next")
         playNextVideo()
+    }
+
+    // MARK: - Private: Bounded Loop
+
+    /// Playtime (video-content seconds) elapsed over a wall-clock interval at a
+    /// given player rate. Speed-factored by `rate`; clamped so a single large
+    /// gap (resume from suspension/occlusion) can't overshoot the target.
+    /// Pure + static for unit testing.
+    static func boundedLoopAdvanceDelta(wallDelta: Double, rate: Float, maxWallDelta: Double = 1.0) -> Double {
+        guard rate > 0, wallDelta > 0 else { return 0 }
+        return min(wallDelta, maxWallDelta) * Double(rate)
+    }
+
+    /// Arm the periodic observer that accumulates playtime for a bounded loop.
+    /// Fires only while the player is actually playing, so pauses don't accrue.
+    private func installBoundedLoopObserver() {
+        removeBoundedLoopObserver()
+        guard boundedLoopTargetPlaytime != nil else { return }
+        boundedLoopLastTick = 0   // seed on the first ticking sample
+        let interval = CMTime(seconds: 0.1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        boundedLoopObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in
+            self?.boundedLoopTick()
+        }
+    }
+
+    private func boundedLoopTick() {
+        guard let target = boundedLoopTargetPlaytime, !boundedLoopAdvancing else { return }
+        let now = CACurrentMediaTime()
+        let rate = player.rate
+        // Seed on first tick, and re-seed across pauses (rate <= 0) without
+        // accruing the gap. Playtime advances at `rate`, so a paused player
+        // (rate 0) contributes nothing.
+        if boundedLoopLastTick == 0 || rate <= 0 {
+            boundedLoopLastTick = now
+            return
+        }
+        let wallDelta = now - boundedLoopLastTick
+        boundedLoopLastTick = now
+        boundedLoopAccumulatedPlaytime += PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: wallDelta, rate: rate)
+        if boundedLoopAccumulatedPlaytime >= target {
+            boundedLoopAdvancing = true
+            debugLog("PlayerCoordinator: bounded loop reached \(Int(target))s playtime, advancing")
+            playNextVideo()
+        }
+    }
+
+    private func removeBoundedLoopObserver() {
+        if let token = boundedLoopObserverToken {
+            player.removeTimeObserver(token)
+            boundedLoopObserverToken = nil
+        }
     }
 
     // MARK: - Private: Duration Loading

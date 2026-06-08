@@ -12,6 +12,15 @@ enum AppLocation {
     case other(String)        // somewhere else
 }
 
+/// One pluginkit registration of our screensaver extension bundle id.
+/// We only ever track/act on the ones whose path is NOT the running app's
+/// embedded `.appex` (i.e. stale duplicates from old archives / build copies).
+struct PluginRegistration: Identifiable {
+    let version: String
+    let path: String
+    var id: String { path }
+}
+
 /// Central plugin manager for the appex screensaver extension
 class AerialPluginManager: ObservableObject {
     static let shared = AerialPluginManager()
@@ -26,6 +35,11 @@ class AerialPluginManager: ObservableObject {
     @Published var appLocation: AppLocation = .other("")
     @Published var isPluginRegistered: Bool = false
     @Published var isScreensaverEnabled: Bool = false
+    /// Stale duplicate registrations of our extension bundle id (paths other
+    /// than the running app's embedded `.appex`). Duplicates make the system's
+    /// ExtensionKit context setup fail silently, so the screensaver inits but
+    /// never starts. Surfaced (debug mode for now) so the user can clean them.
+    @Published var staleRegistrations: [PluginRegistration] = []
 
     // MARK: - Private
 
@@ -115,13 +129,82 @@ class AerialPluginManager: ObservableObject {
         }
     }
 
+    /// Scan ALL registrations of our extension bundle id and flag any whose
+    /// path isn't the running app's embedded `.appex`. `-A` is required: a
+    /// plain `-m -p com.apple.screensaver` only returns the single elected
+    /// plugin, hiding the duplicates that actually break context setup.
+    func scanScreensaverRegistrations() {
+        guard let canonical = canonicalExtensionPath() else {
+            staleRegistrations = []
+            return
+        }
+        do {
+            let output = try runProcess("/usr/bin/pluginkit", arguments: ["-m", "-A", "-v", "-i", bundleIdentifier])
+            var stale: [PluginRegistration] = []
+            for rawLine in output.components(separatedBy: "\n") {
+                let line = rawLine.trimmingCharacters(in: .whitespaces)
+                guard line.contains(bundleIdentifier) else { continue }
+                // Verbose format: "<bundleid>(<version>)\t<uuid>\t<date>\t<path>"
+                let fields = line.components(separatedBy: "\t")
+                guard let last = fields.last?.trimmingCharacters(in: .whitespaces),
+                      last.hasPrefix("/") else { continue }
+                guard normalizedPath(last) != canonical else { continue }
+                stale.append(PluginRegistration(version: extractVersion(from: fields[0]), path: last))
+            }
+            staleRegistrations = stale
+        } catch {
+            errorLog("Failed to scan pluginkit registrations: \(error.localizedDescription)")
+            staleRegistrations = []
+        }
+    }
+
+    /// Unregister every stale duplicate via `pluginkit -r <path>`. Only ever
+    /// touches our own bundle id at non-canonical paths (never the running
+    /// app's embedded `.appex`, never other bundles). Re-scans afterward.
+    func removeStaleRegistrations() {
+        let toRemove = staleRegistrations
+        guard !toRemove.isEmpty else { return }
+        for reg in toRemove {
+            do {
+                debugLog("Removing stale screensaver registration (\(reg.version)): \(reg.path)")
+                _ = try runProcess("/usr/bin/pluginkit", arguments: ["-r", reg.path])
+            } catch {
+                errorLog("Failed to remove stale registration \(reg.path): \(error.localizedDescription)")
+            }
+        }
+        refreshAll()
+    }
+
     func refreshAll() {
         checkAppLocation()
         checkPluginRegistered()
         checkScreensaverEnabled()
+        scanScreensaverRegistrations()
     }
 
     // MARK: - Private Helpers
+
+    /// The running app's embedded extension path — the one "correct"
+    /// registration. Any registration of our bundle id elsewhere is stale.
+    private func canonicalExtensionPath() -> String? {
+        guard let url = Bundle.main.builtInPlugInsURL?.appendingPathComponent("AerialScreenSaverExtension.appex") else {
+            return nil
+        }
+        return normalizedPath(url.path)
+    }
+
+    private func normalizedPath(_ path: String) -> String {
+        return URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL.path
+    }
+
+    /// Pull the version out of a pluginkit field like
+    /// `com.glouel.Aerial-App.AerialScreenSaverExtension(4.0.10)`.
+    private func extractVersion(from field: String) -> String {
+        guard let open = field.firstIndex(of: "("),
+              let close = field.lastIndex(of: ")"),
+              open < close else { return "?" }
+        return String(field[field.index(after: open)..<close])
+    }
 
     private func runProcess(_ path: String, arguments: [String]) throws -> String {
         let process = Process()

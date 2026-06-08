@@ -299,6 +299,7 @@
 		F0VBC0082F30000000000001 /* VideoBrowserRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */; };
 		F0VBC0092F30000000000001 /* VideoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR0092F30000000000001 /* VideoInspectorView.swift */; };
 		F0VBC00A2F30000000000001 /* TimeOfDayOverrideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */; };
+		F0VBC00E2F30000000000001 /* SceneEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00E2F30000000000001 /* SceneEditorView.swift */; };
 		F0VBC00B2F30000000000001 /* VideoMetadataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00B2F30000000000001 /* VideoMetadataHelpers.swift */; };
 		F0VBC00C2F30000000000001 /* VideoBrowserPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */; };
 		F0VBC00D2F30000000000001 /* DropZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VBR00D2F30000000000001 /* DropZoneView.swift */; };
@@ -579,6 +580,7 @@
 		F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserRowView.swift; sourceTree = "<group>"; };
 		F0VBR0092F30000000000001 /* VideoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoInspectorView.swift; sourceTree = "<group>"; };
 		F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeOfDayOverrideView.swift; sourceTree = "<group>"; };
+		F0VBR00E2F30000000000001 /* SceneEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneEditorView.swift; sourceTree = "<group>"; };
 		F0VBR00B2F30000000000001 /* VideoMetadataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataHelpers.swift; sourceTree = "<group>"; };
 		F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBrowserPreviews.swift; sourceTree = "<group>"; };
 		F0VBR00D2F30000000000001 /* DropZoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropZoneView.swift; sourceTree = "<group>"; };
@@ -1202,6 +1204,7 @@
 				F0VBR0082F30000000000001 /* VideoBrowserRowView.swift */,
 				F0VBR0092F30000000000001 /* VideoInspectorView.swift */,
 				F0VBR00A2F30000000000001 /* TimeOfDayOverrideView.swift */,
+				F0VBR00E2F30000000000001 /* SceneEditorView.swift */,
 				F0VBR00C2F30000000000001 /* VideoBrowserPreviews.swift */,
 				F0VBR00D2F30000000000001 /* DropZoneView.swift */,
 				F0VBR00F2F30000000000001 /* FormatBadge.swift */,
@@ -1594,6 +1597,7 @@
 				F0VBC0082F30000000000001 /* VideoBrowserRowView.swift in Sources */,
 				F0VBC0092F30000000000001 /* VideoInspectorView.swift in Sources */,
 				F0VBC00A2F30000000000001 /* TimeOfDayOverrideView.swift in Sources */,
+				F0VBC00E2F30000000000001 /* SceneEditorView.swift in Sources */,
 				F0VBC00B2F30000000000001 /* VideoMetadataHelpers.swift in Sources */,
 				F0VBC00C2F30000000000001 /* VideoBrowserPreviews.swift in Sources */,
 				F0VBC00D2F30000000000001 /* DropZoneView.swift in Sources */,
@@ -1862,7 +1866,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.0.9;
+				MARKETING_VERSION = 4.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1893,7 +1897,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.0.9;
+				MARKETING_VERSION = 4.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1934,7 +1938,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 4.0.9;
+				MARKETING_VERSION = 4.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1976,7 +1980,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 4.0.9;
+				MARKETING_VERSION = 4.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.AerialScreenSaverExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

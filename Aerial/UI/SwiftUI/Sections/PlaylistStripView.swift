@@ -104,7 +104,13 @@ struct PlaylistSectionView: View {
                 Button(action: {
                     shuffleMode.toggle()
                     Preferences.playlistShuffle = shuffleMode
-                    PlaylistManager.shared.regenerateAll()
+                    if shuffleMode {
+                        // Visible, immediate reshuffle (keeps the current video playing)
+                        PlaylistManager.shared.reshuffleAll()
+                    } else {
+                        // Back to loop: update cycleMode while preserving order
+                        PlaylistManager.shared.regenerateAll()
+                    }
                 }) {
                     Image(systemName: shuffleMode ? "shuffle" : "repeat")
                         .font(.system(size: 14))
@@ -114,11 +120,11 @@ struct PlaylistSectionView: View {
                 }
                 .buttonStyle(.borderless)
                 .help(shuffleMode
-                      ? "Shuffle: reshuffles when the playlist loops. Tap to switch to loop."
+                      ? "Shuffle: plays in a random order, reshuffled now and on each loop. Tap to switch to loop."
                       : "Loop: replays the same order. Tap to switch to shuffle.")
                 .accessibilityLabel(shuffleMode ? "Shuffle on" : "Loop on")
                 .accessibilityHint(shuffleMode
-                                   ? "Reshuffles the playlist each time it loops. Tap to switch to loop."
+                                   ? "Reshuffles the playlist now and each time it loops. Tap to switch to loop."
                                    : "Replays the same order each loop. Tap to switch to shuffle.")
             }
         }
