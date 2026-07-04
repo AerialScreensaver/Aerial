@@ -190,6 +190,24 @@ final class PlayerCoordinator {
         return PrefsVideos.fadeDuration
     }
 
+    // MARK: - Sleep / wake recovery (desktop wallpaper only)
+
+#if COMPANION_APP
+    /// Set when a video advance was requested while the Mac was asleep —
+    /// a macOS dark wake (Power Nap) resumes the player just long enough
+    /// to hit a video's end / bounded-loop target and call `playNextVideo`
+    /// with the GPU compositor suspended. A player started in that state
+    /// comes back to a black `AVPlayerLayer` that never recovers on full
+    /// wake (issue #146). We skip starting the item then and replay the
+    /// advance on the next full wake instead. Desktop wallpaper only.
+    private var pendingWakeAdvance = false
+
+    /// Observer for `didWakeNotification`, installed for desktop
+    /// coordinators so a deferred advance can be replayed / the surviving
+    /// item nudged when the Mac fully wakes. Removed in `cleanup()`.
+    private var wakeObserver: NSObjectProtocol?
+#endif
+
     // MARK: - Delegates (weak references)
 
     private struct WeakDelegate {
@@ -205,6 +223,9 @@ final class PlayerCoordinator {
         self.isDesktop = isDesktop
         self.player = AVQueuePlayer()
         player.isMuted = PrefsAdvanced.muteSound
+#if COMPANION_APP
+        installWakeRecoveryIfNeeded()
+#endif
     }
 
     // MARK: - Registration
@@ -258,6 +279,17 @@ final class PlayerCoordinator {
     ///   - skipFade: When true, skips position-driven fade-in (used for user-initiated skips).
     ///   - resumeTimestamp: Explicit resume position (for handoff). Loader's timestamp is used if nil.
     func playNextVideo(skipFade: Bool = false, resumeTimestamp: Double? = nil) {
+#if COMPANION_APP
+        // Don't start a new item while the Mac is asleep: a dark wake can
+        // fire this with the GPU suspended, leaving a black layer on full
+        // wake (#146). Defer the advance to the next wake instead.
+        if shouldDeferAdvanceForSleep {
+            debugLog("PlayerCoordinator: asleep — deferring video advance to wake")
+            pendingWakeAdvance = true
+            player.pause()
+            return
+        }
+#endif
         let loader = ExtensionVideoLoader.shared
 
         let result = loader.getNextVideo(isVertical: isVertical, screenUUID: screenUUID)
@@ -444,9 +476,69 @@ final class PlayerCoordinator {
         player.pause()
         player.removeAllItems()
 
+#if COMPANION_APP
+        if let observer = wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            wakeObserver = nil
+        }
+        pendingWakeAdvance = false
+#endif
+
         currentVideo = nil
         debugLog("PlayerCoordinator: cleaned up")
     }
+
+    // MARK: - Sleep / Wake Recovery (desktop wallpaper only)
+
+#if COMPANION_APP
+    /// Install a `didWakeNotification` observer for desktop coordinators
+    /// so we can repair the black-on-wake state described in #146.
+    private func installWakeRecoveryIfNeeded() {
+        guard isDesktop, wakeObserver == nil else { return }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleSystemDidWake()
+        }
+    }
+
+    /// True while we must not start a new item because the display is
+    /// suspended — i.e. inside the system-sleep span (including dark
+    /// wakes), as tracked by `SystemSleepState`. Desktop only.
+    private var shouldDeferAdvanceForSleep: Bool {
+        isDesktop && SystemSleepState.shared.isAsleep
+    }
+
+    /// On full wake, recover the desktop wallpaper: restart playback when
+    /// the player came back empty (the usual #146 case) or when we
+    /// deferred an advance during sleep, otherwise nudge the surviving
+    /// item in case its layer froze across the sleep span.
+    private func handleSystemDidWake() {
+        // The desktop AVQueuePlayer routinely comes back from a system
+        // sleep with no current item — the queue drains across sleep and
+        // is never refilled (per-video looping makes it more frequent, but
+        // it happens with plain rotation too), so `rate` stays 1.0 while
+        // there is nothing left to render and the wallpaper is black
+        // (#146). Restart playback when we wake to an empty player, or to
+        // replay an advance we deferred during sleep. Otherwise nudge the
+        // surviving item in case its layer froze across the sleep span.
+        let emptyPlayer = player.currentItem == nil
+        if pendingWakeAdvance || emptyPlayer {
+            pendingWakeAdvance = false
+            debugLog("PlayerCoordinator: wake — restarting playback (emptyPlayer=\(emptyPlayer))")
+            // Defer one runloop tick so SystemSleepState has cleared
+            // `isAsleep` (both observe didWake; order isn't guaranteed) and
+            // the restart isn't re-gated by the sleep check.
+            DispatchQueue.main.async { [weak self] in self?.playNextVideo() }
+        } else if !isPaused && !isSystemPaused {
+            debugLog("PlayerCoordinator: wake — nudging player to refresh layer")
+            player.pause()
+            playAtDesiredSpeed()
+        }
+    }
+#endif
 
     // MARK: - Frame Capture
 
