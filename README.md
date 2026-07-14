@@ -6,6 +6,8 @@
 
 The Apple TV screensaver for your mac, now with optional wallpaper continuity. With optional overlays, time-of-day adaptation, and live camera feeds support. Now distributed as an App + App Extension.
 
+Version 4.1 is currently available in beta with a native wallpaper extension, replacing continuity and fixing the last remaining issues.
+
 For more details, check the website: [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
 
 ## App Extension
@@ -21,9 +23,11 @@ If you want to make your own macOS App Extension screensaver, instead of messing
 
 For earlier macOS Versions, check the [old saver repository](https://github.com/JohnCoates/Aerial). 
 
-- If you only want the `.saver`, [version 3.6.3](https://github.com/JohnCoates/Aerial/releases/tag/v3.6.3) is the latest available.
+For macOS 27 Golden Gate, use the latest beta.
 
-- If you want to use the old desktop mode from Companion, [version 1.5.3beta1](https://github.com/AerialScreensaver/Aerial/releases/download/v1.5.3beta1/Aerial.Companion.zip) is the latest : you *will need* to disable the update checks as you will be prompted to upgrade to version 4 ! It will automatically download version 3.6.3 at first launch. 
+- If you only want the old `.saver`, [version 3.6.3](https://github.com/JohnCoates/Aerial/releases/tag/v3.6.3) is the latest available.
+
+- If you want to use the old desktop mode from Companion, [version 1.5.3beta1](https://github.com/AerialScreensaver/Aerial/releases/download/v1.5.3beta1/Aerial.Companion.zip) is the latest : you *will need* to disable the update checks as you will be prompted to upgrade to version 4 ! It will automatically download version 3.6.3 of the `.saver` at first launch. 
 
 ## Build from source
 
@@ -39,7 +43,7 @@ Note that `ScreenSaver/Source/Models/API/APISecrets.swift` ships with a blank Op
 
 ## Thank you
 
-Weather overlays are provided thanks to [Openweather](https://openweathermap.org) who has offerred free support for Aerial for many years now ! Many thanks to them !
+Weather overlays are provided thanks to [Openweather](https://openweathermap.org) who has offerred free support for Aerial for *many* years now ! Many thanks to them !
 
 <a href="https://openweathermap.org"><img src="ScreenSaver/Resources/openweather_logo.png" alt="OpenWeather" width="200"></a>
 
@@ -51,9 +55,11 @@ Aerial relies on a few great open source projects, you should check them out :
 
 Many thanks to those maintainers and their contributors !
 
+To enable the screensaver (and wallpaper in version 4.1), Aerial relies on [PaperSaver](https://github.com/AerialScreensaver/PaperSaver). You can use this library to set your own screensaver too as the old API is no longer available to do this, and Apple does not provide a replacement.
+
 ## Contributing
 
-Contributions welcome, but please open an issue first for substantial changes so we can discuss the approach before you put time into it.
+Contributions welcome, but **please open an issue first** for substantial changes so we can discuss the approach before you put time into it.
 
 ## License
 
