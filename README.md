@@ -6,7 +6,7 @@
 
 The Apple TV screensaver for your mac, now with optional wallpaper continuity. With optional overlays, time-of-day adaptation, and live camera feeds support. Now distributed as an App + App Extension.
 
-Version 4.1 is currently available in beta with a native wallpaper extension, replacing continuity and fixing the last remaining issues.
+Version 4.1 is currently available in beta with a native wallpaper extension, replacing continuity and fixing the last remaining issues!
 
 For more details, check the website: [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
 
