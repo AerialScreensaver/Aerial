@@ -34,7 +34,7 @@ struct Helpers {
     static var version: String {
         return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
-    
+
     // Launch a process through shell and capture/return output
     static func shell(launchPath: String, arguments: [String] = []) -> String? {
         let task = Process()

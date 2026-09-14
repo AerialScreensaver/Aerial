@@ -19,14 +19,21 @@ final class FirstLaunchWizardState: ObservableObject {
         case migration  // conditional — only after the user clicks Go ahead AND data is found
         case mode
         case overlays
+        case presentation  // menu bar vs Dock
         case thanks
     }
 
     @Published var step: Step = .welcome
-    @Published var mode: FirstLaunch.ModeChoice?
-    @Published var wallpaperContinuity: Bool = true
     @Published var overlay: FirstLaunch.OverlayPreset? = .modern
     @Published var rotateForBurnIn: Bool = false
+
+    /// Three-mode selection (off / still / live). Seeded to the
+    /// recommended default in `init`.
+    @Published var wallpaperMode: WallpaperMode?
+
+    /// Menu bar vs Dock. Seeded to the menu bar (or the already-chosen
+    /// presentation on a re-run) in `init`.
+    @Published var presentation: AppPresentation = FirstLaunch.initialPresentation
 
     /// True once the user has clicked "Go ahead" AND the legacy
     /// container probe found data. Drives whether the `.migration`
@@ -34,19 +41,18 @@ final class FirstLaunchWizardState: ObservableObject {
     @Published private(set) var migrationNeeded: Bool = false
 
     init() {
-        self.mode = FirstLaunch.initialModeChoice
-        self.wallpaperContinuity = FirstLaunch.initialWallpaperContinuity
+        self.wallpaperMode = FirstLaunch.initialWallpaperMode
     }
 
     /// Steps that actually render (skipping welcome/migration from
     /// the user-visible "Step X of Y" indicator; both are present in
-    /// the flow but not counted in the polished three-step progress).
+    /// the flow but not counted in the polished four-step progress).
     var visibleSteps: [Step] {
         Step.allCases.filter { $0 != .migration || migrationNeeded }
     }
 
     /// 1-based progress index for the dot indicator. Counts only the
-    /// polished three (mode / overlays / thanks).
+    /// polished four (mode / overlays / presentation / thanks).
     var stepIndex: Int {
         let counted = visibleSteps.filter { $0 != .welcome && $0 != .migration }
         return (counted.firstIndex(of: step) ?? 0) + 1
@@ -68,9 +74,10 @@ final class FirstLaunchWizardState: ObservableObject {
         // irrelevant. They drive transitions via custom methods.
         case .welcome:   return false
         case .migration: return false
-        case .mode:      return mode != nil
-        case .overlays:  return overlay != nil
-        case .thanks:    return true
+        case .mode:         return wallpaperMode != nil
+        case .overlays:     return overlay != nil
+        case .presentation: return true  // always has a selection
+        case .thanks:       return true
         }
     }
 
@@ -150,6 +157,8 @@ struct FirstLaunchWizardView: View {
             FirstLaunchModeStep(state: state)
         case .overlays:
             FirstLaunchOverlayStep(state: state)
+        case .presentation:
+            FirstLaunchPresentationStep(state: state)
         case .thanks:
             FirstLaunchThankYouStep()
         }
@@ -201,22 +210,27 @@ struct FirstLaunchWizardView: View {
 
     /// Apply the chosen prefs at the right step boundaries. Mode is
     /// committed when leaving the mode step; overlays when leaving the
-    /// overlays step; the completion sentinel is set when finishing
-    /// the thanks step. Welcome + Migration are handled by their own
-    /// step views — they don't reach this method.
+    /// overlays step; the presentation (menu bar / Dock) when leaving
+    /// its step — live, so a Dock choice shows its icon before the
+    /// thanks step; the completion sentinel is set when finishing the
+    /// thanks step. Welcome + Migration are handled by their own step
+    /// views — they don't reach this method.
     private func handleAdvance() {
         switch state.step {
         case .welcome, .migration:
             return  // their step views drive their own transitions
         case .mode:
-            if let mode = state.mode {
-                FirstLaunch.apply(mode: mode, wallpaperContinuity: state.wallpaperContinuity)
+            if let wp = state.wallpaperMode {
+                FirstLaunch.apply(wallpaperMode: wp)
             }
             state.goNext()
         case .overlays:
             if let overlay = state.overlay {
                 FirstLaunch.apply(overlay: overlay, rotateForBurnIn: state.rotateForBurnIn)
             }
+            state.goNext()
+        case .presentation:
+            FirstLaunch.apply(presentation: state.presentation)
             state.goNext()
         case .thanks:
             Preferences.firstLaunchCompleted = true
@@ -226,7 +240,7 @@ struct FirstLaunchWizardView: View {
 
     /// Tiny step-of-N indicator pinned to the bottom-leading corner.
     /// Welcome + Migration are excluded from the count so users always
-    /// see "1 of 3" / "2 of 3" / "3 of 3" for the polished trio.
+    /// see "1 of 4" … "4 of 4" for the polished steps.
     @ViewBuilder
     private var stepIndicator: some View {
         if state.step != .welcome && state.step != .migration {

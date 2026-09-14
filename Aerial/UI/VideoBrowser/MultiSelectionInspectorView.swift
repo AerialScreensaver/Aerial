@@ -148,7 +148,9 @@ struct MultiSelectionInspectorView: View {
 
     @ViewBuilder
     private var addToPlaylistMenu: some View {
-        let summaries = UserPlaylistManager.shared.allSummaries()
+        // Observed state, not the singleton — keeps the menu reactive to
+        // playlist creation/deletion (see VideoBrowserCardView).
+        let summaries = state.userPlaylists
         if !summaries.isEmpty {
             Menu {
                 ForEach(summaries) { summary in

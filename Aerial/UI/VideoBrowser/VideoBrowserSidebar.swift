@@ -9,6 +9,9 @@ import SwiftUI
 
 struct VideoBrowserSidebar: View {
     @ObservedObject var state: VideoBrowserState
+    /// Drives the per-display "Now Playing" rows; reactive to hotplug and
+    /// crash-safe (no live `NSScreen.screenUuid` reads during render).
+    @ObservedObject private var playbackManager = PlaybackManager.shared
     @State private var expansionsExpanded: Bool = false
     /// Stable IDs for the orange "New" pills the sidebar can display.
     /// The raw value is what's persisted in `companion.json` — change
@@ -34,8 +37,16 @@ struct VideoBrowserSidebar: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 4) {
-            // PLAYLIST section
-            Text("PLAYLIST")
+            // DASHBOARD — the default landing view
+            sidebarRow(icon: "house", title: "Home", category: .dashboard)
+                .padding(.top, 12)
+
+            Divider()
+                .padding(.vertical, 4)
+                .padding(.horizontal, 12)
+
+            // MONITORS section
+            Text("MONITORS")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
@@ -49,12 +60,11 @@ struct VideoBrowserSidebar: View {
             // row labelled by the active mode instead of a generic
             // "Now Playing".
             if PrefsDisplays.viewingMode == .independent {
-                ForEach(NSScreen.screens, id: \.self) { screen in
-                    let uuid = screen.screenUuid
+                ForEach(playbackManager.availableScreens) { screen in
                     sidebarRow(
                         icon: "display",
-                        title: screen.localizedName,
-                        category: .nowPlaying(screenUUID: uuid)
+                        title: screen.name,
+                        category: .nowPlaying(screenUUID: screen.uuid)
                     )
                 }
             } else {

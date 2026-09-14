@@ -182,8 +182,13 @@ struct OverlayPreviewRenderer: View {
         let left   = CGFloat(state.layout.marginLeft)
         let bottom = CGFloat(state.layout.marginBottom)
         let right  = CGFloat(state.layout.marginRight)
-        // In desktop mode, add the dock inset so previewed overlays sit clear of the dock miniature.
-        let d = state.isDesktopMode ? state.dockInfo.swiftUIInsets : EdgeInsets()
+        // In desktop mode, add the dock/menubar inset so previewed overlays
+        // sit clear of the dock miniature — mirroring the extension's gate
+        // (wallpaper only + dockOffsetEnabled). The miniature itself stays
+        // visible when the offset is disabled: overlays overlapping it is
+        // an accurate preview of that state.
+        let offsetEnabled = OverlayConfigManager.shared.config.dockOffsetEnabled
+        let d = (state.isDesktopMode && offsetEnabled) ? state.dockInfo.swiftUIInsets : EdgeInsets()
         return EdgeInsets(
             top: top + d.top,
             leading: left + d.leading,

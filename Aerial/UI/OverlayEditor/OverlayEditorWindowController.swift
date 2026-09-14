@@ -24,7 +24,7 @@ class OverlayEditorWindowController: NSWindowController {
 
     convenience init(screenUUID: String? = nil, onScreen: NSScreen? = nil) {
         let state = OverlayEditorState(screenUUID: screenUUID)
-        print("[OverlayEditor] state created, layout instances: \(state.layout.allInstances.count), screenUUID: \(screenUUID ?? "shared")")
+        debugLog("[OverlayEditor] state created, layout instances: \(state.layout.allInstances.count), screenUUID: \(screenUUID ?? "shared")")
 
         // Pick a video URL for the preview background. Use `localPathFor`
         // so My Videos / non-cacheable sources resolve to their source
@@ -54,8 +54,10 @@ class OverlayEditorWindowController: NSWindowController {
         hostingController.sizingOptions = []
 
         // Initial size = 75% of screen (matching screen aspect ratio)
-        let screen = onScreen ?? NSScreen.main ?? NSScreen.screens.first!
-        let screenFrame = screen.visibleFrame
+        // No display at all (headless, mid-unplug): fall back to a sane frame
+        // instead of trapping on an empty screen list.
+        let screenFrame = (onScreen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame
+            ?? CGRect(x: 0, y: 0, width: 1920, height: 1080)
         let initialScale: CGFloat = 0.75
         let width = screenFrame.width * initialScale
         let height = screenFrame.height * initialScale
@@ -142,11 +144,11 @@ class OverlayEditorWindowController: NSWindowController {
             }
             .store(in: &cancellables)
 
-        print("[OverlayEditor] init complete, window: \(String(describing: self.window))")
+        debugLog("[OverlayEditor] init complete, window: \(String(describing: self.window))")
     }
 
     func showEditorWindow() {
-        print("[OverlayEditor] showEditorWindow, window=\(String(describing: window))")
+        debugLog("[OverlayEditor] showEditorWindow, window=\(String(describing: window))")
         window?.center()
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
@@ -161,12 +163,19 @@ class OverlayEditorWindowController: NSWindowController {
         showInspectorPanel()
     }
 
+    /// Point an already-open editor at a different screen scope (nil =
+    /// shared "All displays"). `switchScreen` reloads that scope's layout,
+    /// clears the selection, and moves the window to the target screen.
+    func retarget(screenUUID: String?) {
+        editorState?.switchScreen(uuid: screenUUID)
+    }
+
     // MARK: - Window Resizing
 
     private func resizeWindow(to scale: CGFloat) {
         guard let window = window else { return }
-        let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first!
-        let screenFrame = screen.visibleFrame
+        let screenFrame = (window.screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame
+            ?? CGRect(x: 0, y: 0, width: 1920, height: 1080)
 
         let newWidth = screenFrame.width * scale
         let newHeight = screenFrame.height * scale

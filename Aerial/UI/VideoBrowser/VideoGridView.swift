@@ -41,6 +41,16 @@ struct VideoGridView: View {
     /// would let modifier toggles change selection semantics in flight.
     @State private var marqueeModifiers: NSEvent.ModifierFlags = []
 
+    // MARK: - Keyboard navigation state
+
+    /// True while the grid container holds keyboard focus — gates ⌘A and
+    /// arrow-key handling so text fields keep their own shortcuts.
+    @FocusState private var gridFocused: Bool
+    /// Current grid column count, derived from the measured content width
+    /// (adaptive 200pt items + 12pt spacing → 212pt pitch). Drives the
+    /// row jump distance for up/down arrow navigation.
+    @State private var currentColumns: Int = 1
+
     var body: some View {
         VStack(spacing: 0) {
             // Content (search + view-mode toggle now live in the
@@ -59,35 +69,100 @@ struct VideoGridView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if state.viewMode == .grid {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if state.isMyVideos {
-                            myVideosHeader
-                            myVideosDropZone
-                        } else if state.currentSourceName != nil {
-                            sourceHeader
-                        } else if let header = categoryHeader() {
-                            header
-                        }
+                GeometryReader { outer in
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            ZStack(alignment: .topLeading) {
+                                // Marquee drag-target. Spans the full viewport
+                                // (via minHeight) so drags begun in the empty
+                                // area below/around the cards still start a
+                                // selection. Cards layer above and consume their
+                                // own taps + drag-to-playlist gestures, so
+                                // neither is disrupted by this layer.
+                                Color.clear
+                                    .frame(minHeight: outer.size.height)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+                                        if !modifiers.contains(.shift) && !modifiers.contains(.command) {
+                                            state.clearSelection()
+                                        }
+                                    }
+                                    .gesture(marqueeGesture)
 
-                        if videos.isEmpty {
-                            myVideosEmptyState
-                        } else {
-                            videoGrid(videos: videos)
-                        }
+                                VStack(alignment: .leading, spacing: 16) {
+                                    if state.isMyVideos {
+                                        myVideosHeader
+                                        myVideosDropZone
+                                    } else if state.currentSourceName != nil {
+                                        sourceHeader
+                                    } else if let header = categoryHeader() {
+                                        header
+                                    }
 
-                        // Global cross-source results below the grid,
-                        // excluding the current source so we don't
-                        // render a duplicate card for it.
-                        if !state.searchText.isEmpty {
-                            GlobalSearchResultsView(
-                                state: state,
-                                excludedSource: state.currentSourceName,
-                                showOtherSourcesHeader: true
-                            )
+                                    if videos.isEmpty {
+                                        myVideosEmptyState
+                                    } else {
+                                        videoGrid(videos: videos)
+                                    }
+
+                                    // Global cross-source results below the grid,
+                                    // excluding the current source so we don't
+                                    // render a duplicate card for it.
+                                    if !state.searchText.isEmpty {
+                                        GlobalSearchResultsView(
+                                            state: state,
+                                            excludedSource: state.currentSourceName,
+                                            showOtherSourcesHeader: true
+                                        )
+                                    }
+                                }
+                                .padding(16)
+
+                                // Marquee rectangle, drawn while a drag is in
+                                // progress. Hit testing is disabled so the
+                                // rectangle never intercepts the gesture that's
+                                // drawing it.
+                                if let rect = marqueeRect {
+                                    Rectangle()
+                                        .strokeBorder(Color.aerial, lineWidth: 1)
+                                        .background(Color.aerial.opacity(0.15))
+                                        .frame(width: rect.width, height: rect.height)
+                                        .position(x: rect.midX, y: rect.midY)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                            .coordinateSpace(name: "videoGrid")
+                            .onPreferenceChange(CardFramePreferenceKey.self) { cardFrames = $0 }
+                        }
+                        .focusable()
+                        .focusEffectDisabled()
+                        .focused($gridFocused)
+                        .onKeyPress { press in
+                            if press.key == KeyEquivalent("a"), press.modifiers.contains(.command) {
+                                state.selectAllDisplayed()
+                                return .handled
+                            }
+                            return .ignored
+                        }
+                        .onMoveCommand { direction in
+                            let extend = NSApp.currentEvent?.modifierFlags.contains(.shift) ?? false
+                            state.moveFocus(direction, columns: currentColumns, extend: extend)
+                            if let id = state.focusedVideoId {
+                                withAnimation(.easeOut(duration: 0.12)) {
+                                    proxy.scrollTo(id, anchor: .center)
+                                }
+                            }
+                        }
+                        .onAppear { gridFocused = true }
+                        .onChange(of: state.lastClickedVideoId) { _, newValue in
+                            // Pull keyboard focus to the grid the moment the user
+                            // interacts with a card, so arrow keys / ⌘A work
+                            // without an extra click. (Inline title editing
+                            // doesn't change lastClickedVideoId, so it's safe.)
+                            if newValue != nil { gridFocused = true }
                         }
                     }
-                    .padding(16)
                 }
             } else {
                 if state.isMyVideos {
@@ -234,6 +309,7 @@ struct VideoGridView: View {
             title: "My Videos",
             description: "You can add your own videos here, or copy them manually in `/Users/Shared/Aerial/My Videos/`. Files cannot be played from other locations because of security restrictions in macOS."
         ) {
+            PlayViewButton(state: state)
             downloadAllButtonIfNeeded
             Button(action: { myVideosVM.openInFinder() }) {
                 Label("Open Folder", systemImage: "folder")
@@ -263,6 +339,7 @@ struct VideoGridView: View {
             title: sourceName,
             description: source?.description
         ) {
+            PlayViewButton(state: state)
             downloadAllButtonIfNeeded
             Button(action: {
                 VideoList.instance.reloadSource(named: sourceName)
@@ -298,6 +375,7 @@ struct VideoGridView: View {
 
         return AnyView(
             ContentHeader(icon: icon, title: title) {
+                PlayViewButton(state: state)
                 downloadAllButtonIfNeeded
             }
         )
@@ -345,63 +423,40 @@ struct VideoGridView: View {
     // MARK: - Video Grid
 
     private func videoGrid(videos: [AerialVideo]) -> some View {
-        ZStack(alignment: .topLeading) {
-            // Background drag-target. Catches marquee drags from the empty
-            // space between cards. Cards are layered above this and consume
-            // their own taps + drag-to-playlist gestures, so neither is
-            // disrupted by this layer.
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
-                    if !modifiers.contains(.shift) && !modifiers.contains(.command) {
-                        state.clearSelection()
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 200, maximum: 200), spacing: 12)],
+            alignment: .leading,
+            spacing: 12
+        ) {
+            ForEach(videos, id: \.id) { video in
+                VideoBrowserCardView(
+                    video: video,
+                    state: state,
+                    isCurrent: false,
+                    showTimeMatch: state.currentTimeRestriction.active,
+                    isMyVideos: state.isMyVideos,
+                    onTitleChanged: state.isMyVideos ? { newTitle in
+                        updateMyVideoTitle(video: video, newTitle: newTitle)
+                    } : nil
+                )
+                .id(video.id)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: CardFramePreferenceKey.self,
+                            value: [video.id: geo.frame(in: .named("videoGrid"))]
+                        )
                     }
-                }
-                .gesture(marqueeGesture)
-
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 200, maximum: 200), spacing: 12)],
-                alignment: .leading,
-                spacing: 12
-            ) {
-                ForEach(videos, id: \.id) { video in
-                    VideoBrowserCardView(
-                        video: video,
-                        state: state,
-                        isCurrent: false,
-                        showTimeMatch: state.currentTimeRestriction.active,
-                        isMyVideos: state.isMyVideos,
-                        onTitleChanged: state.isMyVideos ? { newTitle in
-                            updateMyVideoTitle(video: video, newTitle: newTitle)
-                        } : nil
-                    )
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear.preference(
-                                key: CardFramePreferenceKey.self,
-                                value: [video.id: geo.frame(in: .named("videoGrid"))]
-                            )
-                        }
-                    )
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Marquee rectangle, drawn while a drag is in progress. Hit
-            // testing is disabled so the rectangle never intercepts the
-            // gesture that's drawing it.
-            if let rect = marqueeRect {
-                Rectangle()
-                    .strokeBorder(Color.aerial, lineWidth: 1)
-                    .background(Color.aerial.opacity(0.15))
-                    .frame(width: rect.width, height: rect.height)
-                    .position(x: rect.midX, y: rect.midY)
-                    .allowsHitTesting(false)
+                )
             }
         }
-        .coordinateSpace(name: "videoGrid")
-        .onPreferenceChange(CardFramePreferenceKey.self) { cardFrames = $0 }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Track the grid's content width to derive the column count used by
+        // arrow-key navigation. 200pt items + 12pt spacing → 212pt pitch, so
+        // N columns occupy 212·N − 12 ⟹ N = ⌊(width + 12) / 212⌋.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+            currentColumns = max(1, Int((width + 12) / 212))
+        }
     }
 
     // MARK: - Marquee Selection
