@@ -65,36 +65,3 @@ struct FirstLaunchCard: View {
         .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
-
-// MARK: - Bullet pane
-
-/// The "This will:" listicle shown under a card row, mirroring the
-/// selected card. Markdown honored via `Text(.init(line))`. Shared by
-/// the wallpaper-mode and presentation choosers.
-struct FirstLaunchBulletPane: View {
-    let lines: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("This will:")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.secondary)
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(lines, id: \.self) { line in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("•")
-                            .foregroundColor(.secondary)
-                        Text(.init(line))
-                            .font(.system(size: 13))
-                    }
-                }
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.secondary.opacity(0.06))
-        )
-    }
-}

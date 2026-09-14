@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17132" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17132"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="AUMenuViewController" customModule="AerialUpdater" customModuleProvider="target">
+            <connections>
+                <outlet property="mainMenu" destination="05t-Ah-w4y" id="XtJ-0o-bnv"/>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <point key="canvasLocation" x="-90" y="384"/>
+        </customView>
+        <menu identifier="AUMenu" id="05t-Ah-w4y">
+            <items>
+                <menuItem title="Aerial Updater" id="gaj-JQ-AwX">
+                    <attributedString key="attributedTitle">
+                        <fragment content="Aerial Updater">
+                            <attributes>
+                                <font key="NSFont" metaFont="systemSemibold" size="11"/>
+                                <paragraphStyle key="NSParagraphStyle" alignment="left" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
+                            </attributes>
+                        </fragment>
+                    </attributedString>
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <outlet property="view" destination="Pfn-BK-CvD" id="bZh-QJ-2vz"/>
+                    </connections>
+                </menuItem>
+                <menuItem isSeparatorItem="YES" id="D9c-Ro-F6l"/>
+                <menuItem title="Item 2" id="alX-7R-PpH">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <outlet property="view" destination="uy4-vL-mi9" id="H02-zK-hOf"/>
+                    </connections>
+                </menuItem>
+                <menuItem isSeparatorItem="YES" id="Acu-1E-cfn"/>
+                <menuItem title="Desired Version" id="k85-ez-dNU">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="Desired Version" id="ezl-5Z-CYp">
+                        <items>
+                            <menuItem title="Alpha" id="Lap-Bt-Yi1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                            </menuItem>
+                            <menuItem title="Beta" id="zsl-sc-Zl9">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                            </menuItem>
+                            <menuItem title="Release" state="on" id="u3i-Ln-Rbp">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="Update Mode" id="ecM-Pr-5UC">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                </menuItem>
+                <menuItem isSeparatorItem="YES" id="fcQ-AR-P0P"/>
+                <menuItem title="Quit" id="tro-YC-ltC">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                </menuItem>
+            </items>
+            <point key="canvasLocation" x="304" y="82"/>
+        </menu>
+        <customView id="Pfn-BK-CvD">
+            <rect key="frame" x="0.0" y="0.0" width="250" height="32"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mT3-TZ-1ao">
+                    <rect key="frame" x="13" y="8" width="94" height="16"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Aerial Updater" id="XBp-6K-70S">
+                        <font key="font" metaFont="systemMedium" size="13"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <progressIndicator maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="cYi-SP-qj3">
+                    <rect key="frame" x="219" y="8" width="16" height="16"/>
+                </progressIndicator>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="cYi-SP-qj3" secondAttribute="trailing" constant="15" id="IUS-5K-VCv"/>
+                <constraint firstItem="cYi-SP-qj3" firstAttribute="centerY" secondItem="Pfn-BK-CvD" secondAttribute="centerY" id="Nxw-mV-6NJ"/>
+                <constraint firstItem="mT3-TZ-1ao" firstAttribute="leading" secondItem="Pfn-BK-CvD" secondAttribute="leading" constant="15" id="X4w-oK-azV"/>
+                <constraint firstItem="mT3-TZ-1ao" firstAttribute="centerY" secondItem="Pfn-BK-CvD" secondAttribute="centerY" id="mhB-91-cYF"/>
+            </constraints>
+            <point key="canvasLocation" x="-31" y="55"/>
+        </customView>
+        <customView id="uy4-vL-mi9">
+            <rect key="frame" x="0.0" y="0.0" width="250" height="32"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EDc-kv-Hdm">
+                    <rect key="frame" x="13" y="8" width="192" height="16"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Version 2.0.0alpha4 is installed" id="Lqk-w7-3nD">
+                        <font key="font" usesAppearanceFont="YES"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="iVh-pT-iWa">
+                    <rect key="frame" x="220" y="9" width="15" height="15"/>
+                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="checkmark.circle" catalog="system" id="1JB-2Z-I05"/>
+                </imageView>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="iVh-pT-iWa" secondAttribute="trailing" constant="15" id="FSA-6C-NeX"/>
+                <constraint firstItem="iVh-pT-iWa" firstAttribute="centerY" secondItem="uy4-vL-mi9" secondAttribute="centerY" id="Gug-EG-d3G"/>
+                <constraint firstItem="EDc-kv-Hdm" firstAttribute="top" secondItem="uy4-vL-mi9" secondAttribute="top" constant="8" id="YpG-ro-3JC"/>
+                <constraint firstItem="EDc-kv-Hdm" firstAttribute="leading" secondItem="uy4-vL-mi9" secondAttribute="leading" constant="15" id="k7k-0A-bho"/>
+                <constraint firstAttribute="bottom" secondItem="EDc-kv-Hdm" secondAttribute="bottom" constant="8" id="mo9-Wf-VHv"/>
+            </constraints>
+            <point key="canvasLocation" x="-30.5" y="122"/>
+        </customView>
+    </objects>
+    <resources>
+        <image name="checkmark.circle" catalog="system" width="15" height="15"/>
+    </resources>
+</document>

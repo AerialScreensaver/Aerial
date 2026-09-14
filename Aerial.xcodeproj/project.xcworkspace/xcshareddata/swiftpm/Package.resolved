@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AerialScreensaver/PaperSaver.git",
       "state" : {
-        "revision" : "f38915ef1a4ac9e6c7a840802562d52a9f24fb8b",
-        "version" : "0.3.1"
+        "revision" : "3929bf81bc160047b3cb6da546d0ed59819f36b7",
+        "version" : "0.2.1"
       }
     },
     {

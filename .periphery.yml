@@ -37,4 +37,4 @@ index_exclude:
   - "**/build/**"
   - "**/DerivedData/**"
   - "**/SourcePackages/**"
-  - "Shared/Time/Solar.swift"
+  - "ScreenSaver/Source/Models/Time/Solar.swift"

@@ -14,9 +14,8 @@ struct SceneEditorView: View {
     let video: AerialVideo
     @ObservedObject var state: VideoBrowserState
 
-    /// Buttons per row → a 4+3 grid over the seven `SourceScene` cases
-    /// (a lone tile on a third row looked stranded at 3 columns).
-    private let columns = 4
+    /// Buttons per row → a 3×2 grid over the six `SourceScene` cases.
+    private let columns = 3
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -41,7 +40,7 @@ struct SceneEditorView: View {
         }
     }
 
-    /// Chunk the scenes into rows of `columns` for the grid.
+    /// Chunk the six scenes into rows of `columns` for the grid.
     private var sceneRows: [[SourceScene]] {
         let all = SourceScene.allCases
         return stride(from: 0, to: all.count, by: columns).map {

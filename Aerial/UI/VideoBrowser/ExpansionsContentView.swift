@@ -325,7 +325,7 @@ struct ExpansionsContentView: View {
     private var advancedDisclosure: some View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 16) {
-                appleMacWarningBanner
+                macOS26WarningBanner
 
                 ForEach(filteredHeaders, id: \.name) { header in
                     sourceSection(header)
@@ -334,7 +334,7 @@ struct ExpansionsContentView: View {
                 Divider()
 
                 Button {
-                    if let url = URL(string: "https://aerialscreensaver.github.io/expansions/") {
+                    if let url = URL(string: "https://aerialscreensaver.github.io/expansions/Save") {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
@@ -352,20 +352,20 @@ struct ExpansionsContentView: View {
         }
     }
 
-    /// Banner shown at the top of the Advanced disclosure. The Apple macOS
+    /// Banner shown at the top of the Advanced disclosure. The macOS 26
     /// source carries the canonical location names + POI translations
     /// that every other source falls back on for display strings, so
     /// turning it off cripples those features for users who don't
     /// realise. Phrased as a warning, not a hard block — power users
     /// can still disable it below.
-    private var appleMacWarningBanner: some View {
+    private var macOS26WarningBanner: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 32, weight: .regular))
                 .foregroundColor(.orange)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Keep the macOS source enabled")
+                Text("Keep the macOS 26 source enabled")
                     .font(.system(size: 13, weight: .semibold))
                 Text("Disabling it removes the location names and translations that other sources rely on. Not recommended unless you know what you're doing.")
                     .font(.system(size: 12))

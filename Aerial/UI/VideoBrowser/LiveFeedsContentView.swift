@@ -11,7 +11,6 @@ import SwiftUI
 import AppKit
 
 struct LiveFeedsContentView: View {
-    @ObservedObject var state: VideoBrowserState
     @State private var feeds: [LiveFeed] = []
     @State private var showingAdd = false
     @State private var editing: LiveFeed?
@@ -64,7 +63,6 @@ struct LiveFeedsContentView: View {
             title: "Live Feeds",
             description: "Add live streams from local cameras, YouTube, or any HLS URL."
         ) {
-            PlayViewButton(state: state)
             Button {
                 showingAdd = true
             } label: {

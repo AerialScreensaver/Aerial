@@ -29,22 +29,12 @@ struct VideoBrowserView: View {
                 contentView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Right inspector. Never on Home. On views with selectable
-                // video cards (grid/list, Now Playing per-monitor sections,
-                // Activity) it stays permanently open — a "No Selection"
-                // placeholder fills it when nothing is selected — so the
-                // layout doesn't jump as you select/deselect.
-                if !state.isDashboard {
-                    if state.hasMultiSelection {
-                        MultiSelectionInspectorView(state: state)
-                            .frame(width: 300)
-                    } else if let video = state.selectedVideo {
-                        VideoInspectorView(video: video, state: state)
-                            .frame(width: 300)
-                    } else if state.keepsInspectorOpen {
-                        InspectorEmptyView()
-                            .frame(width: 300)
-                    }
+                if state.hasMultiSelection {
+                    MultiSelectionInspectorView(state: state)
+                        .frame(width: 300)
+                } else if let video = state.selectedVideo {
+                    VideoInspectorView(video: video, state: state)
+                        .frame(width: 300)
                 }
             }
             // `.searchable` and `.toolbar` attached to the detail
@@ -94,10 +84,7 @@ struct VideoBrowserView: View {
         // managed by the split-view container, not the detail.
         .toolbar(removing: .title)
         .navigationSplitViewStyle(.balanced)
-        // Minimum = the smallest layout Home still reads well at
-        // (measured 1229×832 pt); first-open size and persistence are
-        // handled by the scene's `.defaultSize` + AppPresentationController.
-        .frame(minWidth: 1230, minHeight: 830)
+        .frame(minWidth: 900, minHeight: 550)
         .tint(.aerial)
         // External routing: callers (e.g. About box's "Browse
         // Expansions") post `openCategoryRequest` after openWindow to
@@ -127,14 +114,12 @@ struct VideoBrowserView: View {
                 }
                 .padding(16)
             }
-        } else if state.isDashboard {
-            DashboardView(state: state)
         } else if state.isNowPlaying {
             PlaylistSummaryView(state: state)
         } else if state.isUserPlaylist {
             UserPlaylistContentView(state: state)
         } else if state.isLiveFeeds {
-            LiveFeedsContentView(state: state)
+            LiveFeedsContentView()
         } else if state.isExpansions {
             ExpansionsContentView(state: state)
         } else if state.isActivity {
@@ -158,29 +143,6 @@ private struct MinimizedSearchToolbar: ViewModifier {
         } else {
             content
         }
-    }
-}
-
-/// Placeholder filling the right inspector on grid/list views when no video
-/// is selected, so the panel stays a stable fixed-width pane instead of
-/// collapsing. Mirrors the lightweight empty-state styling used elsewhere in
-/// the browser (cf. `VideoGridView`'s "No videos found").
-private struct InspectorEmptyView: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "info.circle")
-                .font(.system(size: 28))
-                .foregroundColor(.secondary)
-            Text("No Selection")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
-            Text("Select a video to see its details")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

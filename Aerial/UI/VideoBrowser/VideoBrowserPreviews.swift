@@ -23,7 +23,7 @@ enum PreviewData {
             timeOfDay: timeOfDay,
             scene: scene,
             urls: [.v1080pH264: "https://example.com/v.mp4"],
-            source: Source(
+            sources: [Source(
                 name: "Preview",
                 description: "Preview source",
                 manifestUrl: "",
@@ -32,7 +32,7 @@ enum PreviewData {
                 isCachable: false,
                 license: "",
                 more: ""
-            ),
+            )],
             poi: [:]
         )
     }

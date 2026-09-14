@@ -328,12 +328,16 @@ struct PlaylistSummaryView: View {
     /// Compute the start date of each slice from todayized sunrise/sunset + window.
     private func sliceBoundaries(sunTimes: (sunrise: Date, sunset: Date)?) -> [String: Date] {
         guard let st = sunTimes else { return [:] }
-        let b = SunSliceBoundaries(sunrise: st.sunrise, sunset: st.sunset)
+        let window = TimeInterval(PrefsTime.sunEventWindow)
+        // sunrise slice starts at sunrise
+        // day starts at sunrise + window
+        // sunset starts at sunset - window
+        // night starts at sunset
         return [
-            "sunrise": b.sunriseStart,
-            "day": b.sunriseEnd,
-            "sunset": b.sunsetStart,
-            "night": b.sunsetEnd
+            "sunrise": st.sunrise,
+            "day": st.sunrise.addingTimeInterval(window),
+            "sunset": st.sunset.addingTimeInterval(-window),
+            "night": st.sunset
         ]
     }
 }

@@ -195,76 +195,36 @@ struct PlaylistStateMachineTests {
             #expect(playlist.entries.first!.videoId != lastBefore)
         }
     }
-
-    // MARK: - On-screen index resolution (progress sidecar)
-    //
-    // The extension's cursor runs one entry ahead of the screen (the
-    // renderer pre-pops its next reader), so the sidecar resolves the
-    // presenting video's index by searching BACKWARDS from the cursor.
-
-    @Test("index(ofVideoId:) resolves the entry at the cursor")
-    func indexOfVideoAtCursor() {
-        let pl = makePlaylist(ids: ["a", "b", "c", "d"], currentIndex: 2)
-        #expect(pl.index(ofVideoId: "c") == 2)
-    }
-
-    @Test("Cursor one ahead (pre-popped next reader) → on-screen entry is cursor − 1")
-    func indexOfVideoBehindCursor() {
-        let pl = makePlaylist(ids: ["a", "b", "c", "d"], currentIndex: 3)
-        #expect(pl.index(ofVideoId: "c") == 2)
-        #expect(pl.index(ofVideoId: "a") == 0)
-    }
-
-    @Test("Backward search wraps past index 0")
-    func indexOfVideoWraps() {
-        let pl = makePlaylist(ids: ["a", "b", "c", "d"], currentIndex: 0)
-        #expect(pl.index(ofVideoId: "d") == 3)
-        #expect(pl.index(ofVideoId: "c") == 2)
-    }
-
-    @Test("Duplicate entries resolve to the occurrence at or just before the cursor")
-    func indexOfDuplicateVideo() {
-        let pl = makePlaylist(ids: ["x", "a", "x", "b", "x"], currentIndex: 3)
-        #expect(pl.index(ofVideoId: "x") == 2)
-        #expect(pl.index(ofVideoId: "x", searchingBackFrom: 1) == 0)
-        #expect(pl.index(ofVideoId: "x", searchingBackFrom: 4) == 4)
-    }
-
-    @Test("Absent video and empty playlist → nil")
-    func indexOfMissingVideo() {
-        #expect(makePlaylist(ids: ["a", "b"], currentIndex: 1).index(ofVideoId: "zzz") == nil)
-        #expect(makePlaylist(ids: [], currentIndex: 0).index(ofVideoId: "a") == nil)
-    }
 }
 
 // MARK: - Bounded Loop Accumulator
 
 /// Tests for the pure playtime-accumulator math behind the per-video
-/// play-duration override (PlaybackMath.boundedLoopAdvanceDelta).
+/// play-duration override (PlayerCoordinator.boundedLoopAdvanceDelta).
 @Suite("Bounded Loop Accumulator")
 struct BoundedLoopAccumulatorTests {
 
     @Test("Playtime delta scales by player rate (speed-factored)")
     func deltaScalesByRate() {
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 1.0) == 1.0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 2.0) == 2.0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 0.5, rate: 2.0) == 1.0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.5) == 0.5)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 1.0) == 1.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 2.0) == 2.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.5, rate: 2.0) == 1.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.5) == 0.5)
     }
 
     @Test("Non-positive rate or wallDelta yields zero (pause-safe)")
     func deltaZeroGuards() {
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.0) == 0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: -1.0) == 0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: -0.1, rate: 1.0) == 0)
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 0.0, rate: 1.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: 0.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 1.0, rate: -1.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: -0.1, rate: 1.0) == 0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.0, rate: 1.0) == 0)
     }
 
     @Test("A large wall gap is clamped (resume from suspension can't overshoot)")
     func deltaClampsLargeGap() {
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 300, rate: 1.0, maxWallDelta: 1.0) == 1.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 300, rate: 1.0, maxWallDelta: 1.0) == 1.0)
         // Clamp applies before the rate multiply.
-        #expect(PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 300, rate: 2.0, maxWallDelta: 1.0) == 2.0)
+        #expect(PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 300, rate: 2.0, maxWallDelta: 1.0) == 2.0)
     }
 
     @Test("Accumulating 0.1s ticks crosses the target; 2x needs ~half the ticks")
@@ -273,7 +233,7 @@ struct BoundedLoopAccumulatorTests {
 
         var acc = 0.0, ticks = 0
         while acc < target {
-            acc += PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 1.0)
+            acc += PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 1.0)
             ticks += 1
         }
         #expect(acc >= target)
@@ -281,7 +241,7 @@ struct BoundedLoopAccumulatorTests {
 
         var acc2 = 0.0, ticks2 = 0
         while acc2 < target {
-            acc2 += PlaybackMath.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 2.0)
+            acc2 += PlayerCoordinator.boundedLoopAdvanceDelta(wallDelta: 0.1, rate: 2.0)
             ticks2 += 1
         }
         #expect(acc2 >= target)

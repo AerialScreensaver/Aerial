@@ -46,8 +46,8 @@ class VideoPreviewNSView: NSView {
         let item = AVPlayerItem(asset: asset)
 
         // Apply color invert filter if enabled (accessibility).
-        // Invert in sRGB so wide-gamut sources look right.
-        if Preferences.invertColors {
+        // Mirrors PlayerCoordinator: invert in sRGB so wide-gamut sources look right.
+        if AerialSaverView.readInvertColorsFromCompanionJSON() {
             let srgb = CGColorSpace(name: CGColorSpace.sRGB)!
             item.videoComposition = AVMutableVideoComposition(
                 asset: asset,

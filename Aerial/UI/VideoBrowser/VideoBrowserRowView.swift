@@ -12,8 +12,6 @@ struct VideoBrowserRowView: View {
     let video: AerialVideo
     @ObservedObject var state: VideoBrowserState
 
-    @State private var pendingCacheDelete: PendingCacheDelete?
-
     var body: some View {
         HStack(spacing: 10) {
             // Thumbnail
@@ -74,33 +72,6 @@ struct VideoBrowserRowView: View {
         .contextMenu {
             contextMenuContent
         }
-        .alert(
-            cacheDeleteTitle,
-            isPresented: Binding(
-                get: { pendingCacheDelete != nil },
-                set: { if !$0 { pendingCacheDelete = nil } }
-            ),
-            presenting: pendingCacheDelete
-        ) { pending in
-            Button("Delete and hide", role: .destructive) {
-                state.deleteVideosFromCache(pending.videos, alsoHide: true)
-            }
-            Button("Delete", role: .destructive) {
-                state.deleteVideosFromCache(pending.videos, alsoHide: false)
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { pending in
-            Text(pending.videos.count == 1
-                ? "You can also hide the video so it doesn't get redownloaded in the future."
-                : "You can also hide the videos so they don't get redownloaded in the future.")
-        }
-    }
-
-    private var cacheDeleteTitle: String {
-        guard let pending = pendingCacheDelete, pending.videos.count > 1 else {
-            return "Do you want to delete this video from your cache?"
-        }
-        return "Do you want to delete these \(pending.videos.count) videos from your cache?"
     }
 
     // MARK: - Context Menu (multi-selection aware)
@@ -108,11 +79,7 @@ struct VideoBrowserRowView: View {
     @ViewBuilder
     private var contextMenuContent: some View {
         let videos = state.videosForContextAction(rightClicked: video)
-        // Read playlists from the observed state, not the singleton: the
-        // .contextMenu builder is a snapshot from the last body evaluation,
-        // so a non-observable read can serve a stale (even empty) list until
-        // some unrelated @Published happens to invalidate the row.
-        let summaries = state.userPlaylists
+        let summaries = UserPlaylistManager.shared.allSummaries()
         if !summaries.isEmpty {
             Menu(videos.count > 1 ? "Add \(videos.count) Videos to Playlist" : "Add to Playlist") {
                 ForEach(summaries) { summary in
@@ -186,19 +153,6 @@ struct VideoBrowserRowView: View {
         } label: {
             Label(allHidden ? (videos.count > 1 ? "Unhide All" : "Unhide") : (videos.count > 1 ? "Hide All" : "Hide"),
                   systemImage: allHidden ? "eye" : "eye.slash")
-        }
-
-        // Delete from cache (downloaded, remote-source videos only —
-        // local "My Videos" files are managed from the My Videos panel)
-        let deletable = videos.filter { $0.isAvailableOffline && !$0.url.absoluteString.starts(with: "file") }
-        if !deletable.isEmpty {
-            Divider()
-            Button {
-                pendingCacheDelete = PendingCacheDelete(videos: deletable)
-            } label: {
-                Label(deletable.count == 1 ? "Delete Video" : "Delete \(deletable.count) Videos",
-                      systemImage: "trash")
-            }
         }
     }
 

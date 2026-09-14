@@ -33,7 +33,6 @@ struct OverlayEditorToolbar: View {
                     get: { state.screenUUID ?? "" },
                     set: { state.switchScreen(uuid: $0.isEmpty ? nil : $0) }
                 )) {
-                    Text("All displays").tag("")
                     ForEach(screens, id: \.uuid) { screen in
                         Text(screen.name).tag(screen.uuid)
                     }

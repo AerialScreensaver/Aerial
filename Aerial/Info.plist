@@ -41,6 +41,8 @@
 	<string>https://aerialscreensaver.github.io/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>8VgyFnUp44Aj4mvoEyrhru/WHllgXNzmnls+jrZ1xiY=</string>
+	<key>NSMainStoryboardFile</key>
+	<string>Main</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>UTExportedTypeDeclarations</key>

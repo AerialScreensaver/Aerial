@@ -1,0 +1,393 @@
+//
+//  MyVideosSettingsPanel.swift
+//  Aerial Companion
+//
+//  Created by Guillaume Louel on 20/01/2026.
+//
+
+import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - Video Row View
+
+struct VideoRowView: View {
+    let video: LocalVideoInfo
+    let onDelete: () -> Void
+    let onReveal: () -> Void
+    let onTitleChanged: (String) -> Void
+
+    @State private var isHovering = false
+    @State private var editingTitle: String = ""
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Thumbnail
+            ZStack {
+                if let thumbnail = video.thumbnail {
+                    Image(nsImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 96, height: 54)
+                        .clipped()
+                        .cornerRadius(4)
+                } else if video.status == .valid {
+                    // Loading placeholder for valid videos
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(width: 96, height: 54)
+                        .cornerRadius(4)
+                        .overlay {
+                            ProgressView()
+                                .scaleEffect(0.5)
+                        }
+                } else {
+                    // Warning icon for invalid files
+                    Rectangle()
+                        .fill(Color.orange.opacity(0.1))
+                        .frame(width: 96, height: 54)
+                        .cornerRadius(4)
+                        .overlay {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                                .font(.system(size: 20))
+                        }
+                }
+            }
+
+            // File info
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    TextField("Title", text: $editingTitle, onCommit: {
+                        onTitleChanged(editingTitle)
+                    })
+                    .font(.system(size: 13, weight: .medium))
+                    .textFieldStyle(.plain)
+                    .fixedSize()
+                    .onAppear { editingTitle = video.title }
+                    .onChange(of: video.title) { newValue in
+                        editingTitle = newValue
+                    }
+                    Image(systemName: "pencil.line")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+
+                HStack(spacing: 8) {
+                    // Filename
+                    Text(video.filename)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    // Status/Duration
+                    if video.status == .valid {
+                        if let duration = video.formattedDuration {
+                            Label(duration, systemImage: "clock")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Text(video.status.description)
+                            .font(.system(size: 11))
+                            .foregroundColor(.orange)
+                    }
+
+                    // File size
+                    Text(video.formattedSize)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+
+                    // File extension badge
+                    Text(video.fileExtension)
+                        .font(.system(size: 9, weight: .medium))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(video.status == .valid ? Color.aerial.opacity(0.2) : Color.orange.opacity(0.2))
+                        .foregroundColor(video.status == .valid ? .aerial : .orange)
+                        .cornerRadius(3)
+                }
+            }
+
+            Spacer()
+
+            // Status indicator and actions
+            if isHovering {
+                HStack(spacing: 8) {
+                    Button(action: onReveal) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 14))
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Reveal in Finder")
+                    .accessibilityLabel("Reveal in Finder")
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 14))
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Move to Trash")
+                    .accessibilityLabel("Move to Trash")
+                }
+            } else {
+                // Status icon
+                if video.status == .valid {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 16))
+                } else {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 16))
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(isHovering ? Color.secondary.opacity(0.1) : Color.clear)
+        .cornerRadius(8)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+}
+
+// MARK: - My Videos Settings Panel
+
+struct MyVideosSettingsPanel: View {
+    @StateObject private var viewModel = MyVideosViewModel()
+    @State private var isDropTargeted = false
+    @State private var showDeleteConfirmation = false
+    @State private var videoToDelete: LocalVideoInfo?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header — title + description leading, action buttons trailing.
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("My Videos")
+                        .font(.system(size: 24, weight: .bold))
+
+                    Text("You can add your own videos here, or copy them manually in `/Users/Shared/Aerial/My Videos/`. Files cannot be played from other locations because of security restrictions in macOS. ")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Button(action: { viewModel.openInFinder() }) {
+                        Label("Open Folder", systemImage: "folder")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                    Button(action: { viewModel.scanFolder() }) {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                }
+            }
+            .padding(.horizontal, 24).padding(.bottom, 24).padding(.top, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
+            // Content
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView("Scanning folder...")
+                    .frame(maxWidth: .infinity)
+                Spacer()
+            } else if viewModel.videos.isEmpty {
+                // Empty state
+                Spacer()
+                VStack(spacing: 16) {
+                    Image(systemName: "film.stack")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary)
+
+                    Text("No videos found")
+                        .font(.headline)
+
+                    Text("Add videos by dragging them here or placing them in the My Videos folder")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 300)
+
+                    Button("Open Folder in Finder") {
+                        viewModel.openInFinder()
+                    }
+                    .controlSize(.large)
+                }
+                .frame(maxWidth: .infinity)
+                Spacer()
+            } else {
+                // Video list
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(viewModel.videos) { video in
+                            VideoRowView(
+                                video: video,
+                                onDelete: {
+                                    videoToDelete = video
+                                    showDeleteConfirmation = true
+                                },
+                                onReveal: {
+                                    viewModel.revealInFinder(video)
+                                },
+                                onTitleChanged: { newTitle in
+                                    viewModel.updateVideoTitle(video, newTitle: newTitle)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+            }
+
+            // Drop zone
+            DropZoneView(isTargeted: $isDropTargeted)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                    handleDrop(providers: providers)
+                    return true
+                }
+
+            // Error banner
+            if let error = viewModel.errorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text(error)
+                        .font(.system(size: 12))
+                    Spacer()
+                    Button(action: { viewModel.errorMessage = nil }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Dismiss")
+                    .accessibilityLabel("Dismiss error")
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(6)
+                .padding(.horizontal, 24)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            // Import progress
+            if viewModel.isImporting {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    Text(viewModel.importProgress)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
+            }
+
+            Divider()
+
+            // Footer — stats only; the action buttons moved to the header.
+            HStack {
+                Spacer()
+
+                let validCount = viewModel.videos.filter { $0.status == .valid }.count
+                let totalCount = viewModel.videos.count
+
+                if totalCount > 0 {
+                    if validCount == totalCount {
+                        Text("\(validCount) video\(validCount == 1 ? "" : "s")")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("\(validCount) video\(validCount == 1 ? "" : "s"), \(totalCount - validCount) ignored")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.controlBackgroundColor))
+        .onAppear {
+            viewModel.scanFolder()
+        }
+        .alert("Delete Video", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                videoToDelete = nil
+            }
+            Button("Move to Trash", role: .destructive) {
+                if let video = videoToDelete {
+                    viewModel.deleteVideo(video)
+                }
+                videoToDelete = nil
+            }
+        } message: {
+            if let video = videoToDelete {
+                Text("Are you sure you want to move '\(video.filename)' to the Trash?")
+            }
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private func handleDrop(providers: [NSItemProvider]) {
+        var urls: [URL] = []
+        var rejectedExtensions: Set<String> = []
+        let supportedExtensions = ["mp4", "mov", "m4v", "avi", "mkv", "webm"]
+
+        let group = DispatchGroup()
+
+        for provider in providers {
+            if provider.canLoadObject(ofClass: URL.self) {
+                group.enter()
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    if let url = url {
+                        let ext = url.pathExtension.lowercased()
+                        if supportedExtensions.contains(ext) {
+                            urls.append(url)
+                        } else {
+                            rejectedExtensions.insert(ext.isEmpty ? "unknown" : ext)
+                        }
+                    }
+                    group.leave()
+                }
+            }
+        }
+
+        group.notify(queue: .main) {
+            if !urls.isEmpty {
+                viewModel.importVideos(urls: urls)
+            }
+            if !rejectedExtensions.isEmpty {
+                let formats = rejectedExtensions.sorted().map { ".\($0)" }.joined(separator: ", ")
+                let count = rejectedExtensions.count
+                viewModel.showError("File type\(count == 1 ? "" : "s") not supported: \(formats)")
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+struct MyVideosSettingsPanel_Previews: PreviewProvider {
+    static var previews: some View {
+        MyVideosSettingsPanel()
+            .frame(width: 500, height: 600)
+    }
+}
