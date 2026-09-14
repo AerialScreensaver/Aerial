@@ -67,6 +67,121 @@ struct CodableRoundTripTests {
         #expect(decoded.cycleMode == .loop)
     }
 
+    @Test("CacheSettings decodes pre-expansions JSON with the sub-option off")
+    func cacheSettingsExpansionsFallback() throws {
+        let json = """
+        {
+            "enableManagement": true,
+            "cacheLimit": 20,
+            "intCachePeriodicity": 1,
+            "restrictOnWiFi": false,
+            "allowedNetworks": [],
+            "overrideCache": false
+        }
+        """
+        let decoded = try JSONDecoder().decode(CacheSettings.self, from: json.data(using: .utf8)!)
+        #expect(decoded.expansionsAtCacheLocation == false)
+    }
+
+    @Test("CacheSettings ignores the dropped standalone Expansions keys")
+    func cacheSettingsLegacyExpansionsKeysIgnored() throws {
+        // The 2026-07 standalone Expansions location was replaced by the
+        // cache-location sub-option; old keys must neither fail decoding
+        // nor turn the sub-option on.
+        let json = """
+        {
+            "enableManagement": true,
+            "cacheLimit": 20,
+            "intCachePeriodicity": 1,
+            "restrictOnWiFi": false,
+            "allowedNetworks": [],
+            "overrideCache": false,
+            "overrideExpansions": true,
+            "expansionsPath": "/Volumes/External/AerialPacks"
+        }
+        """
+        let decoded = try JSONDecoder().decode(CacheSettings.self, from: json.data(using: .utf8)!)
+        #expect(decoded.expansionsAtCacheLocation == false)
+        #expect(decoded.overrideCache == false)
+    }
+
+    @Test("CacheSettings expansionsAtCacheLocation round-trips")
+    func cacheSettingsExpansionsAtLocationRoundTrip() throws {
+        var settings = CacheSettings.default
+        settings.overrideCache = true
+        settings.cachePath = "/Users/Shared/Aerial/ExternalCache"
+        settings.expansionsAtCacheLocation = true
+        let decoded = try roundTrip(settings)
+        #expect(decoded.expansionsAtCacheLocation == true)
+    }
+
+    @Test("CacheSettings decodes pre-external-image JSON with a nil image path")
+    func cacheSettingsExternalImageFallback() throws {
+        // Settings written before the external cache image feature carry
+        // no externalCacheImagePath; a custom folder cache must decode as
+        // plain-folder mode (isExternalImageMode == false).
+        let json = """
+        {
+            "enableManagement": true,
+            "cacheLimit": 20,
+            "intCachePeriodicity": 1,
+            "restrictOnWiFi": false,
+            "allowedNetworks": [],
+            "overrideCache": true,
+            "cachePath": "/Volumes/External/Aerial"
+        }
+        """
+        let decoded = try JSONDecoder().decode(CacheSettings.self, from: json.data(using: .utf8)!)
+        #expect(decoded.overrideCache == true)
+        #expect(decoded.cachePath == "/Volumes/External/Aerial")
+        #expect(decoded.externalCacheImagePath == nil)
+    }
+
+    @Test("CacheSettings external image path round-trips")
+    func cacheSettingsExternalImageRoundTrip() throws {
+        var settings = CacheSettings.default
+        settings.overrideCache = true
+        settings.cachePath = "/Users/Shared/Aerial/ExternalCache"
+        settings.externalCacheImagePath = "/Volumes/External/Aerial Cache.sparsebundle"
+        let decoded = try roundTrip(settings)
+        #expect(decoded.overrideCache == true)
+        #expect(decoded.cachePath == "/Users/Shared/Aerial/ExternalCache")
+        #expect(decoded.externalCacheImagePath == "/Volumes/External/Aerial Cache.sparsebundle")
+    }
+
+    @Test("PersistedPlaylist cycleMode .repeatOne round-trips")
+    func persistedPlaylistRepeatOneRoundTrip() throws {
+        let original = PersistedPlaylist(
+            entries: [PlaylistEntry(videoId: "a", videoName: "A", secondaryName: "", duration: nil)],
+            currentIndex: 0,
+            playbackTimestamp: nil,
+            filterMode: 0,
+            filterStrings: [],
+            generatedAt: Date(timeIntervalSinceReferenceDate: 700000000),
+            cycleMode: .repeatOne
+        )
+        let decoded = try roundTrip(original)
+        #expect(decoded.cycleMode == .repeatOne)
+    }
+
+    @Test("PersistedPlaylist unknown cycleMode raw value degrades to .loop")
+    func persistedPlaylistUnknownCycleModeFallback() throws {
+        // A file written by a newer build with a mode this build doesn't
+        // know must not fail the whole playlist decode.
+        let json = """
+        {
+            "entries": [],
+            "currentIndex": 0,
+            "filterMode": 0,
+            "filterStrings": [],
+            "generatedAt": 700000000.0,
+            "cycleMode": 99
+        }
+        """
+        let decoded = try JSONDecoder().decode(PersistedPlaylist.self, from: json.data(using: .utf8)!)
+        #expect(decoded.cycleMode == .loop)
+    }
+
     @Test("PlaylistState round-trip")
     func playlistStateRoundTrip() throws {
         let state = PlaylistState(
@@ -329,6 +444,45 @@ struct CodableRoundTripTests {
         #expect(decoded.updatesPrefs.checkForUpdates == original.updatesPrefs.checkForUpdates)
     }
 
+    // MARK: - WallpaperControlState
+
+    @Test("WallpaperControlState audio fields round-trip and default when missing")
+    func wallpaperControlStateAudioFields() throws {
+        var original = WallpaperControlState()
+        original.audioEnabled = true
+        original.audioVolume = 0.8
+        let decoded = try roundTrip(original)
+        #expect(decoded.audioEnabled == true)
+        #expect(decoded.audioVolume == 0.8)
+
+        // A control file written by an older build has no audio keys —
+        // the tolerant decoder must default them instead of throwing
+        // (a throw resets version and turns the extension deaf).
+        let legacy = """
+        { "version": 12, "speed": 1.0 }
+        """
+        let old = try JSONDecoder().decode(WallpaperControlState.self, from: legacy.data(using: .utf8)!)
+        #expect(old.version == 12)
+        #expect(old.audioEnabled == false)
+        #expect(old.audioVolume == 0.5)
+    }
+
+    @Test("WallpaperControlState screenLayoutGeneration round-trips and defaults when missing")
+    func wallpaperControlStateScreenLayoutGeneration() throws {
+        var original = WallpaperControlState()
+        original.screenLayoutGeneration = 7
+        let decoded = try roundTrip(original)
+        #expect(decoded.screenLayoutGeneration == 7)
+
+        // Control file from a build without the key — must default, not throw.
+        let legacy = """
+        { "version": 3, "dockInsets": {} }
+        """
+        let old = try JSONDecoder().decode(WallpaperControlState.self, from: legacy.data(using: .utf8)!)
+        #expect(old.version == 3)
+        #expect(old.screenLayoutGeneration == 0)
+    }
+
     @Test("VideoSettings timeOfDayOverride defaults to empty when missing")
     func videoSettingsTimeOfDayOverrideFallback() throws {
         // Build JSON without timeOfDayOverride
@@ -375,6 +529,25 @@ struct CodableRoundTripTests {
         let decoded = try JSONDecoder().decode(TimeSettings.self, from: json.data(using: .utf8)!)
         #expect(decoded.cachedNightShiftSunrise == 0)
         #expect(decoded.cachedNightShiftSunset == 0)
+        // The legacy "intSolarMode" key is intentionally ignored — the pref
+        // was dead through 4.x, so slicing resets to astronomical under the
+        // renamed "intSolarSliceMode" key.
+        #expect(decoded.intSolarMode == 4)
+        // Window placement is new — missing key means the historical
+        // during-daylight behavior.
+        #expect(decoded.intSunWindowPlacement == 0)
+    }
+
+    @Test("TimeSettings solar slice mode round-trips under the renamed key")
+    func timeSettingsSolarSliceModeRoundTrip() throws {
+        var settings = TimeSettings.default
+        settings.intSolarMode = 2  // SolarMode.civil
+        let data = try JSONEncoder().encode(settings)
+        let json = String(data: data, encoding: .utf8)!
+        #expect(json.contains("\"intSolarSliceMode\":2"))
+        #expect(!json.contains("\"intSolarMode\""))
+        let decoded = try JSONDecoder().decode(TimeSettings.self, from: data)
+        #expect(decoded.intSolarMode == 2)
     }
 
     // MARK: - UserPlaylistModels

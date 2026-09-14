@@ -3,13 +3,18 @@
 //  Aerial Companion
 //
 //  Final step of the wizard: heading at the top, three-paragraph body
-//  on the left, and a popover preview screenshot on the right so the
-//  user sees what they're about to land on once they hit Get Started.
+//  on the left, and a preview on the right so the user sees what
+//  they're about to land on once they hit Get Started — the popover
+//  screenshot (menu-bar presentation) or the Dock icon (Dock
+//  presentation, chosen on the previous step).
 //
 
 import SwiftUI
 
 struct FirstLaunchThankYouStep: View {
+
+    /// Written by the presentation step right before this one.
+    private var isDock: Bool { Preferences.appPresentation == .dock }
 
     var body: some View {
         VStack(spacing: 18) {
@@ -24,7 +29,11 @@ struct FirstLaunchThankYouStep: View {
                 bodyText
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                popoverPreview
+                if isDock {
+                    dockPreview
+                } else {
+                    popoverPreview
+                }
             }.padding(.top, 24)
 
             Spacer(minLength: 0)
@@ -35,9 +44,15 @@ struct FirstLaunchThankYouStep: View {
 
     private var bodyText: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(.init("Aerial 4 is configured. Press *Get Started* to head into the app, it will show up in your menu bar. You can pick and control what should play directly from the menu bar, or launch the wallpaper mode from there !"))
-            Text(.init("I **strongly** recommend you check the settings first (bottom left of the menu). While similar in many ways to the previous version, many features have been entirely rethought/adapted and will need to be adjusted again to your liking."))
-            Text(.init("Then head to the Video Library to check more of the new features, including new high quality videos in 4K 240 fps !"))
+            if isDock {
+                Text(.init("Aerial 4 is configured. Press *Get Started* to head into the app — Aerial lives in your Dock, and the Video Library is its main window. Home shows what's playing on each display; pick and control what should play from there, or launch the wallpaper mode !"))
+                Text(.init("I **strongly** recommend you check the settings first (Aerial menu → *Settings…*, or the gear button in the window's toolbar). While similar in many ways to the previous version, many features have been entirely rethought/adapted and will need to be adjusted again to your liking."))
+                Text(.init("Closing the window keeps Aerial running in the background — downloads, overlays and auto-pause keep working. While you're in the Video Library, check out the new features, including new high quality videos in 4K 240 fps !"))
+            } else {
+                Text(.init("Aerial 4 is configured. Press *Get Started* to head into the app, it will show up in your menu bar. You can pick and control what should play directly from the menu bar, or launch the wallpaper mode from there !"))
+                Text(.init("I **strongly** recommend you check the settings first (bottom left of the menu). While similar in many ways to the previous version, many features have been entirely rethought/adapted and will need to be adjusted again to your liking."))
+                Text(.init("Then head to the Video Library to check more of the new features, including new high quality videos in 4K 240 fps !"))
+            }
             Text(.init("Aerial is still free and open source. If you enjoy it, check out the about box for more information on how you can support it's development."))
 
         }
@@ -55,5 +70,22 @@ struct FirstLaunchThankYouStep: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 2)
             .accessibilityLabel("Aerial menu bar popover preview")
+    }
+
+    /// Dock presentation: the app icon, Dock-tile sized, in place of the
+    /// popover screenshot.
+    private var dockPreview: some View {
+        VStack(spacing: 12) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 160, height: 160)
+                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 2)
+            Text("Aerial in your Dock")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+        }
+        .frame(width: 240)
+        .accessibilityLabel("Aerial Dock icon preview")
     }
 }

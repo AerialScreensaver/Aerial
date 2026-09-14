@@ -11,6 +11,7 @@ import Combine
 // MARK: - Browse Category
 
 enum BrowseCategory: Hashable {
+    case dashboard
     case nowPlaying(screenUUID: String?)
     case allVideos
     case location(String)
@@ -27,6 +28,7 @@ enum BrowseCategory: Hashable {
 
     func hash(into hasher: inout Hasher) {
         switch self {
+        case .dashboard: hasher.combine("dashboard")
         case .nowPlaying(let uuid): hasher.combine("now"); hasher.combine(uuid)
         case .allVideos: hasher.combine("all")
         case .location(let l): hasher.combine("loc"); hasher.combine(l)
@@ -55,12 +57,23 @@ enum VideoViewMode: String {
     case grid, list
 }
 
+/// Alert payload for the context menu's "Delete Video" confirmation
+/// (used by both the card and row cell views).
+struct PendingCacheDelete: Identifiable {
+    let id = UUID()
+    let videos: [AerialVideo]
+}
+
 // MARK: - State
 
 class VideoBrowserState: ObservableObject {
-    @Published var selectedSidebarItem: BrowseCategory = .nowPlaying(screenUUID: nil)
+    @Published var selectedSidebarItem: BrowseCategory = .dashboard
     @Published var selectedVideoIds: Set<String> = []
     @Published var lastClickedVideoId: String?
+    /// Keyboard-navigation cursor: the moving end for shift-extend and the
+    /// pivot for arrow movement. Distinct from `lastClickedVideoId`, which is
+    /// the fixed range anchor that shift-extends pivot around.
+    @Published var focusedVideoId: String?
     @Published var searchText: String = ""
     @Published var sortOrder: VideoSortOrder = .name
     @Published var viewMode: VideoViewMode = .grid
@@ -98,18 +111,9 @@ class VideoBrowserState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // The default `.nowPlaying(screenUUID: nil)` matches the sole
-        // "Now Playing" row that the sidebar renders in shared /
-        // spanned / mirrored modes. In `.independent` mode the sidebar
-        // emits one row per connected display, each with that screen's
-        // actual UUID — `nil` matches none of them, so the selection
-        // pill wouldn't render. Pin the default to the first screen's
-        // UUID in that case so the topmost sidebar row reads as
-        // selected on first open.
-        if PrefsDisplays.viewingMode == .independent,
-           let firstScreen = NSScreen.screens.first {
-            selectedSidebarItem = .nowPlaying(screenUUID: firstScreen.screenUuid)
-        }
+        // The Dashboard is the default landing view (the property's
+        // initial value above). A caller can still override the initial
+        // selection via `pendingInitialCategory` below.
 
         // Honor a deferred initial category set by a caller right
         // before openWindow(id: "videoBrowser") — e.g. the About box's
@@ -159,10 +163,15 @@ class VideoBrowserState: ObservableObject {
         return VideoList.instance.videos.first { $0.id == id }
     }
 
-    /// All selected videos resolved from VideoList
+    /// All selected videos resolved from VideoList. One object per selected
+    /// id even if the list ever regresses to holding duplicate ids again —
+    /// the count here drives user-facing labels ("N Videos Selected",
+    /// "Add N Videos to Playlist") and must never exceed the id count.
     var selectedVideos: [AerialVideo] {
-        let allVideos = VideoList.instance.videos
-        return allVideos.filter { selectedVideoIds.contains($0.id) }
+        var seen = Set<String>()
+        return VideoList.instance.videos.filter {
+            selectedVideoIds.contains($0.id) && seen.insert($0.id).inserted
+        }
     }
 
     var hasMultiSelection: Bool {
@@ -178,27 +187,89 @@ class VideoBrowserState: ObservableObject {
                 selectedVideoIds.insert(video.id)
             }
             lastClickedVideoId = video.id
+            focusedVideoId = video.id
         } else if modifiers.contains(.shift), let anchorId = lastClickedVideoId {
-            // Shift+click: range select from anchor
-            let videos = filteredVideos
-            guard let anchorIndex = videos.firstIndex(where: { $0.id == anchorId }),
-                  let clickIndex = videos.firstIndex(where: { $0.id == video.id }) else {
-                selectedVideoIds = [video.id]
-                lastClickedVideoId = video.id
-                return
-            }
-            let range = min(anchorIndex, clickIndex)...max(anchorIndex, clickIndex)
-            selectedVideoIds = Set(videos[range].map(\.id))
+            // Shift+click: range select from the anchor (anchor stays put)
+            selectRange(from: anchorId, to: video.id)
         } else {
             // Plain click: single select
             selectedVideoIds = [video.id]
             lastClickedVideoId = video.id
+            focusedVideoId = video.id
+        }
+    }
+
+    /// Selects the inclusive range of displayed videos between two ids, in
+    /// `filteredVideos` order. The range anchor (`lastClickedVideoId`) is left
+    /// untouched so successive shift-clicks / shift-arrows pivot around it;
+    /// only the moving cursor (`focusedVideoId`) advances. Falls back to a
+    /// single selection if either id isn't currently displayed. Shared by
+    /// shift-click and shift-arrow.
+    private func selectRange(from anchorId: String, to toId: String) {
+        let videos = filteredVideos
+        guard let anchorIndex = videos.firstIndex(where: { $0.id == anchorId }),
+              let toIndex = videos.firstIndex(where: { $0.id == toId }) else {
+            selectedVideoIds = [toId]
+            lastClickedVideoId = toId
+            focusedVideoId = toId
+            return
+        }
+        let range = min(anchorIndex, toIndex)...max(anchorIndex, toIndex)
+        selectedVideoIds = Set(videos[range].map(\.id))
+        focusedVideoId = toId
+    }
+
+    /// Selects every currently displayed video (the `filteredVideos` order
+    /// shown in both grid and list). Backs ⌘A in grid mode.
+    func selectAllDisplayed() {
+        let videos = filteredVideos
+        guard !videos.isEmpty else { return }
+        selectedVideoIds = Set(videos.map(\.id))
+        lastClickedVideoId = videos.first?.id
+        focusedVideoId = videos.last?.id
+    }
+
+    /// Moves the keyboard cursor through the displayed grid. `columns` is the
+    /// current column count (derived from width by the view). With `extend`
+    /// (shift held) the selection grows from the anchor to the new cursor;
+    /// otherwise the cursor becomes a fresh single selection. Uses
+    /// `filteredVideos` as the ordering authority — same as click selection.
+    func moveFocus(_ direction: MoveCommandDirection, columns: Int, extend: Bool) {
+        let videos = filteredVideos
+        guard !videos.isEmpty else { return }
+
+        // Current cursor position, falling back to the single selection, the
+        // last click, then the first card.
+        let currentId = focusedVideoId ?? selectedVideoIds.first ?? lastClickedVideoId
+        let currentIndex = currentId.flatMap { id in
+            videos.firstIndex(where: { $0.id == id })
+        } ?? 0
+
+        let step: Int
+        switch direction {
+        case .left:  step = -1
+        case .right: step = 1
+        case .up:    step = -max(1, columns)
+        case .down:  step = max(1, columns)
+        @unknown default: return
+        }
+
+        let targetIndex = min(max(currentIndex + step, 0), videos.count - 1)
+        let targetId = videos[targetIndex].id
+
+        if extend, let anchorId = lastClickedVideoId {
+            selectRange(from: anchorId, to: targetId)   // anchor fixed, cursor moves
+        } else {
+            selectedVideoIds = [targetId]
+            lastClickedVideoId = targetId
+            focusedVideoId = targetId
         }
     }
 
     func clearSelection() {
         selectedVideoIds.removeAll()
         lastClickedVideoId = nil
+        focusedVideoId = nil
     }
 
     /// For context menu: if right-clicked video is in selection, return all selected; otherwise just that one
@@ -217,7 +288,39 @@ class VideoBrowserState: ObservableObject {
         return video.id
     }
 
+    /// Delete downloaded videos from the cache, optionally hiding them so
+    /// the DownloadCoordinator doesn't re-download them later.
+    func deleteVideosFromCache(_ videos: [AerialVideo], alsoHide: Bool) {
+        for video in videos {
+            let path = VideoList.instance.localPathFor(video: video)
+            if !path.isEmpty {
+                do {
+                    try FileManager.default.removeItem(atPath: path)
+                } catch {
+                    errorLog("Couldn't delete cached video at \(path): \(error.localizedDescription)")
+                }
+            }
+        }
+        if alsoHide {
+            var hidden = PrefsVideos.hidden
+            for video in videos where !hidden.contains(video.id) {
+                hidden.append(video.id)
+            }
+            PrefsVideos.hidden = hidden
+        }
+        // Drops the deleted entries from every filter playlist, persists,
+        // and bumps playlistGeneration — the extension advances away if
+        // one of them was playing.
+        PlaylistManager.shared.regenerateAll()
+        refreshTrigger += 1
+    }
+
     // MARK: - Computed
+
+    var isDashboard: Bool {
+        if case .dashboard = selectedSidebarItem { return true }
+        return false
+    }
 
     var isNowPlaying: Bool {
         if case .nowPlaying = selectedSidebarItem { return true }
@@ -255,13 +358,24 @@ class VideoBrowserState: ObservableObject {
     /// and Activity — all of which have bespoke content layouts.
     var supportsViewMode: Bool {
         switch selectedSidebarItem {
-        case .nowPlaying, .userPlaylist, .expansions, .activity:
+        case .dashboard, .nowPlaying, .userPlaylist, .expansions, .activity:
             return false
         case .source(let name) where name == "Live Feeds":
             return false
         default:
             return true
         }
+    }
+
+    /// Views where the right inspector stays permanently open — showing a
+    /// "No Selection" placeholder when nothing is selected — instead of
+    /// collapsing as you select/deselect. Exactly the views that render
+    /// selectable `VideoBrowserCardView`s: the grid/list browsing views plus
+    /// the per-monitor Now Playing sections and the Activity feed. Home, User
+    /// Playlists, Live Feeds, and Expansions don't use the shared video
+    /// selection, so they're excluded.
+    var keepsInspectorOpen: Bool {
+        supportsViewMode || isNowPlaying || isActivity
     }
 
     var userPlaylistId: UUID? {
@@ -318,7 +432,11 @@ class VideoBrowserState: ObservableObject {
             result.sort { $0.duration > $1.duration }
         }
 
-        return result
+        // The grid's ForEach, the marquee frame map and list-mode selection
+        // all key off video id — duplicate ids there are SwiftUI undefined
+        // behavior (ghost cards, broken context menus), so never let them
+        // through even if VideoList regresses.
+        return result.unique(for: \.id)
     }
 
     var currentTimeRestriction: (active: Bool, restrictTo: String) {

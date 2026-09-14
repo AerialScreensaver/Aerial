@@ -1,0 +1,559 @@
+//
+//  TimeSettingsPanel.swift
+//  Aerial Companion
+//
+//  Created by Guillaume Louel on 11/03/2026.
+//
+
+import SwiftUI
+import CoreLocation
+import AppKit
+
+struct TimeSettingsPanel: View {
+    @State private var selectedMode: Int = PrefsTime.timeMode.rawValue
+    @State private var manualSunriseDate: Date = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter.date(from: PrefsTime.manualSunrise) ?? Date()
+    }()
+    @State private var manualSunsetDate: Date = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter.date(from: PrefsTime.manualSunset) ?? Date()
+    }()
+    @State private var darkModeOverride: Bool = PrefsTime.darkModeNightOverride
+    @State private var sunEventWindow: Int = PrefsTime.sunEventWindow
+    @State private var sunWindowPlacement: Int = PrefsTime.sunWindowPlacement.rawValue
+    @State private var solarMode: Int = PrefsTime.solarMode.rawValue
+    @State private var nightShiftStatus: String = ""
+    @State private var nightShiftAvailable: Bool = true
+    @State private var showLocationSuccess: Bool = false
+    @State private var showLocationError: Bool = false
+    @State private var locationResultText: String = ""
+    /// Cached Core Location authorization status. The Location Service
+    /// time mode needs CL auth to fetch coordinates; without it we
+    /// surface a warning + deep link into System Settings. Refreshed
+    /// on view appear and again when the app regains focus.
+    @State private var locationAuthStatus: CLAuthorizationStatus = LocationProvider.shared.authorizationStatus
+
+    // Computed sunrise/sunset for the time bar
+    @State private var barSunrise: Date? = nil
+    @State private var barSunset: Date? = nil
+
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        // POSIX locale so the stored pref is always a 24-hour "HH:mm"
+        // string — with the system 12-hour override active, an unlocaled
+        // formatter would write "5:12 PM"-style values the readers can't
+        // parse back.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
+    private let solarModeOptions: [(label: String, value: Int)] = [
+        ("Strict (0°)", SolarMode.strict.rawValue),
+        ("Official (0.83°)", SolarMode.official.rawValue),
+        ("Civil (6°)", SolarMode.civil.rawValue),
+        ("Nautical (12°)", SolarMode.nautical.rawValue),
+        ("Astronomical (18°)", SolarMode.astronomical.rawValue),
+    ]
+
+    private let sunEventWindowOptions: [(label: String, value: Int)] = [
+        ("1 hour", 3600),
+        ("1 hour 30 min", 5400),
+        ("2 hours", 7200),
+        ("2 hours 30 min", 9000),
+        ("3 hours", 10800),
+        ("3 hours 30 min", 12600),
+        ("4 hours", 14400),
+    ]
+
+    private var currentTimeMode: TimeMode {
+        TimeMode(rawValue: selectedMode) ?? .disabled
+    }
+
+    private var showTimeBar: Bool {
+        switch currentTimeMode {
+        case .nightShift, .manual, .locationService:
+            return barSunrise != nil && barSunset != nil
+        default:
+            return false
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Time")
+                    .font(.system(size: 24, weight: .bold))
+                    .padding(.bottom, 8)
+
+                // MARK: - Time Adaptation
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Location Services
+                        radioRow(mode: .locationService, icon: "mappin.and.ellipse", label: "Use Location Services")
+                        if currentTimeMode == .locationService {
+                            locationSubContent
+                        }
+
+                        Divider()
+
+                        // Night Shift
+                        radioRow(mode: .nightShift, icon: "house", label: "Use Night Shift", disabled: !nightShiftAvailable)
+                        if !nightShiftStatus.isEmpty {
+                            Text(nightShiftStatus)
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 36)
+                        }
+
+                        Divider()
+
+                        // Manual
+                        radioRow(mode: .manual, icon: "clock", label: "Manual")
+                        if currentTimeMode == .manual {
+                            manualSubContent
+                        }
+
+                        Divider()
+
+                        // Light/Dark Mode
+                        radioRow(mode: .lightDarkMode, icon: "gear", label: "Light/Dark Mode")
+
+                        Divider()
+
+                        // Disabled
+                        radioRow(mode: .disabled, icon: "xmark.circle", label: "Disabled")
+                    }
+                    .padding(12)
+                } label: {
+                    Label("Time Adaptation", systemImage: "clock").font(Font.title3.bold()).padding(4)
+                }
+
+                // MARK: - Options
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Toggle("Show only night videos in Dark Mode", isOn: $darkModeOverride)
+                            .font(.system(size: 14))
+                            .disabled(currentTimeMode == .lightDarkMode)
+                            .onChange(of: darkModeOverride) { newValue in
+                                PrefsTime.darkModeNightOverride = newValue
+                            }
+
+                        HStack {
+                            Text("Sunrise/sunset window")
+                                .font(.system(size: 14))
+                            Spacer()
+                            Picker("", selection: $sunEventWindow) {
+                                ForEach(sunEventWindowOptions, id: \.value) { option in
+                                    Text(option.label).tag(option.value)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 220, alignment: .trailing)
+                            .onChange(of: sunEventWindow) { newValue in
+                                PrefsTime.sunEventWindow = newValue
+                                refreshTimeBar()
+                            }
+                        }
+
+                        if [.locationService, .nightShift, .manual].contains(currentTimeMode) {
+                            HStack {
+                                Text("Window placement")
+                                    .font(.system(size: 14))
+                                Spacer()
+                                Picker("", selection: $sunWindowPlacement) {
+                                    Text("During daylight").tag(SunWindowPlacement.daylight.rawValue)
+                                    Text("Centered on sunrise & sunset").tag(SunWindowPlacement.centered.rawValue)
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 220, alignment: .trailing)
+                                .onChange(of: sunWindowPlacement) { newValue in
+                                    PrefsTime.sunWindowPlacement = SunWindowPlacement(rawValue: newValue) ?? .daylight
+                                    refreshTimeBar()
+                                }
+                            }
+                            .help("During daylight keeps the sunrise period right after sunrise and the sunset period right before sunset. Centered splits each period half before, half after the event.")
+                        }
+
+                        if currentTimeMode == .locationService {
+                            HStack {
+                                Text("Sunrise/sunset calculation")
+                                    .font(.system(size: 14))
+                                Spacer()
+                                Picker("", selection: $solarMode) {
+                                    ForEach(solarModeOptions, id: \.value) { option in
+                                        Text(option.label).tag(option.value)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 220, alignment: .trailing)
+                                .onChange(of: solarMode) { newValue in
+                                    PrefsTime.solarMode = SolarMode(rawValue: newValue) ?? .astronomical
+                                    refreshTimeBar()
+                                }
+                            }
+                            .help("Strict (0°) and Official (0.83°) switch at true sunrise/sunset. Civil (6°), Nautical (12°) and Astronomical (18°) switch at dawn/dusk, based on how far the Sun sits below the horizon.")
+                        }
+                    }
+                    .padding(12)
+                } label: {
+                    Label("Options", systemImage: "slider.horizontal.3").font(Font.title3.bold()).padding(4)
+                }
+
+                // MARK: - Time Bar
+                if showTimeBar, let sunrise = barSunrise, let sunset = barSunset {
+                    GroupBox {
+                        TimeBarView(sunrise: sunrise, sunset: sunset, windowSeconds: sunEventWindow,
+                                    placement: SunWindowPlacement(rawValue: sunWindowPlacement) ?? .daylight)
+                            .padding(12)
+                    } label: {
+                        Label("Day/Night Preview", systemImage: "sun.and.horizon").font(Font.title3.bold()).padding(4)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 24).padding(.bottom, 24).padding(.top, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.controlBackgroundColor))
+        .onAppear {
+            setupNightShift()
+            refreshTimeBar()
+        }
+        .onChange(of: selectedMode) { newValue in
+            PrefsTime.timeMode = TimeMode(rawValue: newValue) ?? .disabled
+            LocationProvider.shared.reevaluate()
+            refreshTimeBar()
+        }
+        .alert("Location Found", isPresented: $showLocationSuccess) {
+            Button("OK") {}
+        } message: {
+            Text(locationResultText)
+        }
+        .alert("Location Error", isPresented: $showLocationError) {
+            Button("OK") {}
+        } message: {
+            Text(locationResultText)
+        }
+    }
+
+    // MARK: - Sub-content Views
+
+    private var locationSubContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if locationGrantNeeded {
+                locationPermissionWarning
+            }
+            HStack(spacing: 12) {
+                if PrefsTime.cachedLatitude != 0 || PrefsTime.cachedLongitude != 0 {
+                    let lat = String(format: "%.2f", PrefsTime.cachedLatitude)
+                    let lon = String(format: "%.2f", PrefsTime.cachedLongitude)
+                    Text("Cached location: \(lat), \(lon)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                Button("Test Location") {
+                    testLocation()
+                }
+            }
+        }
+        .padding(.leading, 36)
+        .onAppear { refreshLocationAuth() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshLocationAuth()
+        }
+    }
+
+    private var locationGrantNeeded: Bool {
+        locationAuthStatus == .notDetermined
+            || locationAuthStatus == .denied
+            || locationAuthStatus == .restricted
+    }
+
+    /// Inline warning shown when "Use Location Services" is selected
+    /// but Core Location hasn't been authorized for the Companion.
+    /// Same affordance as `CacheSettingsPanel` and the Weather overlay
+    /// inspector — one-click deep link to Privacy & Security.
+    private var locationPermissionWarning: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Location permission needed")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Sunrise/sunset times for this mode are computed from your coordinates. Without Location access Aerial can't pick them up.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Open Location Settings…") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    private func refreshLocationAuth() {
+        locationAuthStatus = LocationProvider.shared.authorizationStatus
+    }
+
+    private var manualSubContent: some View {
+        HStack(spacing: 16) {
+            Text("Sunrise:")
+                .font(.system(size: 14))
+            DatePicker("", selection: $manualSunriseDate, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .frame(width: 80)
+                .onChange(of: manualSunriseDate) { newValue in
+                    PrefsTime.manualSunrise = timeFormatter.string(from: newValue)
+                    refreshTimeBar()
+                }
+
+            Text("Sunset:")
+                .font(.system(size: 14))
+            DatePicker("", selection: $manualSunsetDate, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .frame(width: 80)
+                .onChange(of: manualSunsetDate) { newValue in
+                    PrefsTime.manualSunset = timeFormatter.string(from: newValue)
+                    refreshTimeBar()
+                }
+        }
+        .padding(.leading, 36)
+    }
+
+    // MARK: - Radio Row
+
+    private func radioRow(mode: TimeMode, icon: String, label: String, disabled: Bool = false) -> some View {
+        Button {
+            if !disabled {
+                selectedMode = mode.rawValue
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: selectedMode == mode.rawValue ? "circle.inset.filled" : "circle")
+                    .foregroundColor(selectedMode == mode.rawValue ? .aerial : .secondary)
+                    .font(.system(size: 14))
+                Image(systemName: icon)
+                    .foregroundColor(disabled ? .secondary.opacity(0.5) : .secondary)
+                    .frame(width: 20)
+                Text(label)
+                    .font(.system(size: 14))
+                    .foregroundColor(disabled ? .secondary : .primary)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+    }
+
+    // MARK: - Actions
+
+    private func setupNightShift() {
+        let (isAvailable, sunriseDate, sunsetDate, errorMessage) = NightShift.getInformation()
+        if isAvailable, let sunriseDate, let sunsetDate {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "j:mm:ss", options: 0, locale: Locale.current)
+            nightShiftAvailable = true
+            nightShiftStatus = "Today's sunrise: " + dateFormatter.string(from: sunriseDate) + "  Today's sunset: " + dateFormatter.string(from: sunsetDate)
+        } else {
+            NightShift.isNightShiftDataCached = true
+            nightShiftAvailable = false
+            nightShiftStatus = errorMessage ?? "Night Shift is not available"
+        }
+    }
+
+    private func testLocation() {
+        Locations.sharedInstance.getCoordinates(failure: { error in
+            locationResultText = "Make sure you enabled location services on your Mac, and that Aerial is allowed to use your location."
+            showLocationError = true
+        }, success: { coordinates in
+            let lat = String(format: "%.2f", coordinates.latitude)
+            let lon = String(format: "%.2f", coordinates.longitude)
+            locationResultText = "Aerial can access your location (latitude: \(lat), longitude: \(lon)) and will use it to show you the correct videos."
+            showLocationSuccess = true
+            refreshTimeBar()
+        })
+    }
+
+    private func refreshTimeBar() {
+        switch currentTimeMode {
+        case .locationService:
+            _ = TimeManagement.sharedInstance.calculateFromCoordinates()
+            let (sunrise, sunset) = TimeManagement.sharedInstance.getSunriseSunset()
+            barSunrise = sunrise
+            barSunset = sunset
+        case .nightShift, .manual:
+            let (sunrise, sunset) = TimeManagement.sharedInstance.getSunriseSunset()
+            barSunrise = sunrise
+            barSunset = sunset
+        default:
+            barSunrise = nil
+            barSunset = nil
+        }
+    }
+}
+
+// MARK: - Time Bar View
+
+struct TimeBarView: View {
+    let sunrise: Date
+    let sunset: Date
+    let windowSeconds: Int
+    let placement: SunWindowPlacement
+
+    private let barHeight: CGFloat = 32
+
+    private var segments: [(fraction: CGFloat, color: Color)] {
+        let cal = Calendar.current
+        let sunriseMin = cal.component(.hour, from: sunrise) * 60 + cal.component(.minute, from: sunrise)
+        var sunsetMin = cal.component(.hour, from: sunset) * 60 + cal.component(.minute, from: sunset)
+        // A sunset past midnight (astronomical dusk at high latitudes in
+        // summer) lands "before" sunrise on the 0-24h axis — unwrap it
+        // onto the following day so the day band wraps around the bar
+        // edges instead of collapsing to zero.
+        if sunsetMin <= sunriseMin { sunsetMin += 1440 }
+        let windowMin = windowSeconds / 60
+
+        // The four slice boundaries in minute space — mirrors
+        // SunSliceBoundaries, clamped so short days stay ordered.
+        let riseStart: Int
+        let riseEnd: Int
+        let setStart: Int
+        let setEnd: Int
+        switch placement {
+        case .daylight:
+            riseStart = sunriseMin
+            riseEnd = min(sunriseMin + windowMin, sunsetMin)
+            setStart = max(sunsetMin - windowMin, riseEnd)
+            setEnd = sunsetMin
+        case .centered:
+            riseStart = sunriseMin - windowMin / 2
+            riseEnd = min(sunriseMin + windowMin / 2, sunsetMin)
+            setStart = max(sunsetMin - windowMin / 2, riseEnd)
+            setEnd = sunsetMin + windowMin / 2
+        }
+
+        // Classify one clock-minute the same way getTimeSlice() slices the
+        // day: unwrap it onto the sun-day axis anchored at the sunrise
+        // period's start (which can itself cross midnight when centered).
+        func color(atMinute m: Int) -> Color {
+            var t = m
+            while t < riseStart { t += 1440 }
+            if t >= setEnd { return .gray }           // night
+            if t < riseEnd { return .purple }         // sunrise window
+            if t >= setStart { return .orange }       // sunset window
+            return .teal                              // day
+        }
+
+        // Walk the 24h and merge consecutive same-colored minutes.
+        var runs: [(fraction: CGFloat, color: Color)] = []
+        var runStart = 0
+        var runColor = color(atMinute: 0)
+        for m in 1..<1440 where color(atMinute: m) != runColor {
+            runs.append((CGFloat(m - runStart) / 1440.0, runColor))
+            runStart = m
+            runColor = color(atMinute: m)
+        }
+        runs.append((CGFloat(1440 - runStart) / 1440.0, runColor))
+        return runs
+    }
+
+    private var timeLabels: [(time: String, fraction: CGFloat)] {
+        let cal = Calendar.current
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+
+        let b = SunSliceBoundaries(sunrise: sunrise, sunset: sunset,
+                                   window: TimeInterval(windowSeconds), placement: placement)
+
+        func fraction(of date: Date) -> CGFloat {
+            CGFloat(cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)) / 1440.0
+        }
+
+        return [
+            (formatter.string(from: b.sunriseStart), fraction(of: b.sunriseStart)),
+            (formatter.string(from: b.sunriseEnd), fraction(of: b.sunriseEnd)),
+            (formatter.string(from: b.sunsetStart), fraction(of: b.sunsetStart)),
+            (formatter.string(from: b.sunsetEnd), fraction(of: b.sunsetEnd)),
+        ]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Legend
+            HStack(spacing: 16) {
+                legendItem(color: .gray, label: "Night")
+                legendItem(color: .purple, label: "Sunrise")
+                legendItem(color: .teal, label: "Day")
+                legendItem(color: .orange, label: "Sunset")
+            }
+            .font(.system(size: 11))
+
+            // Bar
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                        if segment.fraction > 0 {
+                            RoundedRectangle(cornerRadius: 0)
+                                .fill(segment.color)
+                                .frame(width: max(segment.fraction * geo.size.width, 1))
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .frame(height: barHeight)
+
+            // Time labels
+            GeometryReader { geo in
+                let totalWidth = geo.size.width
+                ForEach(Array(timeLabels.enumerated()), id: \.offset) { _, item in
+                    Text(item.time)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .position(x: item.fraction * totalWidth, y: 8)
+                }
+            }
+            .frame(height: 20)
+        }
+    }
+
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(color)
+                .frame(width: 12, height: 12)
+            Text(label)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+// MARK: - Preview
+
+struct TimeSettingsPanel_Previews: PreviewProvider {
+    static var previews: some View {
+        TimeSettingsPanel()
+            .frame(width: 500, height: 800)
+    }
+}

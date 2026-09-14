@@ -10,6 +10,7 @@ import UniformTypeIdentifiers
 
 struct UserPlaylistContentView: View {
     @ObservedObject var state: VideoBrowserState
+    @StateObject private var downloadTracker = DownloadTracker.shared
     @State private var isDropTargeted = false
 
     private var playlistId: UUID? {
@@ -64,12 +65,64 @@ struct UserPlaylistContentView: View {
             title: manifest.name,
             description: "\(manifest.entries.count) video\(manifest.entries.count == 1 ? "" : "s")"
         ) {
+            PlayViewButton(state: state)
+            downloadAllButtonIfNeeded(manifest: manifest)
             if !manifest.entries.isEmpty {
                 Button(action: { shufflePlaylist() }) {
                     Label("Shuffle", systemImage: "shuffle")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+            }
+        }
+    }
+
+    // MARK: - Download All
+
+    /// Videos referenced by the playlist that are in the library but not
+    /// cached. Live feeds (streams) and entries whose video is no longer
+    /// in the library (e.g. imported from another Mac) aren't downloadable.
+    private func uncachedVideos(in manifest: UserPlaylistManifest) -> [AerialVideo] {
+        manifest.entries.compactMap { entry in
+            guard let video = VideoList.instance.videos.first(where: { $0.id == entry.videoId }),
+                  !video.isLive, !video.isAvailableOffline else { return nil }
+            return video
+        }
+    }
+
+    /// Playlist-scoped counterpart of VideoGridView's section-header
+    /// Download All: renders nothing when the playlist is fully cached.
+    @ViewBuilder
+    private func downloadAllButtonIfNeeded(manifest: UserPlaylistManifest) -> some View {
+        let uncached = uncachedVideos(in: manifest)
+        if !uncached.isEmpty {
+            let allQueued = uncached.allSatisfy {
+                if case .none = downloadTracker.state(for: $0.id) { return false }
+                return true
+            }
+
+            if allQueued {
+                HStack(spacing: 4) {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                    Text("Downloading \(uncached.count)...")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                Button(action: {
+                    for video in uncached {
+                        if case .none = downloadTracker.state(for: video.id) {
+                            downloadTracker.queueDownload(videoId: video.id)
+                        }
+                    }
+                }) {
+                    Label("Download All (\(uncached.count))", systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.aerial)
+                .help("Download all \(uncached.count) missing videos in this playlist")
             }
         }
     }
@@ -93,18 +146,26 @@ struct UserPlaylistContentView: View {
     }
 
     private func entryRow(entry: PlaylistEntry, index: Int) -> some View {
-        let isLive = VideoList.instance.videos.first(where: { $0.id == entry.videoId })?.isLive ?? false
+        let video = VideoList.instance.videos.first(where: { $0.id == entry.videoId })
+        let isLive = video?.isLive ?? false
         return HStack(spacing: 10) {
             Text("\(index + 1)")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(.secondary)
                 .frame(width: 24, alignment: .trailing)
 
-            // Thumbnail
-            thumbnailView(for: entry.videoId)
-                .frame(width: 80, height: 45)
-                .clipped()
-                .cornerRadius(4)
+            // Thumbnail (scrim + download badge when the video isn't cached)
+            ZStack {
+                thumbnailView(for: entry.videoId)
+                if let video, !video.isLive, !video.isAvailableOffline {
+                    Rectangle()
+                        .fill(Color.black.opacity(0.4))
+                    downloadBadge(for: video)
+                }
+            }
+            .frame(width: 80, height: 45)
+            .clipped()
+            .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.secondaryName)
@@ -160,13 +221,53 @@ struct UserPlaylistContentView: View {
             Text("No videos yet")
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
-            Text("Drag videos here or right-click videos in the browser to add them.")
+            Text("Browse a category from the menu on the left, then drag videos onto this playlist's name in the sidebar — or right-click any video and choose \"Add to Playlist\".")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 300)
+            Text("Tip: you can select multiple videos at a time by dragging a selection box around them, or with Shift-click.")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 300)
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Download Badge
+
+    /// Scaled-down version of VideoBrowserCardView's thumbnail badge,
+    /// sized for the 80×45 row thumbnail.
+    @ViewBuilder
+    private func downloadBadge(for video: AerialVideo) -> some View {
+        switch downloadTracker.state(for: video.id) {
+        case .downloading(let progress):
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                    .frame(width: 18, height: 18)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(Color.aerial, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .frame(width: 18, height: 18)
+                    .rotationEffect(.degrees(-90))
+            }
+        case .queued:
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 16))
+                .foregroundColor(.white.opacity(0.8))
+        case .none:
+            Button(action: { downloadTracker.queueDownload(videoId: video.id) }) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            .buttonStyle(.borderless)
+            .help("Download this video")
+            .accessibilityLabel("Download this video")
+        }
     }
 
     // MARK: - Thumbnail

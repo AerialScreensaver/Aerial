@@ -11,7 +11,17 @@ import AppKit
 extension NSScreen {
 
     public var screenUuid: String {
-        return CFUUIDCreateString(nil, CGDisplayCreateUUIDFromDisplayID(deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! CGDirectDisplayID).takeRetainedValue()) as String
+        // Defensive: never trap. `deviceDescription` may lack NSScreenNumber,
+        // and `CGDisplayCreateUUIDFromDisplayID` returns nil for a display
+        // that has just been disconnected (e.g. while SwiftUI re-renders
+        // mid-hotplug). Return "" in those cases — callers compare UUIDs, so
+        // an empty string simply fails to match rather than crashing.
+        guard let displayID = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID,
+              let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue(),
+              let string = CFUUIDCreateString(nil, uuid) else {
+            return ""
+        }
+        return string as String
     }
 
     static public func getScreenByUuid(_ screenUuid: String) -> NSScreen? {
