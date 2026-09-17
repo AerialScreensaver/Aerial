@@ -82,8 +82,12 @@ final class WallpaperAutoPauseCoordinator {
         // trigger auto-pause.
         let presenting = (monitor.status?.saverActive ?? false)
             || (monitor.status?.lockedActive ?? false)
+        // Screensaver-only installs have no desktop wallpaper to protect;
+        // a coverage flag would only leak into saver sessions.
+        let desktopActive = WallpaperControl.shared.desktopWallpaperActive
         let shouldWatch = Preferences.desktopAutoPause
             && monitor.isRunning
+            && desktopActive
             && !presenting
 
         if shouldWatch {
@@ -94,11 +98,12 @@ final class WallpaperAutoPauseCoordinator {
             // tick. Poking every status heartbeat would defeat the
             // paused-cadence stride.
             if !wasWatching { pokePoll() }
-        } else if !Preferences.desktopAutoPause {
-            // Feature off = no coverage pause, period. Clear EVERY flag
-            // in the control file, not just our in-memory set — flags
-            // set by a previous app session or on since-retired screen
-            // UUIDs aren't in `coveredScreens` and would stick forever.
+        } else if !Preferences.desktopAutoPause || !desktopActive {
+            // Feature off, or no desktop wallpaper to protect = no
+            // coverage pause, period. Clear EVERY flag in the control
+            // file, not just our in-memory set — flags set by a previous
+            // app session or on since-retired screen UUIDs aren't in
+            // `coveredScreens` and would stick forever.
             teardownWatches()
             coveredScreens.removeAll()
             WallpaperControl.shared.clearAllAutoPaused()

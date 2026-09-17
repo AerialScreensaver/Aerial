@@ -38,6 +38,7 @@ struct VideoBrowserCardView: View {
             // Thumbnail
             ZStack(alignment: .topTrailing) {
                 thumbnailView
+                    .rotatedByOverride(RotationOverride.degrees(for: video))
                     .frame(height: 108)
                     .clipped()
                     .cornerRadius(6)
@@ -291,6 +292,27 @@ struct VideoBrowserCardView: View {
                   systemImage: allHidden ? "eye" : "eye.slash")
         }
 
+        // Rotate (local files only): extra rotation on top of the clip's
+        // own metadata, for clips that play upside down or sideways.
+        let rotatable = videos.filter { $0.url.isFileURL }
+        if !rotatable.isEmpty {
+            Divider()
+            Menu(rotatable.count > 1 ? "Rotate \(rotatable.count) Videos" : "Rotate") {
+                ForEach(RotationOverride.options, id: \.degrees) { option in
+                    let isCurrent = rotatable.allSatisfy { RotationOverride.degrees(for: $0) == option.degrees }
+                    Button {
+                        RotationOverride.apply(option.degrees, to: rotatable)
+                        state.refreshTrigger += 1
+                    } label: {
+                        if isCurrent {
+                            Label(option.label, systemImage: "checkmark")
+                        } else {
+                            Text(option.label)
+                        }
+                    }
+                }
+            }
+        }
         // Delete from cache (downloaded, remote-source videos only —
         // local "My Videos" files are managed from the My Videos panel)
         let deletable = videos.filter { $0.isAvailableOffline && !$0.url.absoluteString.starts(with: "file") }

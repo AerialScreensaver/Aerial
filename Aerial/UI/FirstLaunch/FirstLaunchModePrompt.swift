@@ -313,6 +313,7 @@ struct UpgradePromptView: View {
                     advance()
                 }
             } catch {
+                errorLog("💽 legacy external cache conversion failed for \(folder): \(error.localizedDescription)")
                 conversionStep = nil
                 isConverting = false
                 conversionError = error.localizedDescription

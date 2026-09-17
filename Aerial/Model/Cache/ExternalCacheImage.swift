@@ -274,12 +274,24 @@ final class ExternalCacheImage {
             debugLog("💽 reusing existing image at \(bundle)")
             return bundle
         }
+        // A network share can only host a disk image when its server
+        // supports F_FULLFSYNC — the Time Machine requirement. Without it
+        // hdiutil refuses the bundle ("erreur 513"), and an image that
+        // does get there (copied in, or a single-file sparseimage) can
+        // never be unmounted cleanly and loses every write on the forced
+        // detach — verified 2026-09-15 on an SMB share. Refuse up front
+        // with a message that names the fix.
+        if let problem = Self.imageHostingProblem(folder: folder) {
+            errorLog("💽 cannot create an image in \(folder): \(problem)")
+            throw CommandError(message: problem)
+        }
         let sizeGB = Self.sparseCapGB(forFolder: folder)
-        debugLog("💽 creating \(bundle) (sparse cap \(sizeGB) GB)")
+        debugLog("💽 creating \(bundle) (sparse cap \(sizeGB) GB, volume: \(Self.volumeDescription(folder)))")
         let result = run(["create", "-type", "SPARSEBUNDLE", "-fs", "APFS",
                           "-volname", Self.volumeName, "-size", "\(sizeGB)g",
                           "-nospotlight", "-plist", bundle], timeout: 60)
         guard result.status == 0, Self.backingVolumeMounted(image: bundle) else {
+            errorLog("💽 create failed in \(folder) (hdiutil exit \(result.status)): \(result.stderr)")
             throw CommandError(message: "Could not create the disk image (hdiutil exit \(result.status)): \(result.stderr)")
         }
         return bundle
@@ -296,6 +308,53 @@ final class ExternalCacheImage {
         let total = (try? url.resourceValues(forKeys: [.volumeTotalCapacityKey]).volumeTotalCapacity) ?? 0
         let gb = total / 1_000_000_000
         return min(max(gb, 10), 2000)
+    }
+
+    // MARK: - Backing volume checks
+
+    /// True when `path` sits on a network volume (SMB, AFP, NFS…).
+    static func volumeIsNetwork(_ path: String) -> Bool {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        let local = (try? url.resourceValues(forKeys: [.volumeIsLocalKey]).volumeIsLocal) ?? true
+        return !local
+    }
+
+    /// The volume's format as macOS names it ("APFS", "SMB (Unknown)"…),
+    /// prefixed with "network" when it is one. Logs and diagnostics.
+    static func volumeDescription(_ path: String) -> String {
+        let format = volumeFormat(path)
+        return volumeIsNetwork(path) ? "network, \(format)" : format
+    }
+
+    private static func volumeFormat(_ path: String) -> String {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        return (try? url.resourceValues(forKeys: [.volumeLocalizedFormatDescriptionKey]).volumeLocalizedFormatDescription) ?? "unknown"
+    }
+
+    /// Whether files in `folder` accept F_FULLFSYNC — what the disk-image
+    /// driver needs to commit writes durably. Local volumes always do; an
+    /// SMB server only when the share advertises it (Samba
+    /// `fruit:time machine = yes`, "Time Machine" enabled on a NAS share).
+    /// Probes with a throwaway file, so `folder` must be writable; when
+    /// it isn't, answers true and leaves the verdict to hdiutil.
+    static func supportsFullSync(folder: String) -> Bool {
+        let probe = (folder as NSString).appendingPathComponent(".aerial-fullsync-probe")
+        let fd = open(probe, O_CREAT | O_RDWR | O_TRUNC, 0o600)
+        guard fd >= 0 else { return true }
+        defer {
+            close(fd)
+            unlink(probe)
+        }
+        var byte: UInt8 = 0x78
+        _ = write(fd, &byte, 1)
+        return fcntl(fd, F_FULLFSYNC, 0) == 0
+    }
+
+    /// Why `folder` cannot host the cache image, or nil when it can. Only
+    /// network volumes are probed; local drives go straight to hdiutil.
+    static func imageHostingProblem(folder: String) -> String? {
+        guard volumeIsNetwork(folder), !supportsFullSync(folder: folder) else { return nil }
+        return "This folder is on a network share (\(volumeFormat(folder))) whose server does not support full-sync writes, so macOS cannot keep a disk image on it — nothing written to the image would survive. Enable Time Machine support for this share on the NAS (that adds full sync), or choose a folder on a local drive."
     }
 
     /// Attach `image` at the mount point and return its device entry.
@@ -323,6 +382,7 @@ final class ExternalCacheImage {
             result = run(attachArguments(image: image, mountPoint: mp, fsck: true), timeout: 120)
         }
         guard result.status == 0, Self.isAttached() else {
+            errorLog("💽 attach of \(image) failed (hdiutil exit \(result.status)): \(result.stderr)")
             throw CommandError(message: "Could not attach the disk image (hdiutil exit \(result.status)): \(result.stderr)")
         }
         let device = Self.deviceEntry(fromAttachPlist: result.stdout, mountPoint: mp) ?? "?"

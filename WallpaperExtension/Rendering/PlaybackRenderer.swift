@@ -21,7 +21,9 @@ import CoreGraphics
 /// never exists — that guard is what silently substituted cached clips
 /// for live feeds after the AVPlayer engine was removed).
 enum PlaybackSelection {
-    case file(url: URL, resumeAt: Double?)
+    /// `rotation`: the Library's extra rotation for this video (degrees,
+    /// clockwise, 0 when none) — applied on top of the file's metadata.
+    case file(url: URL, resumeAt: Double?, rotation: Int)
     case live(url: URL, videoId: String, name: String, playSeconds: Double)
 }
 

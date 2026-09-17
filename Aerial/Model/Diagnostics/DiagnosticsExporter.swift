@@ -103,6 +103,13 @@ enum DiagnosticsExporter {
         copyIfPresent(from: base.appendingPathComponent("Playlists"),
                       to: configDir.appendingPathComponent("Playlists"))
 
+        // The wallpaper store: which slots hold Aerial and with what
+        // option values decides how WallpaperAgent presents us (the
+        // 2026-09-17 frozen-saver-start report hinged on it). Companion is
+        // unsandboxed, so a plain copy works.
+        copyIfPresent(from: WallpaperStoreSummary.storeURL,
+                      to: configDir.appendingPathComponent("wallpaper-store-Index.plist"))
+
         // Crash / resource reports (.ips/.diag) for our processes and
         // WallpaperAgent — the one artifact testers can never find on
         // their own, and the 2026-07 churn triage had to ask for by
@@ -240,6 +247,22 @@ enum DiagnosticsExporter {
             mode = "external disk image \(image), state \(ExternalCacheImage.shared.state)"
         }
         lines.append("Mode: \(mode)")
+        // The folder holding the image (or the 4.0 folder): a network
+        // share without full-sync support can never hold a working image.
+        let hostFolder: String?
+        switch Cache.locationKind {
+        case .externalImage(let image): hostFolder = (image as NSString).deletingLastPathComponent
+        case .legacyExternalFolder(let folder): hostFolder = folder
+        case .internalFolder, .customFolder: hostFolder = nil
+        }
+        if let hostFolder {
+            let mounted = FileManager.default.fileExists(atPath: hostFolder)
+            var volume = "Backing volume: \(mounted ? ExternalCacheImage.volumeDescription(hostFolder) : "not mounted")"
+            if mounted, ExternalCacheImage.volumeIsNetwork(hostFolder) {
+                volume += ", full sync: \(ExternalCacheImage.supportsFullSync(folder: hostFolder) ? "yes" : "NO — cannot host a disk image")"
+            }
+            lines.append(volume)
+        }
         lines.append("Path: \(cachePath)")
         lines.append("Available: \(Cache.isAvailable), exists: \(FileManager.default.fileExists(atPath: cachePath)),"
             + " readable by the extension: \(cachePath.hasPrefix("/Users/Shared/"))")
@@ -267,6 +290,8 @@ enum DiagnosticsExporter {
             lines.append("Running: no status file")
         }
         lines.append("Auto-restart sentinel: \(Preferences.agentRestartedForIdentity ?? "none")")
+        lines.append("Wallpaper mode: \(Preferences.wallpaperMode) (chosen=\(Preferences.wallpaperModeChosen)), desktop wallpaper active: \(WallpaperControl.shared.desktopWallpaperActive)")
+        lines.append(contentsOf: WallpaperStoreSummary.describeCurrentStore())
         lines.append("")
 
         lines.append("== Plugin registrations (pluginkit -m -v) ==")
@@ -305,5 +330,57 @@ enum DiagnosticsExporter {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd-HHmm"
         return "Aerial-Diagnostics-\(Helpers.version)-\(formatter.string(from: Date())).zip"
+    }
+}
+
+// MARK: - Wallpaper store summary
+
+/// Decoded view of the wallpaper store's active choices for the
+/// diagnostics bundle. `describe(plist:)` is pure so the parsing is
+/// unit-tested; a `placement` key on the Idle slot is what makes the
+/// screensaver acquire carry `placement=Crop`.
+enum WallpaperStoreSummary {
+    static let storeURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Application Support/com.apple.wallpaper/Store/Index.plist")
+
+    static func describeCurrentStore() -> [String] {
+        guard let data = try? Data(contentsOf: storeURL),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+            return ["Wallpaper store: unreadable (\(storeURL.path))"]
+        }
+        return describe(plist: plist)
+    }
+
+    /// One line per section/slot: section type, provider, option keys.
+    static func describe(plist: [String: Any]) -> [String] {
+        var lines: [String] = []
+        for name in ["AllSpacesAndDisplays", "SystemDefault"] {
+            guard let section = plist[name] as? [String: Any] else {
+                lines.append("Store \(name): missing")
+                continue
+            }
+            let type = section["Type"] as? String ?? "?"
+            for slot in ["Desktop", "Idle", "Linked"] {
+                guard let slotDict = section[slot] as? [String: Any],
+                      let content = slotDict["Content"] as? [String: Any] else { continue }
+                let provider = ((content["Choices"] as? [[String: Any]])?.first?["Provider"] as? String) ?? "?"
+                lines.append("Store \(name).\(slot) [\(type)]: \(provider) options=\(optionKeys(content["EncodedOptionValues"]))")
+            }
+        }
+        if let spaces = plist["Spaces"] as? [String: Any], !spaces.isEmpty {
+            lines.append("Store Spaces: \(spaces.count) per-space section(s)")
+        }
+        if let displays = plist["Displays"] as? [String: Any], !displays.isEmpty {
+            lines.append("Store Displays: \(displays.count) per-display section(s)")
+        }
+        return lines
+    }
+
+    /// Top-level keys of the `{"values": {…}}` option plist, or why not.
+    static func optionKeys(_ encoded: Any?) -> String {
+        guard let data = encoded as? Data else { return "none" }
+        guard let decoded = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let values = decoded["values"] as? [String: Any] else { return "undecodable" }
+        return values.isEmpty ? "empty" : "[" + values.keys.sorted().joined(separator: ", ") + "]"
     }
 }

@@ -42,6 +42,7 @@ struct VideoInspectorView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Large thumbnail
                 largeThumbnailView
+                    .rotatedByOverride(RotationOverride.degrees(for: video))
                     .frame(height: 158)
                     .clipped()
                     .cornerRadius(8)
@@ -93,6 +94,12 @@ struct VideoInspectorView: View {
 
                 // Toggles
                 togglesSection
+
+                // Rotation (local files only)
+                if video.url.isFileURL {
+                    Divider()
+                    RotationOverrideView(video: video, state: state)
+                }
 
                 Divider()
 

@@ -233,6 +233,7 @@
 		F0TST00E2F30000000000001 /* PresentingRingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TST00F2F30000000000001 /* PresentingRingTests.swift */; };
 		F0GST0022F30000000000001 /* GeometrySanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */; };
 		F0VOT0022F30000000000001 /* VideoOrientationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VOT0012F30000000000001 /* VideoOrientationTests.swift */; };
+		F0SDT0022F30000000000001 /* SaverDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SDT0012F30000000000001 /* SaverDetectionTests.swift */; };
 		F0CTP0022F30000000000001 /* CacheTrimPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */; };
 		F0AFD0122F30000000000001 /* AppleFeedDecodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */; };
 		F0AFD0142F30000000000001 /* PoiStringTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AFD0132F30000000000001 /* PoiStringTableTests.swift */; };
@@ -648,6 +649,7 @@
 		F0TST00F2F30000000000001 /* PresentingRingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentingRingTests.swift; sourceTree = "<group>"; };
 		F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometrySanitizerTests.swift; sourceTree = "<group>"; };
 		F0VOT0012F30000000000001 /* VideoOrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoOrientationTests.swift; sourceTree = "<group>"; };
+		F0SDT0012F30000000000001 /* SaverDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverDetectionTests.swift; sourceTree = "<group>"; };
 		F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheTrimPlannerTests.swift; sourceTree = "<group>"; };
 		F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFeedDecodeTests.swift; sourceTree = "<group>"; };
 		F0AFD0132F30000000000001 /* PoiStringTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoiStringTableTests.swift; sourceTree = "<group>"; };
@@ -1470,6 +1472,7 @@
 				F0PRT0072F30000000000001 /* ConcurrencyTests.swift */,
 				F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */,
 				F0VOT0012F30000000000001 /* VideoOrientationTests.swift */,
+				F0SDT0012F30000000000001 /* SaverDetectionTests.swift */,
 				F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */,
 				F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */,
 				F0AFD0132F30000000000001 /* PoiStringTableTests.swift */,
@@ -1934,6 +1937,7 @@
 				F0TST00E2F30000000000001 /* PresentingRingTests.swift in Sources */,
 				F0GST0022F30000000000001 /* GeometrySanitizerTests.swift in Sources */,
 				F0VOT0022F30000000000001 /* VideoOrientationTests.swift in Sources */,
+				F0SDT0022F30000000000001 /* SaverDetectionTests.swift in Sources */,
 				F0CTP0022F30000000000001 /* CacheTrimPlannerTests.swift in Sources */,
 				F0AFD0122F30000000000001 /* AppleFeedDecodeTests.swift in Sources */,
 				F0AFD0142F30000000000001 /* PoiStringTableTests.swift in Sources */,
@@ -2208,8 +2212,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.1.0beta17;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 4.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2239,8 +2243,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.1.0beta17;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 4.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2258,7 +2262,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 3L54M5L5KK;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) COMPANION_APP";
@@ -2275,7 +2279,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 3L54M5L5KK;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) COMPANION_APP";
@@ -2306,8 +2310,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.1.0beta17;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 4.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2340,8 +2344,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.1.0beta17;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 4.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

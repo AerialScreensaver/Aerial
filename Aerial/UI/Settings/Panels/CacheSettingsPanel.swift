@@ -401,6 +401,19 @@ struct CacheSettingsPanel: View {
         let currentPath = Cache.path
         let currentDisplayPath = Cache.isExternalImageMode ? externalImageFolder : currentPath
 
+        // A network share only holds the image when its server supports
+        // full-sync writes. Say so before any question about moving
+        // videos, and leave the configuration untouched.
+        if wantsImage, let problem = ExternalCacheImage.imageHostingProblem(folder: resolved) {
+            errorLog("💽 rejected cache folder \(resolved): \(problem)")
+            let alert = NSAlert()
+            alert.messageText = "This folder can't hold the cache image"
+            alert.informativeText = problem
+            alert.alertStyle = .warning
+            alert.runModal()
+            return
+        }
+
         // A 4.0-style external folder picked again — the obvious self-fix
         // when the wallpaper shows nothing — converts IN PLACE instead of
         // counting as "same location". The image is created inside the
@@ -434,7 +447,10 @@ struct CacheSettingsPanel: View {
             ? " Expansion packs stored at the cache location move along with the videos."
             : ""
         if wantsImage {
-            alert.informativeText = "Aerial will create a disk image (\(ExternalCacheImage.bundleName)) in this folder and keep the videos inside it, so the wallpaper extension can play them from this drive.\n\nWhat would you like to do with the videos in the current cache?\(packsNote)"
+            let networkNote = ExternalCacheImage.volumeIsNetwork(resolved)
+                ? " This folder is on a network share: the videos stream over the network, and the desktop only has them while the share is mounted."
+                : ""
+            alert.informativeText = "Aerial will create a disk image (\(ExternalCacheImage.bundleName)) in this folder and keep the videos inside it, so the wallpaper extension can play them from this drive.\(networkNote)\n\nWhat would you like to do with the videos in the current cache?\(packsNote)"
         } else {
             alert.informativeText = "What would you like to do with videos in the current cache folder?\(packsNote)"
         }
@@ -815,6 +831,7 @@ struct CacheSettingsPanel: View {
                 }
             } catch {
                 let message = error.localizedDescription
+                errorLog("💽 external cache setup failed for \(folder): \(message)")
                 await MainActor.run {
                     externalError = message
                     externalStepText = ""

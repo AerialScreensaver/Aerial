@@ -121,4 +121,21 @@ struct GeometrySanitizerTests {
         _ = CGRect(x: CGFloat.nan, y: 0, width: 1, height: 1).sanitized(ctx())
         #expect(evaluated)
     }
+
+    // The Companion's saver window dump converted `kCGWindowBounds`
+    // doubles with a bare `Int(_:)`; the window server reports NaN / ±inf
+    // / 1.8e308 bounds for lock-screen transition windows and the second
+    // saver start of 2026-09-15 trapped on one (user crash bundle).
+    @Test("window dump bounds never trap and keep bogus values readable")
+    func windowDumpBoundsAreTrapFree() {
+        #expect(WallpaperWindowDump.describeBounds(["X": 0, "Y": 1329, "Width": 0, "Height": 0]) == "(0,1329 0x0)")
+        #expect(WallpaperWindowDump.describeBounds(["X": 578.6, "Y": -459.4, "Width": 900, "Height": 450]) == "(578,-459 900x450)")
+        #expect(WallpaperWindowDump.describeBounds([:]) == "(0,0 0x0)")
+        let bogus = WallpaperWindowDump.describeBounds([
+            "X": .nan, "Y": .infinity, "Width": -.infinity, "Height": .greatestFiniteMagnitude,
+        ])
+        #expect(bogus == "(nan,inf -infx1.7976931348623157e+308)")
+        // Out of Int range but finite: printed raw, not truncated to 0.
+        #expect(WallpaperWindowDump.describeBounds(["X": 1e12, "Y": 0, "Width": 1, "Height": 1]) == "(1000000000000.0,0 1x1)")
+    }
 }

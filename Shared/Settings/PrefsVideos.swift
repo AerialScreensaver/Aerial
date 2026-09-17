@@ -178,6 +178,14 @@ struct PrefsVideos {
         set { manager.setValue(newValue, forKeyPath: \.videos.videoFormatOverride) }
     }
 
+    // Per-video extra rotation (degrees clockwise: 90/180/270) on top of
+    // the file's own orientation metadata. Applied by the wallpaper file
+    // engine and by `AVAsset.isVertical(extraRotation:)`; missing = 0.
+    static var rotationOverride: [String: Int] {
+        get { manager.getValue(forKeyPath: \.videos.rotationOverride) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.rotationOverride) }
+    }
+
     static var lastVideoCheck: String {
         get { manager.getValue(forKeyPath: \.videos.lastVideoCheck) }
         set { manager.setValue(newValue, forKeyPath: \.videos.lastVideoCheck) }

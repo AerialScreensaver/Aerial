@@ -160,6 +160,15 @@ struct WallpaperControlState: Codable, Equatable {
     /// Audio volume, 0...1. Applied live to the owning renderer.
     var audioVolume: Double = 0.5
 
+    /// True while Aerial is the system desktop wallpaper (Companion reads
+    /// the wallpaper store). False = screensaver-only: the extension is
+    /// hosted only for the saver, so the desktop-side pause flags
+    /// (`paused`, per-screen `autoPaused`) have nothing to act on and are
+    /// ignored, and every non-preview `idle` acquire IS the screensaver.
+    /// Defaults to true so a control file from an older Companion keeps
+    /// the historical behaviour until the new one writes the field.
+    var desktopWallpaperActive: Bool = true
+
     static let fileURL: URL = URL(
         fileURLWithPath: "/Users/Shared/Aerial/wallpaper-control.json"
     )
@@ -206,5 +215,50 @@ extension WallpaperControlState {
         screenLayoutGeneration = try c.decodeIfPresent(Int.self, forKey: .screenLayoutGeneration) ?? 0
         audioEnabled = try c.decodeIfPresent(Bool.self, forKey: .audioEnabled) ?? false
         audioVolume = try c.decodeIfPresent(Double.self, forKey: .audioVolume) ?? 0.5
+        desktopWallpaperActive = try c.decodeIfPresent(Bool.self, forKey: .desktopWallpaperActive) ?? true
+    }
+}
+
+extension WallpaperControlState {
+    /// The user/coverage pause inputs a renderer should honour. Both are
+    /// desktop concerns: when Aerial isn't the desktop wallpaper there is
+    /// nothing for them to act on, and letting them through seeded a
+    /// screensaver session paused on its first frame (2026-09-17). The
+    /// broadcast renderer (cloned/spanned) is covered while ANY screen is.
+    func effectivePauseInputs(rendererKey: String, isBroadcast: Bool) -> (user: Bool, coverage: Bool) {
+        guard desktopWallpaperActive else { return (false, false) }
+        let covered = isBroadcast
+            ? screens.values.contains { $0.autoPaused }
+            : (screens[rendererKey]?.autoPaused ?? false)
+        return (paused, covered)
+    }
+}
+
+/// How the extension classifies a fresh acquire. Pure so it can be
+/// unit-tested against the profiles seen in the field:
+///  - the screensaver arrives as `presentationMode == "idle"`; macOS only
+///    presents idle while a saver is up, so `saverRunning` is true for
+///    every non-preview idle acquire (drives the process-wide saver flag);
+///  - `isSaverRole` (subscriber accounting, overlay layout, status) is the
+///    stricter call: when Aerial is not the desktop wallpaper every idle
+///    acquire is the saver window; when it is, an idle acquire may also be
+///    the desktop window re-acquired mid-saver, and only the absence of a
+///    picker placement tells them apart (the desktop choice carries
+///    `placement=Crop/Fill`; a screensaver choice usually doesn't, but a
+///    System Settings–written store can put one there too — the 2026-09-17
+///    frozen-first-start report);
+///  - System Settings previews (`preview=true`) are never the saver.
+enum SaverAcquireRule {
+    struct Verdict: Equatable {
+        let isSaverRole: Bool
+        let saverRunning: Bool
+    }
+
+    static func classify(presentationMode: String, isPreview: Bool, placement: String?,
+                         desktopWallpaperActive: Bool) -> Verdict {
+        guard presentationMode == "idle", !isPreview else {
+            return Verdict(isSaverRole: false, saverRunning: false)
+        }
+        return Verdict(isSaverRole: placement == nil || !desktopWallpaperActive, saverRunning: true)
     }
 }

@@ -228,7 +228,8 @@ struct SourceInfo {
         "85CE77BF-3413-4A7B-9B0F-732E96229A73": "sunrise", // San Francisco - Embarcadero, Market Street
         "b5-3": "sunset", // San Francisco - Embarcadero, Market Street
         "29BDF297-EB43-403A-8719-A78DA11A2948": "sunrise", // San Francisco - Fisherman’s Wharf
-        "640DFB00-FBB9-45DA-9444-9F663859F4BC": "sunset", // New York - Lower Manhattan
+        "840FE8E4-D952-4680-B1A7-AC5BACA2C1F8": "sunset", // New York Midtown
+        "640DFB00-FBB9-45DA-9444-9F663859F4BC": "sunrise", // New York - Lower Manhattan
         "7F4C26C2-67C2-4C3A-8F07-8A7BF6148C97": "sunset", // London - River Thames at Dusk
         "F604AF56-EA77-4960-AEF7-82533CC1A8B3": "sunset", // London - River Thames near Sunset
         "44166C39-8566-4ECA-BD16-43159429B52F": "night", // New York - Seventh Avenue

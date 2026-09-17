@@ -63,3 +63,77 @@ struct VideoOrientationTests {
         #expect(VideoOrientationMath.isVertical(naturalSize: CGSize(width: CGFloat.nan, height: 1080), preferredTransform: .identity) == false)
     }
 }
+
+@Suite("Video display geometry")
+struct VideoDisplayGeometryTests {
+
+    private let landscape = CGSize(width: 1920, height: 1080)
+    private let djiCoded = CGSize(width: 3384, height: 6016)
+    /// What an iPhone writes for a landscape clip held the other way.
+    private let halfTurn = CGAffineTransform(a: -1, b: 0, c: 0, d: -1, tx: 1920, ty: 1080)
+    /// What an iPhone writes for a portrait clip (coded landscape).
+    private let quarterTurn = CGAffineTransform(a: 0, b: 1, c: -1, d: 0, tx: 1080, ty: 0)
+
+    @Test("identity stays on the raw track path")
+    func identity() {
+        let g = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: .identity)
+        #expect(g.isIdentity)
+        #expect(g.renderSize == landscape)
+        #expect(g.transform == .identity)
+    }
+
+    @Test("180° iPhone clip: same canvas, opposite corners swap")
+    func halfTurnClip() {
+        let g = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: halfTurn)
+        #expect(!g.isIdentity)
+        #expect(g.renderSize == landscape)
+        #expect(CGPoint.zero.applying(g.transform) == CGPoint(x: 1920, y: 1080))
+        #expect(CGPoint(x: 1920, y: 1080).applying(g.transform) == .zero)
+    }
+
+    @Test("90° coded-landscape phone clip renders portrait, left edge on top")
+    func quarterTurnClip() {
+        let g = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: quarterTurn)
+        #expect(g.renderSize == CGSize(width: 1080, height: 1920))
+        #expect(CGPoint(x: 0, y: 1080).applying(g.transform) == .zero)
+        #expect(CGPoint.zero.applying(g.transform) == CGPoint(x: 1080, y: 0))
+    }
+
+    @Test("DJI coded-portrait + 90° renders landscape")
+    func droneClip() {
+        let g = VideoOrientationMath.displayGeometry(naturalSize: djiCoded, preferredTransform: quarterTurn)
+        #expect(g.renderSize == CGSize(width: 6016, height: 3384))
+        #expect(!g.isIdentity)
+    }
+
+    @Test("extra rotation composes with the file's matrix")
+    func extraRotation() {
+        let viaMetadata = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: halfTurn)
+        let viaOverride = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: .identity, extraRotation: 180)
+        #expect(viaOverride == viaMetadata)
+        let cancelled = VideoOrientationMath.displayGeometry(naturalSize: landscape, preferredTransform: quarterTurn, extraRotation: 270)
+        #expect(cancelled.isIdentity)
+        #expect(cancelled.renderSize == landscape)
+        #expect(VideoOrientationMath.rotation(degrees: -90) == VideoOrientationMath.rotation(degrees: 270))
+        #expect(VideoOrientationMath.rotation(degrees: 360) == .identity)
+        // Same matrix as the trig version, minus its rounding noise.
+        let trig = CGAffineTransform(rotationAngle: .pi / 2)
+        let exact = VideoOrientationMath.rotation(degrees: 90)
+        #expect(abs(exact.a - trig.a) < 1e-9 && abs(exact.b - trig.b) < 1e-9
+            && abs(exact.c - trig.c) < 1e-9 && abs(exact.d - trig.d) < 1e-9)
+    }
+
+    @Test("extra 90° flips the portrait verdict, 180° never does")
+    func extraRotationAndVertical() {
+        #expect(VideoOrientationMath.isVertical(naturalSize: landscape, preferredTransform: .identity, extraRotation: 90) == true)
+        #expect(VideoOrientationMath.isVertical(naturalSize: landscape, preferredTransform: quarterTurn, extraRotation: 270) == false)
+        #expect(VideoOrientationMath.isVertical(naturalSize: landscape, preferredTransform: .identity, extraRotation: 180) == false)
+    }
+
+    @Test("degenerate sizes give a finite canvas, never NaN")
+    func degenerate() {
+        let g = VideoOrientationMath.displayGeometry(naturalSize: CGSize(width: CGFloat.nan, height: 1080), preferredTransform: quarterTurn)
+        #expect(g.renderSize.width.isFinite && g.renderSize.height.isFinite)
+        #expect(g.transform.tx.isFinite && g.transform.ty.isFinite)
+    }
+}

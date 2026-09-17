@@ -57,6 +57,22 @@ final class WallpaperControlListener: @unchecked Sendable {
         return lastApplied.paused
     }
 
+    /// Whether Aerial is the system desktop wallpaper (Companion reads
+    /// the wallpaper store). Screensaver-only installs report false —
+    /// every idle acquire is then the saver, and the desktop-side pause
+    /// flags are ignored.
+    var currentDesktopWallpaperActive: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.desktopWallpaperActive
+    }
+
+    /// The user/coverage pause inputs a renderer should honour right now
+    /// (`WallpaperControlState.effectivePauseInputs`), one lock take.
+    func effectivePauseInputs(rendererKey: String) -> (user: Bool, coverage: Bool) {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.effectivePauseInputs(rendererKey: rendererKey, isBroadcast: rendererKey == broadcastRendererKey)
+    }
+
     /// Battery-pause flag Companion wants. Cold-start acquires seed the
     /// renderer's `.battery` reason from this.
     var currentBatteryPaused: Bool {
@@ -220,13 +236,13 @@ final class WallpaperControlListener: @unchecked Sendable {
         forEachRenderer { shared in
             shared.renderer.setNominalRate(state.speed)
             shared.renderer.setTransitionConfig(config)
-            let covered = shared.rendererKey == broadcastRendererKey
-                ? state.screens.values.contains { $0.autoPaused }
-                : (state.screens[shared.rendererKey]?.autoPaused ?? false)
+            let inputs = state.effectivePauseInputs(
+                rendererKey: shared.rendererKey, isBroadcast: shared.rendererKey == broadcastRendererKey
+            )
             shared.renderer.syncCompanionPauseReasons(
-                user: state.paused,
+                user: inputs.user,
                 battery: state.batteryPaused,
-                coverage: covered,
+                coverage: inputs.coverage,
                 thermal: state.thermalPaused,
                 camera: state.cameraPaused
             )
@@ -260,12 +276,29 @@ final class WallpaperControlListener: @unchecked Sendable {
         //     inhibition defers and re-lands reasons automatically. The
         //     old ad-hoc gates (saver-skip, covered-resume-hold) fell
         //     out of exactly those rules and are gone.
-        if next.paused != prev.paused {
-            debugLog("[WallpaperControl] user pause \(prev.paused) → \(next.paused)")
+        // 1b-pre. Desktop wallpaper active ↔ screensaver-only. User and
+        //         coverage flags only apply to an ACTIVE desktop wallpaper
+        //         (a saver-only session must never inherit a stale pause
+        //         — the 2026-09-17 frozen-first-start report); on a flip,
+        //         drop or re-land both reasons everywhere.
+        if next.desktopWallpaperActive != prev.desktopWallpaperActive {
+            debugLog("[WallpaperControl] desktop wallpaper active \(prev.desktopWallpaperActive) → \(next.desktopWallpaperActive)\(next.desktopWallpaperActive ? "" : " — user/coverage pause flags ignored")")
             forEachRenderer { shared in
-                next.paused
-                    ? shared.renderer.pause(reason: .user)
-                    : shared.renderer.resume(reason: .user)
+                let inputs = next.effectivePauseInputs(
+                    rendererKey: shared.rendererKey, isBroadcast: shared.rendererKey == broadcastRendererKey
+                )
+                inputs.user ? shared.renderer.pause(reason: .user) : shared.renderer.resume(reason: .user)
+                inputs.coverage ? shared.renderer.pause(reason: .coverage) : shared.renderer.resume(reason: .coverage)
+            }
+        }
+        if next.paused != prev.paused {
+            debugLog("[WallpaperControl] user pause \(prev.paused) → \(next.paused)\(next.desktopWallpaperActive ? "" : " (desktop wallpaper inactive — ignored)")")
+            if next.desktopWallpaperActive {
+                forEachRenderer { shared in
+                    next.paused
+                        ? shared.renderer.pause(reason: .user)
+                        : shared.renderer.resume(reason: .user)
+                }
             }
         }
         if next.batteryPaused != prev.batteryPaused {
@@ -450,9 +483,9 @@ final class WallpaperControlListener: @unchecked Sendable {
                     // coverage reason is "ANY screen covered"; per-screen
                     // renderers map 1:1. All other arbitration (user
                     // pause, saver deferral) lives in the reason set.
-                    let covered = shared.rendererKey == broadcastRendererKey
+                    let covered = next.desktopWallpaperActive && (shared.rendererKey == broadcastRendererKey
                         ? next.screens.values.contains { $0.autoPaused }
-                        : nextS.autoPaused
+                        : nextS.autoPaused)
                     covered
                         ? shared.renderer.pause(reason: .coverage)
                         : shared.renderer.resume(reason: .coverage)

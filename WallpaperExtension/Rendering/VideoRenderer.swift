@@ -208,9 +208,19 @@ final class VideoRenderer: @unchecked Sendable {
     }
 
     private var currentReader: AVAssetReader?
-    private var currentOutput: AVAssetReaderTrackOutput?
+    private var currentOutput: AVAssetReaderOutput?
     private var nextReader: AVAssetReader?
-    private var nextOutput: AVAssetReaderTrackOutput?
+    private var nextOutput: AVAssetReaderOutput?
+    /// Track riding alongside `nextReader`/`nextOutput`, adopted at the
+    /// swap — the output no longer exposes it now that it may be a
+    /// composition output.
+    private var nextTrack: AVAssetTrack?
+    /// How the current track must be rotated to appear upright: its
+    /// `preferredTransform` plus the user's extra rotation. Decides
+    /// between the raw track output and a composition output. Queue-
+    /// confined after init; `nextPresentation` rides with the next reader.
+    private var presentation: TrackPresentation
+    private var nextPresentation: TrackPresentation?
 
     // Gapless looping state. Same semantics as Phosphene: ptsOffset
     // accumulates across loops so DTS/PTS are monotonically increasing;
@@ -258,6 +268,117 @@ final class VideoRenderer: @unchecked Sendable {
     nonisolated(unsafe) private static let decodedOutputSettings: [String: Any] = [
         kCVPixelBufferIOSurfacePropertiesKey as String: [:] as [String: Any],
     ]
+
+    // MARK: - Track orientation
+
+    /// What the reader output needs to present a track upright: the
+    /// geometry from `VideoOrientationMath` (the file's
+    /// `preferredTransform` plus the user's extra rotation) and the
+    /// track's colour tags, which the composition carries so HDR clips
+    /// keep their transfer function. Loaded once per asset, off the
+    /// queue, together with the track.
+    struct TrackPresentation {
+        let geometry: VideoOrientationMath.DisplayGeometry
+        let preferredTransform: CGAffineTransform
+        let extraRotation: Int
+        /// End of the track, for the composition instruction's range.
+        let trackEnd: CMTime
+        let colorPrimaries: String?
+        let colorTransferFunction: String?
+        let colorYCbCrMatrix: String?
+
+        var needsComposition: Bool { !geometry.isIdentity }
+
+        var summary: String {
+            let t = preferredTransform
+            let matrix = String(format: "[%.0f %.0f %.0f %.0f]", t.a, t.b, t.c, t.d)
+            return needsComposition
+                ? "composition \(Int(geometry.renderSize.width))×\(Int(geometry.renderSize.height)) (preferredTransform=\(matrix) extra=\(extraRotation)°)"
+                : "identity, track output (preferredTransform=\(matrix) extra=\(extraRotation)°)"
+        }
+    }
+
+    /// Load the orientation inputs for `track` (async property loads —
+    /// never on the render queue) and fold in `extraRotation`.
+    static func loadPresentation(track: AVAssetTrack, extraRotation: Int) async -> TrackPresentation {
+        let transform = (try? await track.load(.preferredTransform)) ?? .identity
+        let size = (try? await track.load(.naturalSize)) ?? .zero
+        let descriptions = (try? await track.load(.formatDescriptions)) ?? []
+        let timeRange = (try? await track.load(.timeRange)) ?? .invalid
+        func tag(_ key: CFString) -> String? {
+            guard let description = descriptions.first else { return nil }
+            return CMFormatDescriptionGetExtension(description, extensionKey: key) as? String
+        }
+        return TrackPresentation(
+            geometry: VideoOrientationMath.displayGeometry(naturalSize: size, preferredTransform: transform,
+                                                          extraRotation: extraRotation),
+            preferredTransform: transform,
+            extraRotation: extraRotation,
+            trackEnd: timeRange.isValid ? timeRange.end : .invalid,
+            colorPrimaries: tag(kCMFormatDescriptionExtension_ColorPrimaries),
+            colorTransferFunction: tag(kCMFormatDescriptionExtension_TransferFunction),
+            colorYCbCrMatrix: tag(kCMFormatDescriptionExtension_YCbCrMatrix)
+        )
+    }
+
+    /// The reader output for `track`: the raw track output for clips that
+    /// need no rotation (every Apple video — byte-for-byte the historical
+    /// path), a composition output that applies the rotation otherwise,
+    /// so every consumer downstream (fan-out, spanned slicing, snapshots,
+    /// the contents-swap presenter) sees upright frames.
+    private static func makeOutput(track: AVAssetTrack, presentation: TrackPresentation,
+                                   frameRate: Float) -> AVAssetReaderOutput {
+        let output: AVAssetReaderOutput
+        if presentation.needsComposition {
+            let composed = AVAssetReaderVideoCompositionOutput(videoTracks: [track], videoSettings: decodedOutputSettings)
+            composed.videoComposition = makeComposition(track: track, presentation: presentation, frameRate: frameRate)
+            output = composed
+        } else {
+            output = AVAssetReaderTrackOutput(track: track, outputSettings: decodedOutputSettings)
+        }
+        output.alwaysCopiesSampleData = false
+        return output
+    }
+
+    /// One instruction over the whole track applying the display
+    /// transform. Frame timing follows the source track (VFR clips keep
+    /// their PTS, which the loop math and the catch-up watermark rely
+    /// on); `frameDuration` is still required and set from the nominal
+    /// rate. Colour tags are copied when the track carries all three so
+    /// HDR sources are composed in their own colour space.
+    private static func makeComposition(track: AVAssetTrack, presentation: TrackPresentation,
+                                        frameRate: Float) -> AVVideoComposition {
+        var layer = AVVideoCompositionLayerInstruction.Configuration(assetTrack: track)
+        layer.setTransform(presentation.geometry.transform, at: .zero)
+        let end = presentation.trackEnd
+        var instruction = AVVideoCompositionInstruction.Configuration()
+        instruction.timeRange = CMTimeRange(start: .zero, end: end.isNumeric && end > .zero ? end : .positiveInfinity)
+        instruction.layerInstructions = [AVVideoCompositionLayerInstruction(configuration: layer)]
+        let fps = frameRate > 1 ? frameRate : 30
+        var configuration = AVVideoComposition.Configuration()
+        configuration.renderSize = presentation.geometry.renderSize
+        configuration.frameDuration = CMTime(value: 1, timescale: CMTimeScale(fps.rounded()))
+        configuration.sourceTrackIDForFrameTiming = track.trackID
+        configuration.instructions = [AVVideoCompositionInstruction(configuration: instruction)]
+        if let primaries = presentation.colorPrimaries,
+           let transfer = presentation.colorTransferFunction,
+           let matrix = presentation.colorYCbCrMatrix {
+            configuration.colorPrimaries = primaries
+            configuration.colorTransferFunction = transfer
+            configuration.colorYCbCrMatrix = matrix
+        }
+        return AVVideoComposition(configuration: configuration)
+    }
+
+    /// EXIF orientation that rotates a picture clockwise by `degrees`.
+    private static func exifOrientation(clockwiseDegrees degrees: Int) -> CGImagePropertyOrientation {
+        switch ((degrees % 360) + 360) % 360 {
+        case 90: return .right
+        case 180: return .down
+        case 270: return .left
+        default: return .up
+        }
+    }
 
     /// Sample-buffer display layers receiving the broadcast. Every
     /// subscriber registers its own `requestMediaDataWhenReady` feed
@@ -402,6 +523,12 @@ final class VideoRenderer: @unchecked Sendable {
     /// Loop-boundary hook for forward direction. The handler installs
     /// this with `ExtensionVideoLoader.getNextVideo(...)`.
     var nextVideoProvider: (() -> URL?)?
+    /// Extra rotation (degrees, clockwise) the user set for the video at
+    /// a URL — the Library's per-video override. Consulted whenever a
+    /// reader is built for a URL the hooks handed us (next / previous /
+    /// jump); the first video's value arrives through `create`. nil or 0
+    /// means "the file's own metadata only".
+    var rotationOverrideProvider: ((URL) -> Int)?
 
     /// Mirror for backward direction, called by `regressNow()`.
     var previousVideoProvider: (() -> URL?)?
@@ -420,7 +547,7 @@ final class VideoRenderer: @unchecked Sendable {
     /// at least one subscriber via `addSubscriber(_:)` before — or
     /// shortly after — calling `start()`; until then the timebase
     /// stays at rate 0 and no feeding happens.
-    static func create(videoURL: URL, startAt: Double? = nil) async throws -> VideoRenderer {
+    static func create(videoURL: URL, startAt: Double? = nil, extraRotation: Int = 0) async throws -> VideoRenderer {
         let asset = AVURLAsset(url: videoURL)
         let tracks = try await asset.loadTracks(withMediaType: .video)
         guard let track = tracks.first else {
@@ -429,7 +556,10 @@ final class VideoRenderer: @unchecked Sendable {
             ])
         }
         let fps = (try? await track.load(.nominalFrameRate)) ?? 30
-        return try VideoRenderer(asset: asset, videoTrack: track, frameRate: fps, startAt: startAt)
+        let presentation = await loadPresentation(track: track, extraRotation: extraRotation)
+        debugLog("🔄 [Renderer] \(videoURL.lastPathComponent): \(presentation.summary)")
+        return try VideoRenderer(asset: asset, videoTrack: track, frameRate: fps, startAt: startAt,
+                                 presentation: presentation)
     }
 
     /// Resume offset for the FIRST video only (cold-start resume from
@@ -444,9 +574,11 @@ final class VideoRenderer: @unchecked Sendable {
     /// consumed by the next recreate, cleared on video switch and stop.
     private var deepPauseResumePosition: CMTime = .zero
 
-    private init(asset: AVURLAsset, videoTrack: AVAssetTrack, frameRate: Float, startAt: Double? = nil) throws {
+    private init(asset: AVURLAsset, videoTrack: AVAssetTrack, frameRate: Float, startAt: Double? = nil,
+                 presentation: TrackPresentation) throws {
         self.asset = asset
         self.videoTrack = videoTrack
+        self.presentation = presentation
         self.currentFrameRate = frameRate
         self.startOffset = startAt.map { CMTime(sanitizedSeconds: $0, "start offset") } ?? .zero
 
@@ -623,8 +755,7 @@ final class VideoRenderer: @unchecked Sendable {
         if startOffset > .zero {
             reader.timeRange = CMTimeRange(start: startOffset, duration: .positiveInfinity)
         }
-        let output = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: Self.decodedOutputSettings)
-        output.alwaysCopiesSampleData = false
+        let output = Self.makeOutput(track: videoTrack, presentation: presentation, frameRate: currentFrameRate)
         reader.add(output)
         reader.startReading()
 
@@ -1157,6 +1288,7 @@ final class VideoRenderer: @unchecked Sendable {
         nextReader = nil
         nextOutput = nil
         let newAsset = AVURLAsset(url: url)
+        let rotationFor = rotationOverrideProvider
         Task.detached { @Sendable [weak self] in
             guard let self else { return }
             guard let track = try? await newAsset.loadTracks(withMediaType: .video).first else {
@@ -1165,9 +1297,10 @@ final class VideoRenderer: @unchecked Sendable {
             }
             nonisolated(unsafe) let loadedTrack = track
             let fps = (try? await loadedTrack.load(.nominalFrameRate)) ?? 30
+            let nextPres = await Self.loadPresentation(track: loadedTrack, extraRotation: rotationFor?(url) ?? 0)
             queue.async { [weak self] in
                 guard let self, isRunning else { return }
-                installNextReader(asset: newAsset, track: loadedTrack, frameRate: fps)
+                installNextReader(asset: newAsset, track: loadedTrack, frameRate: fps, presentation: nextPres)
                 transition.performImmediateTransition(subscribers: transitionTargets()) { [weak self] in
                     guard let self, isRunning else { return }
                     swapToNextReader(flushDisplayBuffer: true)
@@ -1406,8 +1539,7 @@ final class VideoRenderer: @unchecked Sendable {
             reader.timeRange = CMTimeRange(start: resumeAt, duration: .positiveInfinity)
             debugLog("  [Renderer] recreate resumes at \(String(format: "%.1f", resumeAt.seconds))s")
         }
-        let output = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: Self.decodedOutputSettings)
-        output.alwaysCopiesSampleData = false
+        let output = Self.makeOutput(track: videoTrack, presentation: presentation, frameRate: currentFrameRate)
         reader.add(output)
         reader.startReading()
         currentReader = reader
@@ -1436,48 +1568,55 @@ final class VideoRenderer: @unchecked Sendable {
     /// Body of `prepareNextReader` — must be called on `queue`.
     private func prepareNextReaderOnQueue() {
         if loopCurrentVideo {
-            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate)
+            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation)
             return
         }
         let nextURL = nextVideoProvider?()
         if let nextURL, nextURL != asset.url {
             let newAsset = AVURLAsset(url: nextURL)
+            let rotationFor = rotationOverrideProvider
             Task.detached { @Sendable [weak self] in
                 guard let self else { return }
                 guard let track = try? await newAsset.loadTracks(withMediaType: .video).first else {
                     debugLog("  [Renderer] No video track in next video: \(nextURL.lastPathComponent)")
                     queue.async { [weak self] in
                         guard let self, isRunning else { return }
-                        installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate)
+                        installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation)
                     }
                     return
                 }
                 nonisolated(unsafe) let loadedTrack = track
                 let fps = (try? await loadedTrack.load(.nominalFrameRate)) ?? 30
+                let nextPres = await Self.loadPresentation(track: loadedTrack, extraRotation: rotationFor?(nextURL) ?? 0)
                 queue.async { [weak self] in
                     guard let self, isRunning else { return }
-                    installNextReader(asset: newAsset, track: loadedTrack, frameRate: fps)
+                    installNextReader(asset: newAsset, track: loadedTrack, frameRate: fps, presentation: nextPres)
                 }
             }
         } else {
             if nextURL == nil {
                 debugLog("  [Renderer] nextVideoProvider returned nil — looping current asset")
             }
-            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate)
+            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation)
         }
     }
 
-    private func installNextReader(asset: AVURLAsset, track: AVAssetTrack, frameRate: Float) {
+    private func installNextReader(asset: AVURLAsset, track: AVAssetTrack, frameRate: Float,
+                                   presentation nextPres: TrackPresentation) {
         guard let reader = try? AVAssetReader(asset: asset) else {
             debugLog("  [Renderer] Failed to create next reader")
             pendingSwapWhenPrepared = false
             return
         }
-        let output = AVAssetReaderTrackOutput(track: track, outputSettings: Self.decodedOutputSettings)
-        output.alwaysCopiesSampleData = false
+        if asset.url != self.asset.url {
+            debugLog("🔄 [Renderer] next \(asset.url.lastPathComponent): \(nextPres.summary)")
+        }
+        let output = Self.makeOutput(track: track, presentation: nextPres, frameRate: frameRate)
         reader.add(output)
         nextReader = reader
         nextOutput = output
+        nextTrack = track
+        nextPresentation = nextPres
         nextFrameRate = frameRate
         if pendingSwapWhenPrepared {
             pendingSwapWhenPrepared = false
@@ -1534,13 +1673,16 @@ final class VideoRenderer: @unchecked Sendable {
                     }
                 }
                 asset = nrAsset
-                videoTrack = no.track
+                if let nextTrack { videoTrack = nextTrack }
                 onVideoChanged?()
             }
+            if let nextPresentation { presentation = nextPresentation }
             currentReader = nr
             currentOutput = no
             nextReader = nil
             nextOutput = nil
+            nextTrack = nil
+            nextPresentation = nil
             currentFrameRate = nextFrameRate ?? currentFrameRate
             nextFrameRate = nil
         } else {
@@ -2182,7 +2324,7 @@ final class VideoRenderer: @unchecked Sendable {
         // accumulates there without resetting it — so subtract the
         // offset to get the position within the current asset; read both
         // on `queue` so they're coherent.
-        let (offset, currentAsset) = queue.sync { (ptsOffset, asset) }
+        let (offset, currentAsset, extraRotation) = queue.sync { (ptsOffset, asset, presentation.extraRotation) }
         let captureTime = CMTimeSubtract(CMTimebaseGetTime(timebase), offset)
         let requestTime: CMTime = captureTime.isValid && captureTime.seconds > 0 ? captureTime : .zero
         let generator = AVAssetImageGenerator(asset: currentAsset)
@@ -2191,7 +2333,11 @@ final class VideoRenderer: @unchecked Sendable {
         generator.requestedTimeToleranceAfter = .positiveInfinity
         do {
             let result = try await generator.image(at: requestTime)
-            return result.image
+            // The generator applies the file's own matrix; the user's
+            // extra rotation is ours to add, as the composition does.
+            guard extraRotation != 0 else { return result.image }
+            let oriented = CIImage(cgImage: result.image).oriented(Self.exifOrientation(clockwiseDegrees: extraRotation))
+            return Self.snapshotContext.createCGImage(oriented, from: oriented.extent) ?? result.image
         } catch {
             return nil
         }

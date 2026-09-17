@@ -270,7 +270,7 @@ final class AerialVideo: CustomStringConvertible, Equatable {
             if fileManager.fileExists(atPath: self.url.path) {
                 let asset = AVAsset(url: self.url)
                 self.duration = CMTimeGetSeconds(asset.duration)
-                self.isVertical = asset.isVertical()
+                self.isVertical = asset.isVertical(extraRotation: PrefsVideos.rotationOverride[self.id] ?? 0)
             } else {
                 errorLog("Custom video is missing : \(self.url.path)")
                 self.duration = 0

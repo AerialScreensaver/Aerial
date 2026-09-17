@@ -167,7 +167,7 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
     }
     if let fallback = pickRandomCachedVideo() {
         debugLog("  selectPlayback(uuid=\(playlistScreenUUID?.prefix(8) ?? "nil-shared")) → fallback: \(fallback.lastPathComponent)")
-        return .file(url: fallback, resumeAt: nil)
+        return .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback))
     }
     return nil
 }
@@ -190,7 +190,23 @@ private func playbackSelection(for video: AerialVideo, resumeAt: Double?) -> Pla
     // a file on /Volumes but never read it, and the file engine would
     // fail on it. Same rule as VideoCache.isAvailableOffline.
     guard !path.isEmpty, FileManager.default.isReadableFile(atPath: path) else { return nil }
-    return .file(url: URL(fileURLWithPath: path), resumeAt: resumeAt)
+    return .file(url: URL(fileURLWithPath: path), resumeAt: resumeAt,
+                 rotation: PrefsVideos.rotationOverride[video.id] ?? 0)
+}
+
+/// The Library's extra rotation for the video whose local file is `url`
+/// (degrees, clockwise; 0 when none). The renderer hooks only carry
+/// URLs, so this maps back through the catalog — skipped entirely while
+/// no override exists, which is nearly always.
+private func rotationOverride(for url: URL) -> Int {
+    let overrides = PrefsVideos.rotationOverride
+    guard !overrides.isEmpty else { return 0 }
+    let path = url.path
+    let match = VideoList.instance.videos.first { video in
+        !video.isLive && overrides[video.id] != nil
+            && ExtensionVideoLoader.shared.localPathFor(video: video) == path
+    }
+    return match.flatMap { overrides[$0.id] } ?? 0
 }
 
 
@@ -1050,10 +1066,13 @@ func retryAttachForUnfedWindows(reason: String) {
 private func seedPauseState(_ renderer: any PlaybackRenderer, rendererKey: String, activitySuspended: Bool) {
     let listener = WallpaperControlListener.shared
     renderer.applyActivityPolicy(paused: activitySuspended, animated: false)
+    // User/coverage are desktop concerns — dropped while Aerial isn't
+    // the desktop wallpaper (see `WallpaperControlState.effectivePauseInputs`).
+    let inputs = listener.effectivePauseInputs(rendererKey: rendererKey)
     renderer.syncCompanionPauseReasons(
-        user: listener.currentPaused,
+        user: inputs.user,
         battery: listener.currentBatteryPaused,
-        coverage: listener.isAutoPausedScope(rendererKey),
+        coverage: inputs.coverage,
         thermal: listener.currentThermalPaused,
         camera: listener.currentCameraPaused
     )
@@ -1307,11 +1326,11 @@ private func makeRenderer(
     completion: @escaping @Sendable (any PlaybackRenderer, URL) -> Void
 ) {
     switch selection {
-    case .file(let videoURL, let resumeAt):
+    case .file(let videoURL, let resumeAt, let rotation):
         Task {
             let renderer: VideoRenderer
             do {
-                renderer = try await VideoRenderer.create(videoURL: videoURL, startAt: resumeAt)
+                renderer = try await VideoRenderer.create(videoURL: videoURL, startAt: resumeAt, extraRotation: rotation)
             } catch {
                 debugLog("  Renderer create failed (key=\(shortKey(rendererKey))): \(error).")
                 showNoVideoFallbackForUnfedWindows(key: rendererKey, reason: "renderer create failed")
@@ -1359,7 +1378,7 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
         // the next video at zero.
         guard let selection = selectPlayback(screenUUID: playlistScreenUUID) else { return nil }
         switch selection {
-        case .file(let url, _):
+        case .file(let url, _, _):
             return url
         case .live:
             sharedHandlerState.setPendingSwitch(selection, key: rendererKey)
@@ -1374,13 +1393,19 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
         ) else { return nil }
         guard let selection = playbackSelection(for: result.0, resumeAt: nil) else { return nil }
         switch selection {
-        case .file(let url, _):
+        case .file(let url, _, _):
             return url
         case .live:
             // User-initiated — switch right away, no boundary to respect.
             switchSharedRenderer(key: rendererKey, to: selection, playlistScreenUUID: playlistScreenUUID)
             return nil
         }
+    }
+
+    // Per-video rotation override for the videos the hooks hand over by
+    // URL (the first video's value travels in the selection).
+    renderer.rotationOverrideProvider = { url in
+        rotationOverride(for: url)
     }
 
     // Organic-change echo: the Companion's now-playing follows natural
@@ -1423,7 +1448,7 @@ private func installLiveHooks(on renderer: LiveStreamRenderer, rendererKey: Stri
         guard let fallback = pickRandomCachedVideo() else { return }
         switchSharedRenderer(
             key: rendererKey,
-            to: .file(url: fallback, resumeAt: nil),
+            to: .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback)),
             playlistScreenUUID: playlistScreenUUID
         )
     }
@@ -2032,19 +2057,34 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         }
         CATransaction.commit()
 
-        // Detect the screensaver-flavored acquire up front: `mode=idle`
-        // arrives from the very first acquire (vs the `update`-triggered
-        // idle that says "wallpaper is now covered by a screensaver"),
-        // AND optionValues is empty (screensaver has no picker-side
-        // placement choice; wallpaper carries `placement=Crop/Fill/…`).
-        // System Settings saver previews match that exact profile
-        // (preview=true + mode=idle + nil placement) but share the
-        // desktop's renderer — they must NOT drive it into saver mode
-        // (1.0× + pause bypass), hence the preview exclusion.
-        // Used to route overlays, the rate override, and the user-pause
-        // bypass — kept consistent in one place.
-        let isScreenSaver = (ctx.presentationMode == "idle" && ctx.placement == nil && !ctx.isPreview)
+        // Classify the acquire (rule + rationale in `SaverAcquireRule`):
+        // `mode=idle` on a FIRST acquire is the saver session; the role
+        // additionally needs no picker placement while Aerial is also the
+        // desktop wallpaper (a desktop window re-acquired mid-saver
+        // carries one). Previews never count. The role routes overlays,
+        // subscriber accounting and the status echo; playback correctness
+        // rides on the process-wide flag raised right below.
+        let desktopActive = WallpaperControlListener.shared.currentDesktopWallpaperActive
+        let verdict = SaverAcquireRule.classify(
+            presentationMode: ctx.presentationMode, isPreview: ctx.isPreview,
+            placement: ctx.placement, desktopWallpaperActive: desktopActive
+        )
+        let isScreenSaver = verdict.isSaverRole
         debugLog("  role: screensaver=\(isScreenSaver) rendererKey=\(shortKey(rendererKey)) playlistUUID=\(playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared")")
+        if verdict.saverRunning {
+            // The acquire itself is the live saver signal: a process
+            // spawned FOR the saver has already missed the didstart
+            // notification (it fires ~0.1 s before INIT), and the
+            // update→idle path needs a transition this window never
+            // makes. Raise the process-wide flag now so `attachWallpaper`
+            // seeds the renderer against the saver inhibition, whatever
+            // the role says — the 2026-09-17 frozen-first-start report
+            // (saver-only install, `placement=Crop` on the acquire).
+            setNotificationScreensaver(true, reason: "acquire→idle wid=\(wallpaperIDString.map { String($0.prefix(8)) } ?? "?")")
+            if !isScreenSaver {
+                debugLog("  🖥️ idle acquire without saver role: placement=\(ctx.placement ?? "nil") preview=\(ctx.isPreview) desktopActive=\(desktopActive) activity=\(ctx.activityState)")
+            }
+        }
 
         // 6. Park ActiveWallpaper NOW (before reply) so a fast
         //    UPDATE/INVALIDATE that arrives before async renderer

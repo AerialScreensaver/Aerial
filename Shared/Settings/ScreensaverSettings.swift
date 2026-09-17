@@ -87,6 +87,11 @@ struct VideoSettings: Codable {
     // all resolve through `AerialVideo.preferredFormat()`.
     var videoFormatOverride: [String: Int]
 
+    // Per-video extra rotation in degrees (90/180/270), applied on top
+    // of the file's own orientation metadata — for local clips whose
+    // metadata is missing or wrong. Absent = 0.
+    var rotationOverride: [String: Int]
+
     // Last check date
     var lastVideoCheck: String
 
@@ -108,6 +113,7 @@ struct VideoSettings: Codable {
         playbackSpeed: [:],
         timeOfDayOverride: [:],
         videoFormatOverride: [:],
+        rotationOverride: [:],
         lastVideoCheck: {
             let dateFormatter = DateFormatter()
             let current = Date(timeIntervalSinceReferenceDate: -123456789.0)
@@ -137,6 +143,7 @@ extension VideoSettings {
         playbackSpeed = try container.decode([String: Float].self, forKey: .playbackSpeed)
         timeOfDayOverride = try container.decodeIfPresent([String: String].self, forKey: .timeOfDayOverride) ?? [:]
         videoFormatOverride = try container.decodeIfPresent([String: Int].self, forKey: .videoFormatOverride) ?? [:]
+        rotationOverride = try container.decodeIfPresent([String: Int].self, forKey: .rotationOverride) ?? [:]
         lastVideoCheck = try container.decode(String.self, forKey: .lastVideoCheck)
     }
 }

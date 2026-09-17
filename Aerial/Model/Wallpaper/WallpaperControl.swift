@@ -159,6 +159,12 @@ final class WallpaperControl: @unchecked Sendable {
         controlQueue.sync { state.paused }
     }
 
+    /// Whether Aerial is the system desktop wallpaper, as last published
+    /// to the extension (see `refreshDesktopWallpaperActivation`).
+    var desktopWallpaperActive: Bool {
+        controlQueue.sync { state.desktopWallpaperActive }
+    }
+
     /// Current video-change transition style. Settings UI reads this
     /// to seed its picker on appear.
     var currentTransitionStyle: WallpaperTransitionStyle {
@@ -255,6 +261,31 @@ final class WallpaperControl: @unchecked Sendable {
             guard volume != state.audioVolume else { return false }
             state.audioVolume = volume
             return true
+        }
+    }
+
+    /// Publish whether Aerial is the system desktop wallpaper. The store
+    /// read (PaperSaverKit, one plist) runs off-main; the control file is
+    /// only rewritten on a change. Screensaver-only installs get `false`,
+    /// which makes the extension treat every idle acquire as the saver
+    /// and ignore the desktop-side pause flags, and makes the auto-pause
+    /// coordinator stand down. Called from the status heartbeat and
+    /// after every wallpaper-store write of ours.
+    func refreshDesktopWallpaperActivation(reason: String) {
+        DispatchQueue.global(qos: .utility).async { [self] in
+            let active = Self.isAerialSystemWallpaper() == true
+            mutate("desktopWallpaperActive(\(active), \(reason))") { state in
+                guard active != state.desktopWallpaperActive else { return false }
+                debugLog("🖼 desktop wallpaper active: \(state.desktopWallpaperActive) → \(active) (\(reason))")
+                state.desktopWallpaperActive = active
+                return true
+            }
+            if !active {
+                // Coverage flags are desktop-only; clear any left behind
+                // so a saver session can never inherit them. No-op when
+                // there is nothing to clear.
+                clearAllAutoPaused()
+            }
         }
     }
 
@@ -562,6 +593,7 @@ final class WallpaperControl: @unchecked Sendable {
                 configuration: Data("aerial".utf8),
                 slot: slot
             )
+            shared.refreshDesktopWallpaperActivation(reason: "setAerial(\(slot))")
             return true
         } catch {
             NSLog("Aerial: failed to set Aerial4 (slot: \(slot)): \(error)")

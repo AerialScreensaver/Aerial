@@ -76,6 +76,10 @@ final class WallpaperStatusMonitor: ObservableObject {
         } ?? false
         Self.updateNowPlayingSnapshot(isRunning ? Set((loaded?.nowPlayingId ?? [:]).values) : [])
 
+        // Desktop-wallpaper activation for the extension (screensaver-only
+        // vs wallpaper): one store read per heartbeat, written on change.
+        WallpaperControl.shared.refreshDesktopWallpaperActivation(reason: "status heartbeat")
+
         // Stale-build check (one evaluation per launch, restart once per
         // installed build) + post-restart "resolved" log.
         if let loaded {
@@ -190,11 +194,26 @@ enum WallpaperWindowDump {
             let alpha = (w[kCGWindowAlpha as String] as? Double) ?? 1
             var boundsDesc = "?"
             if let b = w[kCGWindowBounds as String] as? [String: Double] {
-                // CG global coordinates: origin top-left of main, y down.
-                boundsDesc = "(\(Int(b["X"] ?? 0)),\(Int(b["Y"] ?? 0)) \(Int(b["Width"] ?? 0))x\(Int(b["Height"] ?? 0)))"
+                boundsDesc = describeBounds(b)
             }
             lines.append("🪟 \(owner)(\(pid)) #\(num) layer=\(layer) bounds=\(boundsDesc) onscreen=\(onscreen)\(alpha < 1 ? String(format: " a=%.2f", alpha) : "")")
         }
         return lines.sorted()
+    }
+
+    /// `kCGWindowBounds` as "(x,y wxh)" in CG global coordinates (origin
+    /// top-left of the main display, y down). Never converts blindly:
+    /// the window server hands out NaN / ±inf / 1.8e308 bounds for
+    /// lock-screen transition windows, and `Int(_:)` traps on those —
+    /// the 2026-09-15 Companion SIGTRAP on the second saver start of a
+    /// row (dump fired as the screen locked). Such values are printed
+    /// raw so the offending window stays identifiable in the log.
+    static func describeBounds(_ bounds: [String: Double]) -> String {
+        func component(_ key: String) -> String {
+            let value = bounds[key] ?? 0
+            guard value.isFinite, abs(value) < 1_000_000_000 else { return "\(value)" }
+            return String(Int(value))
+        }
+        return "(\(component("X")),\(component("Y")) \(component("Width"))x\(component("Height")))"
     }
 }

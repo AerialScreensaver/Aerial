@@ -5,6 +5,7 @@
 //  Reusable picker for overriding a video's time-of-day classification.
 //
 
+import AVFoundation
 import SwiftUI
 
 struct TimeOfDayOverrideView: View {
@@ -138,5 +139,108 @@ struct TimeOfDayOverrideView_Previews: PreviewProvider {
         TimeOfDayOverrideView(video: video, state: PreviewData.makeState())
             .padding(12)
             .frame(width: 260)
+    }
+}
+
+// MARK: - Rotation override (local files)
+
+/// The per-video extra rotation: degrees clockwise on top of the clip's
+/// own orientation metadata, for local files whose metadata is missing
+/// or wrong (an iPhone clip that plays upside down). Stored with the
+/// other per-video overrides in screensaver.json; the wallpaper
+/// extension re-reads it on the settings-generation bump and applies it
+/// the next time the clip starts.
+enum RotationOverride {
+    static let options: [(degrees: Int, label: String)] = [
+        (0, "None"), (90, "90°"), (180, "180°"), (270, "270°"),
+    ]
+
+    static func degrees(for video: AerialVideo) -> Int {
+        PrefsVideos.rotationOverride[video.id] ?? 0
+    }
+
+    /// Persist `degrees` for `videos` (0 removes the entry), refresh their
+    /// portrait verdict in place, and tell the extension.
+    static func apply(_ degrees: Int, to videos: [AerialVideo]) {
+        var overrides = PrefsVideos.rotationOverride
+        for video in videos {
+            if degrees == 0 {
+                overrides.removeValue(forKey: video.id)
+            } else {
+                overrides[video.id] = degrees
+            }
+            if video.url.isFileURL, FileManager.default.fileExists(atPath: video.url.path) {
+                video.isVertical = AVURLAsset(url: video.url).isVertical(extraRotation: degrees)
+            }
+        }
+        PrefsVideos.rotationOverride = overrides
+        debugLog("🔄 rotation override \(degrees)° for \(videos.map(\.secondaryName))")
+        WallpaperControl.shared.displaysConfigDidChange()
+    }
+}
+
+/// Inspector section: segmented picker for the extra rotation.
+struct RotationOverrideView: View {
+    let video: AerialVideo
+    @ObservedObject var state: VideoBrowserState
+
+    private var selection: Binding<Int> {
+        Binding(
+            get: { RotationOverride.degrees(for: video) },
+            set: { degrees in
+                RotationOverride.apply(degrees, to: [video])
+                state.refreshTrigger += 1
+            }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Rotation")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.secondary)
+            Picker("Rotation", selection: selection) {
+                ForEach(RotationOverride.options, id: \.degrees) { option in
+                    Text(option.label).tag(option.degrees)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            Text("Extra rotation on top of the clip's own orientation metadata. Takes effect the next time the video plays.")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// Thumbnail preview of the override: rotates the (metadata-upright)
+/// thumbnail by the extra degrees, scaling quarter turns so the frame
+/// stays covered.
+struct RotationOverridePreview: ViewModifier {
+    let degrees: Int
+
+    func body(content: Content) -> some View {
+        if degrees == 0 {
+            content
+        } else {
+            GeometryReader { geo in
+                let longest = max(geo.size.width, geo.size.height)
+                let shortest = max(1, min(geo.size.width, geo.size.height))
+                let scale = degrees % 180 == 0 ? 1 : longest / shortest
+                content
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .rotationEffect(.degrees(Double(degrees)))
+                    .scaleEffect(scale)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+        }
+    }
+}
+
+extension View {
+    func rotatedByOverride(_ degrees: Int) -> some View {
+        modifier(RotationOverridePreview(degrees: degrees))
     }
 }
