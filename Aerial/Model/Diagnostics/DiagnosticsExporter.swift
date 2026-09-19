@@ -231,8 +231,8 @@ enum DiagnosticsExporter {
 
         // Cache location — the first thing to read in a "wallpaper says
         // 'No videos found' but the library shows them cached" bundle: a
-        // 4.0-style external folder is readable by Companion, never by the
-        // extension.
+        // plain custom folder outside /Users/Shared is readable by
+        // Companion, never by the extension.
         lines.append("== Cache ==")
         let cachePath = Cache.path
         let mode: String
@@ -242,12 +242,12 @@ enum DiagnosticsExporter {
         case .customFolder:
             mode = "custom folder"
         case .legacyExternalFolder:
-            mode = "LEGACY external folder (4.0 layout — the extension cannot read it; conversion pending)"
+            mode = "PLAIN custom folder outside /Users/Shared (the extension cannot read it; conversion pending)"
         case .externalImage(let image):
             mode = "external disk image \(image), state \(ExternalCacheImage.shared.state)"
         }
         lines.append("Mode: \(mode)")
-        // The folder holding the image (or the 4.0 folder): a network
+        // The folder holding the image (or the plain folder): a network
         // share without full-sync support can never hold a working image.
         let hostFolder: String?
         switch Cache.locationKind {
@@ -265,7 +265,7 @@ enum DiagnosticsExporter {
         }
         lines.append("Path: \(cachePath)")
         lines.append("Available: \(Cache.isAvailable), exists: \(FileManager.default.fileExists(atPath: cachePath)),"
-            + " readable by the extension: \(cachePath.hasPrefix("/Users/Shared/"))")
+            + " readable by the extension: \(Cache.isExtensionReadablePath(cachePath))")
         lines.append("Videos at path: \(movCount(at: cachePath))")
         if let legacy = Cache.legacyExternalFolderPath {
             lines.append("Legacy folder: \(legacy) mounted=\(FileManager.default.fileExists(atPath: legacy)) videos=\(movCount(at: legacy))")

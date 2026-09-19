@@ -114,7 +114,7 @@ enum LegacyExternalCacheMigration {
         await MainActor.run {
             ExternalCacheImage.refreshConsumers(reason: "legacy external cache converted")
         }
-        debugLog("💽 converted legacy external cache \(folder): \(adoption.moved) video(s) moved, \(adoption.alreadyInImage) already in the image, \(adoption.failed) failed")
+        debugLog("💽 converted legacy external cache \(folder): \(adoption.moved) item(s) moved, \(adoption.alreadyInImage) already in the image, \(adoption.failed) failed")
         return Outcome(moved: adoption.moved, alreadyInImage: adoption.alreadyInImage, failed: adoption.failed)
     }
 

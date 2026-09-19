@@ -34,9 +34,10 @@ final class NoVideoFallbackLayer: CALayer {
     static let message = "No videos found, please check your settings or download videos in Aerial.app"
 
     /// The one "no videos" case the user cannot fix from the extension's
-    /// side: a 4.0-style cache folder on an external drive, which this
-    /// sandboxed process can never read. Companion offers the conversion.
-    static let externalDriveMessage = "Your video cache is on an external drive. Open Aerial and follow the prompt to move it into a disk image (Settings › Cache)."
+    /// side: a plain cache folder outside /Users/Shared (external drive or
+    /// home folder), which this sandboxed process can never read.
+    /// Companion offers the conversion.
+    static let externalDriveMessage = "Your video cache is in a folder the wallpaper can't read. Open Aerial and follow the prompt to move it into a disk image (Settings › Cache)."
 
     /// What the label says; set once by `make`.
     private var messageText: String = NoVideoFallbackLayer.message

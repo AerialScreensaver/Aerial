@@ -17,7 +17,7 @@ struct CacheLocationKindTests {
     private let mount = "/Users/Shared/Aerial/ExternalCache"
 
     private func kind(_ override: Bool, _ path: String?, _ image: String?) -> Cache.LocationKind {
-        Cache.classify(overrideCache: override, cachePath: path, externalCacheImagePath: image, mountPoint: mount)
+        Cache.classify(overrideCache: override, cachePath: path, externalCacheImagePath: image)
     }
 
     @Test("override off is internal, whatever else is set")
@@ -33,16 +33,17 @@ struct CacheLocationKindTests {
         #expect(kind(true, nil, image) == .externalImage(image))
     }
 
-    @Test("a plain /Volumes folder without an image is the 4.0 layout")
+    @Test("a plain location outside /Users/Shared without an image needs conversion")
     func legacyExternalFolder() {
         #expect(kind(true, "/Volumes/X/Aerial", nil) == .legacyExternalFolder("/Volumes/X/Aerial"))
         #expect(kind(true, "/Volumes/X/Aerial", "") == .legacyExternalFolder("/Volumes/X/Aerial"))
         #expect(kind(true, "/Volumes/X/Aerial/", nil) == .legacyExternalFolder("/Volumes/X/Aerial/"))
+        #expect(kind(true, "/Users/me/Aerial/Cache", nil) == .legacyExternalFolder("/Users/me/Aerial/Cache"))
     }
 
-    @Test("custom folders elsewhere stay custom, including the bare mount point")
+    @Test("only shared folders stay directly readable by the extension")
     func customFolders() {
-        #expect(kind(true, "/Users/me/Movies/Aerial", nil) == .customFolder("/Users/me/Movies/Aerial"))
+        #expect(kind(true, "/Users/Shared/Aerial/Other", nil) == .customFolder("/Users/Shared/Aerial/Other"))
         #expect(kind(true, mount, nil) == .customFolder(mount))
         #expect(kind(true, mount + "/Cache", nil) == .customFolder(mount + "/Cache"))
         #expect(kind(true, "", nil) == .internalFolder)
@@ -65,6 +66,19 @@ struct CacheLocationKindTests {
         #expect(inventory.bytes == 1500)
         #expect(ExternalCacheImage.siblingVideos(inFolder: dir + "/nope").isEmpty)
         #expect(LegacyExternalCacheMigration.inventory(folder: dir + "/nope") == .init(count: 0, bytes: 0))
+    }
+
+    @Test("sibling packs are the visible folders under Expansions/")
+    func siblingPacks() throws {
+        let dir = NSTemporaryDirectory() + "CacheLocationKindTests-" + UUID().uuidString
+        let packs = dir + "/Expansions"
+        for name in ["B Pack", "A Pack", ".hidden"] {
+            try FileManager.default.createDirectory(atPath: packs + "/" + name, withIntermediateDirectories: true)
+        }
+        try Data("x".utf8).write(to: URL(fileURLWithPath: packs + "/notes.txt"))
+
+        #expect(ExternalCacheImage.siblingPacks(inFolder: dir) == ["A Pack", "B Pack"])
+        #expect(ExternalCacheImage.siblingPacks(inFolder: dir + "/nope").isEmpty)
     }
 
     @Test("volume membership for mount notifications")
