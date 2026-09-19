@@ -58,12 +58,12 @@ enum UpgradePromptPage: CaseIterable {
     case wallpaperMode
     /// 4.1 menu bar vs Dock — gated on `appPresentationChosen`.
     case presentation
-    /// A 4.0-style video cache on an external drive (plain folder under
-    /// /Volumes) that the 4.1 wallpaper extension cannot read. No
-    /// sentinel: the page exists while the configuration does and the
-    /// drive is mounted, and goes away once the user converts the folder
-    /// or switches to the internal cache. "Decide later" brings it back
-    /// at the next launch.
+    /// A plain video cache folder outside /Users/Shared (a 4.0-style
+    /// cache on an external drive, or a folder in the home) that the 4.1
+    /// wallpaper extension cannot read. No sentinel: the page exists while
+    /// the configuration does and the folder is reachable, and goes away
+    /// once the user converts the folder or switches to the internal
+    /// cache. "Decide later" brings it back at the next launch.
     case externalCache
 
     /// Pages still owed by this install. Empty for new installs (the
@@ -77,7 +77,7 @@ enum UpgradePromptPage: CaseIterable {
     }
 }
 
-/// What to do with a 4.0-style external cache folder.
+/// What to do with a plain cache folder the extension cannot read.
 enum LegacyCacheChoice: CaseIterable {
     case convert, useInternal, later
 
@@ -99,8 +99,8 @@ enum LegacyCacheChoice: CaseIterable {
 
     var tagline: String {
         switch self {
-        case .convert: return "Recommended — the videos stay on this drive"
-        case .useInternal: return "The videos stay on the drive, unused"
+        case .convert: return "Recommended — the videos stay in this folder"
+        case .useInternal: return "The videos stay in the folder, unused"
         case .later: return "Ask again next time Aerial starts"
         }
     }
@@ -111,10 +111,10 @@ enum LegacyCacheChoice: CaseIterable {
         case .convert:
             return ["Create **\(ExternalCacheImage.bundleName)** inside `\(folder)`",
                     "Move the \(videos) into it — nothing is deleted",
-                    "The wallpaper extension plays from the image; you can eject the drive from Settings › Cache"]
+                    "The wallpaper extension plays from the image, attached by Aerial when it starts"]
         case .useInternal:
             return ["Switch the cache back to `/Users/Shared/Aerial/Cache`",
-                    "Leave the \(videos) on the drive — Settings › Cache can still convert the folder later",
+                    "Leave the \(videos) in the folder — Settings › Cache can still convert it later",
                     "Videos are downloaded again to the internal disk as needed"]
         case .later:
             return ["Keep the current setting for now",
@@ -235,8 +235,8 @@ struct UpgradePromptView: View {
                 AppPresentationChooser(selection: $presentation)
             case .externalCache:
                 header(
-                    "Your video cache is on an external drive",
-                    "Aerial 4.1 plays videos from a macOS extension that can only reach an external drive through a disk image. Aerial can create one inside your existing external cache folder and migrate your files. Your current cache: \(legacyFolder)"
+                    "Your video cache needs a disk image",
+                    "Aerial 4.1 plays videos from a macOS extension that can only reach a cache outside /Users/Shared (an external drive or your home folder) through a disk image. Aerial can create one inside your existing cache folder and move your videos and Expansion packs into it. Your current cache: \(legacyFolder)"
                 )
                 LegacyExternalCacheChooser(
                     folder: legacyFolder,
@@ -308,7 +308,7 @@ struct UpgradePromptView: View {
                     // Converted, but some files stayed behind: say so and
                     // let the user continue — the folder is no longer a
                     // legacy one, so the page won't come back.
-                    conversionError = "\(outcome.failed) video(s) could not be moved into the disk image and stay in the folder. See Settings › Cache."
+                    conversionError = "\(outcome.failed) video(s) or pack(s) could not be moved into the disk image and stay in the folder. See Settings › Cache."
                 } else {
                     advance()
                 }

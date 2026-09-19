@@ -375,7 +375,7 @@ struct CacheSettingsPanel: View {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Use This Folder"
-        panel.message = "Choose a folder for the video cache. On an external drive, Aerial keeps the videos in a disk image the wallpaper extension can read."
+        panel.message = "Choose a folder for the video cache. Outside /Users/Shared (an external drive, your home folder…), Aerial keeps the videos in a disk image the wallpaper extension can read."
         panel.begin { result in
             guard result == .OK, let url = panel.urls.first else { return }
             confirmAndApply(newPath: url.path)
@@ -395,9 +395,10 @@ struct CacheSettingsPanel: View {
             return
         }
 
-        // External volume → the videos go into a disk image on that drive
-        // (the sandboxed wallpaper extension can't read /Volumes directly).
-        let wantsImage = resolved.hasPrefix("/Volumes/")
+        // The wallpaper extension can only read paths below /Users/Shared.
+        // Put every other custom location (including ~/… and /Volumes/…)
+        // behind a disk image mounted in the shared support directory.
+        let wantsImage = !Cache.isExtensionReadablePath(resolved)
         let currentPath = Cache.path
         let currentDisplayPath = Cache.isExternalImageMode ? externalImageFolder : currentPath
 
@@ -414,7 +415,7 @@ struct CacheSettingsPanel: View {
             return
         }
 
-        // A 4.0-style external folder picked again — the obvious self-fix
+        // A plain folder awaiting conversion picked again — the obvious self-fix
         // when the wallpaper shows nothing — converts IN PLACE instead of
         // counting as "same location". The image is created inside the
         // folder and its videos move in (adoptSiblingVideos), so there is
@@ -425,7 +426,7 @@ struct CacheSettingsPanel: View {
             let inventory = LegacyExternalCacheMigration.inventory(folder: legacy)
             let alert = NSAlert()
             alert.messageText = "Move the videos in this folder into a disk image?"
-            alert.informativeText = "Aerial 4.1 keeps external caches in a disk image (\(ExternalCacheImage.bundleName)) so the wallpaper extension can play them. The image is created inside this folder and the \(inventory.count) video\(inventory.count == 1 ? "" : "s") in it (\(inventory.formattedBytes)) are moved in. Nothing is deleted."
+            alert.informativeText = "Aerial keeps caches outside /Users/Shared in a disk image (\(ExternalCacheImage.bundleName)) so the wallpaper extension can play them. The image is created inside this folder and the \(inventory.count) video\(inventory.count == 1 ? "" : "s") in it (\(inventory.formattedBytes)), plus any Expansion packs, are moved in. Nothing is deleted."
             alert.addButton(withTitle: "Convert")
             alert.addButton(withTitle: "Cancel")
             alert.alertStyle = .informational
@@ -450,7 +451,7 @@ struct CacheSettingsPanel: View {
             let networkNote = ExternalCacheImage.volumeIsNetwork(resolved)
                 ? " This folder is on a network share: the videos stream over the network, and the desktop only has them while the share is mounted."
                 : ""
-            alert.informativeText = "Aerial will create a disk image (\(ExternalCacheImage.bundleName)) in this folder and keep the videos inside it, so the wallpaper extension can play them from this drive.\(networkNote)\n\nWhat would you like to do with the videos in the current cache?\(packsNote)"
+            alert.informativeText = "Aerial will create a disk image (\(ExternalCacheImage.bundleName)) in this folder and keep the videos inside it, so the wallpaper extension can play them from this folder.\(networkNote)\n\nWhat would you like to do with the videos in the current cache?\(packsNote)"
         } else {
             alert.informativeText = "What would you like to do with videos in the current cache folder?\(packsNote)"
         }
@@ -688,6 +689,13 @@ struct CacheSettingsPanel: View {
         }
     }
 
+    /// An image in a home folder sits on the boot volume: there is no drive
+    /// to eject. Path-based on purpose — asking the volume would wake a
+    /// sleeping external drive on every redraw.
+    private var imageIsOnRemovableVolume: Bool {
+        (PrefsCache.externalCacheImagePath ?? "").hasPrefix("/Volumes/")
+    }
+
     private var externalImageStatusRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
@@ -708,12 +716,14 @@ struct CacheSettingsPanel: View {
                     ExternalCacheImage.shared.attachIfNeeded(reason: "user")
                 }
                 .disabled(isImageAttached || externalImageState == .backingVolumeMissing || isMigrating)
-                Button("Eject Drive") {
-                    ejectExternalDrive()
+                if imageIsOnRemovableVolume {
+                    Button("Eject Drive") {
+                        ejectExternalDrive()
+                    }
+                    .disabled(!isImageAttached || isMigrating)
                 }
-                .disabled(!isImageAttached || isMigrating)
             }
-            Text("Videos (and Expansion packs, if enabled below) are kept in a disk image on the drive (\(ExternalCacheImage.bundleName)) so the wallpaper extension can read them.")
+            Text("Videos (and Expansion packs, if enabled below) are kept in a disk image in the cache folder (\(ExternalCacheImage.bundleName)) so the wallpaper extension can read them.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             if let externalError {
@@ -724,16 +734,16 @@ struct CacheSettingsPanel: View {
         }
     }
 
-    /// A 4.0-style external folder (plain `/Volumes/…` cache, no image):
-    /// Companion reads it, the wallpaper extension never can. Same offer
+    /// A plain custom folder outside `/Users/Shared`, with no image yet.
+    /// Companion reads it, while the wallpaper extension cannot. Same offer
     /// as the launch prompt, from Settings.
     private func legacyExternalFolderRow(_ folder: String) -> some View {
         let mounted = FileManager.default.fileExists(atPath: folder)
         return VStack(alignment: .leading, spacing: 6) {
-            Label("This folder is on an external drive", systemImage: "exclamationmark.triangle.fill")
+            Label("This folder needs a cache disk image", systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.orange)
-            Text("Aerial 4.1 keeps external caches in a disk image so the wallpaper extension can play them. Nothing plays on the desktop until this folder is converted. The videos in it are moved into the image; nothing is deleted.")
+            Text("Aerial keeps caches outside /Users/Shared in a disk image so the wallpaper extension can play them. Nothing plays on the desktop until this folder is converted. The videos in it are moved into the image; nothing is deleted.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -744,7 +754,9 @@ struct CacheSettingsPanel: View {
                     }
                     .disabled(isMigrating)
                 } else {
-                    Text("Drive not connected — plug it in to convert.")
+                    Text(folder.hasPrefix("/Volumes/")
+                         ? "Drive not connected — plug it in to convert."
+                         : "Folder not found — choose a folder again or use the default location.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -806,7 +818,7 @@ struct CacheSettingsPanel: View {
                 }
                 if adopted.failed > 0 {
                     await MainActor.run {
-                        externalError = "\(adopted.failed) video(s) could not be moved into the disk image — see the log."
+                        externalError = "\(adopted.failed) video(s) or pack(s) could not be moved into the disk image — see the log."
                     }
                 }
                 await MainActor.run {
