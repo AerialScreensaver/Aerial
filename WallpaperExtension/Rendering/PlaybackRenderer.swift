@@ -23,7 +23,10 @@ import CoreGraphics
 enum PlaybackSelection {
     /// `rotation`: the Library's extra rotation for this video (degrees,
     /// clockwise, 0 when none) — applied on top of the file's metadata.
-    case file(url: URL, resumeAt: Double?, rotation: Int)
+    /// `playDuration`: the playlist entry's play-duration override in
+    /// seconds of playtime (nil = play once) — the file engine loops the
+    /// clip until that much has elapsed, then advances (bounded looping).
+    case file(url: URL, resumeAt: Double?, rotation: Int, playDuration: Double?)
     case live(url: URL, videoId: String, name: String, playSeconds: Double)
 }
 
@@ -96,12 +99,22 @@ protocol PlaybackRenderer: AnyObject {
     func diagnosticsSnapshot() -> String
     func checkFeedHealth()
     func captureCurrentFrame() async -> CGImage?
+    /// Cheap, non-blocking capture of the newest decoded frame (nil when
+    /// nothing is decoded). Never touches a decoder or the render queue —
+    /// the rung the snapshot XPC tries before anything that could block.
+    func captureFromLastSample() -> CGImage?
+    /// Seconds the engine's feed has been inside one blocking
+    /// AVFoundation call (nil = not blocked). Lets the snapshot reply
+    /// avoid opening a second decoder session on a wedged one.
+    var pumpBlockedSeconds: TimeInterval? { get }
 }
 
 extension PlaybackRenderer {
     /// Default no-op so future engines without an audio path still
     /// conform; both current engines implement the real thing.
     func setAudio(enabled: Bool, volume: Double) {}
+    /// Engines without a blocking pull (live) are never "blocked".
+    var pumpBlockedSeconds: TimeInterval? { nil }
 }
 
 extension VideoRenderer: PlaybackRenderer {

@@ -192,6 +192,11 @@ struct CompanionSettings: Codable {
     /// `desktopAutoAdvance` is on.
     var desktopAutoAdvanceMinutes: Int
 
+    /// Show a "Restart Wallpaper Agent" button in the menu bar popover
+    /// (bottom row) and on the Home dashboard's Wallpaper card, in
+    /// addition to Settings → Wallpaper → Troubleshooting. Default off.
+    var showRestartWallpaperButton: Bool
+
     // MARK: - Defaults
 
     /// Default settings for fresh install
@@ -276,6 +281,7 @@ struct CompanionSettings: Codable {
          desktopPauseOnCamera: Bool = false,
          desktopAutoAdvance: Bool = false,
          desktopAutoAdvanceMinutes: Int = 60,
+         showRestartWallpaperButton: Bool = false,
          intWallpaperMode: Int? = nil,
          wallpaperModeChosen: Bool? = nil,
          lastLaunchedVersion: String? = nil,
@@ -310,6 +316,7 @@ struct CompanionSettings: Codable {
         self.desktopPauseOnCamera = desktopPauseOnCamera
         self.desktopAutoAdvance = desktopAutoAdvance
         self.desktopAutoAdvanceMinutes = desktopAutoAdvanceMinutes
+        self.showRestartWallpaperButton = showRestartWallpaperButton
         self.intWallpaperMode = intWallpaperMode
         self.wallpaperModeChosen = wallpaperModeChosen
         self.lastLaunchedVersion = lastLaunchedVersion
@@ -352,6 +359,7 @@ struct CompanionSettings: Codable {
         desktopPauseOnCamera = try container.decodeIfPresent(Bool.self, forKey: .desktopPauseOnCamera) ?? false
         desktopAutoAdvance = try container.decodeIfPresent(Bool.self, forKey: .desktopAutoAdvance) ?? false
         desktopAutoAdvanceMinutes = try container.decodeIfPresent(Int.self, forKey: .desktopAutoAdvanceMinutes) ?? 60
+        showRestartWallpaperButton = try container.decodeIfPresent(Bool.self, forKey: .showRestartWallpaperButton) ?? false
         intWallpaperMode = try container.decodeIfPresent(Int.self, forKey: .intWallpaperMode)
         wallpaperModeChosen = try container.decodeIfPresent(Bool.self, forKey: .wallpaperModeChosen)
         lastLaunchedVersion = try container.decodeIfPresent(String.self, forKey: .lastLaunchedVersion)

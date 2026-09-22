@@ -56,6 +56,18 @@ class ExtensionVideoLoader {
     /// not on every 30 s flush (fallback videos can play for a while).
     private var lastUnresolvedProgressPath: [String: String] = [:]
 
+    /// Resume-after-teardown, per scope key (`screenUUID ?? "shared"`).
+    /// The handler tears a renderer down after its idle grace (nobody
+    /// subscribed for 120 s) and the next acquire builds a fresh one,
+    /// whose first pop used to take the NEXT entry — so a saver
+    /// restarted 2–5 min after the last one changed video, while a
+    /// restart under 2 min continued the old one and a restart after the
+    /// process reclaim resumed it from the sidecar (2026-09-21). The
+    /// teardown hook records the presenting entry + held position; the
+    /// next pop for that scope rewinds the cursor to it and resumes
+    /// there. One-shot. Guarded by `stateLock`.
+    private var pendingTeardownResume: [String: (index: Int, timestamp: Double?)] = [:]
+
     /// Resume timestamp set by PlaylistManager's override closure (Companion only).
     /// Used as a side-channel since the override returns (AerialVideo?, Bool) without timestamp.
     var pendingResumeTimestamp: Double? {
@@ -266,10 +278,22 @@ class ExtensionVideoLoader {
         // Capture resume timestamp before popNextVideo() clears it.
         // Snapshot the activation flag once (locked) — the pop below
         // runs outside the lock.
+        let scopeKey = screenUUID ?? "shared"
+        let teardownResume = stateLock.withLock { pendingTeardownResume.removeValue(forKey: scopeKey) }
         let isFirstActivation = stateLock.withLock { isFirstVideoThisActivation }
-        let resumeTimestamp: Double? = isFirstActivation ? playlist.playbackTimestamp : nil
+        var isResume = isFirstActivation
+        var resumeTimestamp: Double? = isFirstActivation ? playlist.playbackTimestamp : nil
+        if !isFirstActivation, let teardownResume, playlist.entries.indices.contains(teardownResume.index) {
+            // A renderer for this scope was torn down after its idle
+            // grace: put the cursor back on the entry that was on screen
+            // and resume it at the held position instead of advancing.
+            playlist.currentIndex = teardownResume.index
+            isResume = true
+            resumeTimestamp = teardownResume.timestamp
+            debugLog("ExtensionVideoLoader: resuming after renderer teardown → index \(teardownResume.index) at \(teardownResume.timestamp.map { String(format: "%.1fs", $0) } ?? "start") (scope=\(scopeKey.prefix(8)))")
+        }
 
-        debugLog("ExtensionVideoLoader: Playlist has \(playlist.entries.count) entries, currentIndex=\(playlist.currentIndex), resume=\(isFirstActivation)")
+        debugLog("ExtensionVideoLoader: Playlist has \(playlist.entries.count) entries, currentIndex=\(playlist.currentIndex), resume=\(isResume)")
 
         let resolveVideo: (String) -> AerialVideo? = { [self] id in
             videoList.videos.first(where: { $0.id == id && $0.isAvailableOffline })
@@ -278,7 +302,7 @@ class ExtensionVideoLoader {
         let shouldPlayFallback: (AerialVideo) -> Bool = { TimeManagement.videoMatchesCurrentTimeWithFallback($0) }
 
         var popped = playlist.popNextVideo(
-            isResume: isFirstActivation,
+            isResume: isResume,
             resolveVideo: resolveVideo,
             shouldPlay: shouldPlay,
             shouldPlayFallback: shouldPlayFallback
@@ -297,7 +321,7 @@ class ExtensionVideoLoader {
             debugLog("ExtensionVideoLoader: no playlist entry resolved — refreshing catalog from disk and retrying once")
             videoList.refreshCatalogFromDisk(reason: "playlist-resolve")
             popped = playlist.popNextVideo(
-                isResume: isFirstActivation,
+                isResume: isResume,
                 resolveVideo: resolveVideo,
                 shouldPlay: shouldPlay,
                 shouldPlayFallback: shouldPlayFallback
@@ -411,6 +435,23 @@ class ExtensionVideoLoader {
         }
 
         debugLog("ExtensionVideoLoader: Merged sidecar progress")
+    }
+
+    /// A renderer for `screenUUID`'s scope is being torn down after its
+    /// idle grace. Remember the entry on screen and its held position so
+    /// the next pop for that scope resumes it (see `pendingTeardownResume`).
+    /// Unresolvable assets (random fallback, not in this playlist) record
+    /// nothing — the next pop advances as before.
+    func noteRendererTornDown(presentingLocalPath: String, timestamp: Double?, screenUUID: String?) {
+        let scopeKey = screenUUID ?? "shared"
+        guard let playlist = resolvePlaylist(screenUUID),
+              let videoId = videoId(forLocalPath: presentingLocalPath),
+              let index = playlist.index(ofVideoId: videoId) else {
+            debugLog("ExtensionVideoLoader: teardown resume not recorded — presenting asset not in playlist (\(URL(fileURLWithPath: presentingLocalPath).lastPathComponent), scope=\(scopeKey.prefix(8)))")
+            return
+        }
+        stateLock.withLock { pendingTeardownResume[scopeKey] = (index, timestamp) }
+        debugLog("ExtensionVideoLoader: renderer torn down — next pop resumes index \(index) at \(timestamp.map { String(format: "%.1fs", $0) } ?? "start") (scope=\(scopeKey.prefix(8)))")
     }
 
     /// Update the progress sidecar with the video ON SCREEN and its

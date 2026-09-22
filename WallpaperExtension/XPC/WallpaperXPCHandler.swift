@@ -149,9 +149,10 @@ private func screenUUID(for directDisplayID: UInt32?) -> String? {
 /// Falls back to `pickRandomCachedVideo()` if the playlist can't
 /// produce anything so the wallpaper still has *something* to show.
 private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackSelection? {
-    // result.shouldLoop / result.playDuration deliberately unused —
-    // bounded looping in the wallpaper renderer is a pending design
-    // decision.
+    // result.shouldLoop is unused: a single-entry playlist hands the file
+    // engine the same URL again, which is already a gapless loop.
+    // result.playDuration rides in the selection — the file engine loops
+    // the clip until that much playtime has elapsed (bounded looping).
     // result.resumeTimestamp IS used: it's non-nil only on the first pop
     // after a playlist cache load — exactly the cold-start/respawn case
     // where the renderer should resume at the persisted position.
@@ -159,7 +160,8 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
         isVertical: false, screenUUID: playlistScreenUUID
     )
     if let video = result.video {
-        if let selection = playbackSelection(for: video, resumeAt: result.resumeTimestamp) {
+        if let selection = playbackSelection(for: video, resumeAt: result.resumeTimestamp,
+                                             playDuration: result.playDuration) {
             debugLog("  selectPlayback(uuid=\(playlistScreenUUID?.prefix(8) ?? "nil-shared")) → \(video.isLive ? "LIVE" : "playlist"): \(video.secondaryName)\(result.resumeTimestamp.map { String(format: ", resumeAt=%.1fs", $0) } ?? "")")
             return selection
         }
@@ -167,7 +169,7 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
     }
     if let fallback = pickRandomCachedVideo() {
         debugLog("  selectPlayback(uuid=\(playlistScreenUUID?.prefix(8) ?? "nil-shared")) → fallback: \(fallback.lastPathComponent)")
-        return .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback))
+        return .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback), playDuration: nil)
     }
     return nil
 }
@@ -176,7 +178,8 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
 /// detected BEFORE the file-existence check — their "local path" never
 /// exists on disk (that guard is what silently substituted cached clips
 /// for live feeds after the AVPlayer engine was removed).
-private func playbackSelection(for video: AerialVideo, resumeAt: Double?) -> PlaybackSelection? {
+private func playbackSelection(for video: AerialVideo, resumeAt: Double?,
+                               playDuration: Double? = nil) -> PlaybackSelection? {
     if video.isLive {
         return .live(
             url: video.url,
@@ -191,7 +194,7 @@ private func playbackSelection(for video: AerialVideo, resumeAt: Double?) -> Pla
     // fail on it. Same rule as VideoCache.isAvailableOffline.
     guard !path.isEmpty, FileManager.default.isReadableFile(atPath: path) else { return nil }
     return .file(url: URL(fileURLWithPath: path), resumeAt: resumeAt,
-                 rotation: PrefsVideos.rotationOverride[video.id] ?? 0)
+                 rotation: PrefsVideos.rotationOverride[video.id] ?? 0, playDuration: playDuration)
 }
 
 /// The Library's extra rotation for the video whose local file is `url`
@@ -1222,6 +1225,19 @@ func teardownWallpaperWindow(wid uuid: String, gracePeriod: TimeInterval, contex
         }
     }
     sharedHandlerState.releaseRenderer(forWallpaperID: uuid, gracePeriod: gracePeriod) { shared in
+        // Remember what was on screen (mirror read, non-blocking) so the
+        // next acquire for this scope resumes it instead of popping the
+        // next entry — a saver restarted 2–5 min later used to change
+        // video while shorter and longer gaps both kept it. Live feeds
+        // carry no file position; they rotate as before.
+        if shared.renderer.nowPlayingOverride == nil {
+            let snap = shared.renderer.statusSnapshot()
+            ExtensionVideoLoader.shared.noteRendererTornDown(
+                presentingLocalPath: snap.assetURL.path,
+                timestamp: snap.position > 0 ? snap.position : nil,
+                screenUUID: shared.rendererKey == broadcastRendererKey ? nil : shared.rendererKey
+            )
+        }
         shared.renderer.stop()
         debugLog("  Tore down SharedRenderer (key=\(shortKey(shared.rendererKey))) after grace period")
     }
@@ -1326,11 +1342,12 @@ private func makeRenderer(
     completion: @escaping @Sendable (any PlaybackRenderer, URL) -> Void
 ) {
     switch selection {
-    case .file(let videoURL, let resumeAt, let rotation):
+    case .file(let videoURL, let resumeAt, let rotation, let playDuration):
         Task {
             let renderer: VideoRenderer
             do {
-                renderer = try await VideoRenderer.create(videoURL: videoURL, startAt: resumeAt, extraRotation: rotation)
+                renderer = try await VideoRenderer.create(videoURL: videoURL, startAt: resumeAt,
+                                                          extraRotation: rotation, playDuration: playDuration)
             } catch {
                 debugLog("  Renderer create failed (key=\(shortKey(rendererKey))): \(error).")
                 showNoVideoFallbackForUnfedWindows(key: rendererKey, reason: "renderer create failed")
@@ -1373,13 +1390,13 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
             switchSharedRenderer(key: rendererKey, to: pending, playlistScreenUUID: playlistScreenUUID)
             return nil   // loop current until the switch lands
         }
-        // shouldLoop / playDuration unused — see selectPlayback.
-        // resumeTimestamp irrelevant here: loop boundaries always start
-        // the next video at zero.
+        // shouldLoop unused — see selectPlayback. resumeTimestamp is
+        // irrelevant here: loop boundaries always start the next video at
+        // zero. playDuration travels with the pop for bounded looping.
         guard let selection = selectPlayback(screenUUID: playlistScreenUUID) else { return nil }
         switch selection {
-        case .file(let url, _, _):
-            return url
+        case .file(let url, _, _, let playDuration):
+            return VideoRenderer.NextVideo(url: url, playDuration: playDuration)
         case .live:
             sharedHandlerState.setPendingSwitch(selection, key: rendererKey)
             debugLog("  live entry queued for key=\(shortKey(rendererKey)) — engine switch at the loop boundary")
@@ -1391,10 +1408,11 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
         guard let result = ExtensionVideoLoader.shared.popPreviousFromPlaylist(
             screenUUID: playlistScreenUUID
         ) else { return nil }
-        guard let selection = playbackSelection(for: result.0, resumeAt: nil) else { return nil }
+        guard let selection = playbackSelection(for: result.video, resumeAt: nil,
+                                                playDuration: result.playDuration) else { return nil }
         switch selection {
-        case .file(let url, _, _):
-            return url
+        case .file(let url, _, _, let playDuration):
+            return VideoRenderer.NextVideo(url: url, playDuration: playDuration)
         case .live:
             // User-initiated — switch right away, no boundary to respect.
             switchSharedRenderer(key: rendererKey, to: selection, playlistScreenUUID: playlistScreenUUID)
@@ -1412,10 +1430,17 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
     // rotation within ~1 s instead of the next 30 s periodic flush.
     // Fired on the renderer queue — only enqueues; the write runs on
     // statusWriteQueue. The overlay push resolves off-thread too
-    // (it queue.syncs the renderer for the asset URL).
+    // (it reads the renderer's mirror for the asset URL).
     renderer.onVideoChanged = {
         scheduleVideoChangeStatusWrite()
         pushCurrentVideoToOverlays(rendererKey: rendererKey)
+    }
+
+    // Watchdog escalation: the reader cancel did not free the pump. Log
+    // only for now — the mirror keeps status/snapshot/control served;
+    // a renderer replacement hangs off this hook if field logs show it.
+    renderer.onQueueWedged = {
+        debugLog("🐕 [Handler] renderer key=\(shortKey(rendererKey)) queue still wedged after the watchdog cancel — replacement not implemented; status/snapshot keep serving from the mirror")
     }
 }
 
@@ -1448,7 +1473,7 @@ private func installLiveHooks(on renderer: LiveStreamRenderer, rendererKey: Stri
         guard let fallback = pickRandomCachedVideo() else { return }
         switchSharedRenderer(
             key: rendererKey,
-            to: .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback)),
+            to: .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback), playDuration: nil),
             playlistScreenUUID: playlistScreenUUID
         )
     }
@@ -2319,7 +2344,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 } else {
                     shared?.renderer.exitLockedMode()
                 }
-                writeWallpaperStatus(reason: "lock-transition")
+                statusWriteQueue.async { writeWallpaperStatus(reason: "lock-transition") }
             }
 
             // A saver wid flipping idle → default means the screensaver
@@ -2333,7 +2358,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 // is gated on `!screensaverRateSuspended`, so writing status here
                 // flips it false ~5 s before the INVALIDATE — let the Companion
                 // coordinator re-check coverage now rather than at invalidate.
-                writeWallpaperStatus(reason: "saver-exit-ramp")
+                statusWriteQueue.async { writeWallpaperStatus(reason: "saver-exit-ramp") }
                 // Saver-only setups get no wallpaper snapshot() requests
                 // between sessions — persist this session's frame now so
                 // the next cold engage primes with it.
@@ -2352,7 +2377,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             if wallpaper.isScreenSaver, oldMode == "default", ctx.presentationMode == "idle" {
                 debugLog("  saver re-enter (reuse): wid=\(wid.prefix(8)) variant=\(wallpaper.experimentVariant)")
                 shared?.renderer.cancelScreensaverExitRamp()
-                writeWallpaperStatus(reason: "saver-reenter")
+                statusWriteQueue.async { writeWallpaperStatus(reason: "saver-reenter") }
             }
 
             // FALLBACK screensaver detector (second layer; the acquire-driven
@@ -2471,7 +2496,9 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
 
         // Last guaranteed moment with a live position for this acquire's
         // renderer — flush so a follow-up cold start resumes close by.
-        flushPlaybackProgress(reason: "invalidate")
+        // Off the XPC thread: the teardown below is grace-deferred, so
+        // the renderer is still there when this runs.
+        statusWriteQueue.async { flushPlaybackProgress(reason: "invalidate") }
 
         var cleaned = false
         var uuidStr: String?
@@ -2511,7 +2538,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         // acquire for the survivors — re-slice them if the set shrank.
         refreshTopologyAndResliceIfChanged(reason: "invalidate seq=\(seq)")
         dumpTopology(reason: "invalidate seq=\(seq)")
-        writeWallpaperStatus(reason: "invalidate")
+        statusWriteQueue.async { writeWallpaperStatus(reason: "invalidate") }
         reply(nil)
     }
 
@@ -2562,17 +2589,37 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                     return
                 }
             }
-            // Legacy path (10-bit HDR formats, or no decoded frame yet
-            // — includes the poster-frame generator): CIContext capture.
-            if let renderer = shared?.renderer,
-               let frame = await renderer.captureCurrentFrame() {
-                if let did = displayID, shouldRewriteSnapshot(did: did) {
-                    writeSnapshot(frame, for: did)
+            // Legacy path (10-bit HDR formats, or no decoded frame yet).
+            // Two rungs, neither may wait on the renderer queue: the
+            // newest decoded frame via CIContext (mirror read), then the
+            // poster-frame generator — a fresh VideoToolbox decode that
+            // is skipped while the pump is stuck and raced against a
+            // 1.5 s deadline otherwise. WallpaperAgent kills the process
+            // when this reply is ~30 s late (2026-09-20 wake bundle), so
+            // the disk cache / synthetic rungs below must stay reachable.
+            if let renderer = shared?.renderer {
+                var captured = renderer.captureFromLastSample()
+                if captured == nil, (renderer.pumpBlockedSeconds ?? 0) <= PumpWatchdogPolicy.posterSkipAfter {
+                    captured = await withTaskGroup(of: CGImage?.self) { group in
+                        group.addTask { await renderer.captureCurrentFrame() }
+                        group.addTask {
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            return nil
+                        }
+                        let first = await group.next() ?? nil
+                        group.cancelAll()
+                        return first
+                    }
                 }
-                if let xpc = makeSnapshotXPC(from: frame) {
-                    reply(xpc, nil)
-                    debugLog("  Snapshot replied (live frame \(frame.width)x\(frame.height))")
-                    return
+                if let captured {
+                    if let did = displayID, shouldRewriteSnapshot(did: did) {
+                        writeSnapshot(captured, for: did)
+                    }
+                    if let xpc = makeSnapshotXPC(from: captured) {
+                        reply(xpc, nil)
+                        debugLog("  Snapshot replied (live frame \(captured.width)x\(captured.height))")
+                        return
+                    }
                 }
             }
             // Fallback: previously-saved on-disk snapshot for this display.

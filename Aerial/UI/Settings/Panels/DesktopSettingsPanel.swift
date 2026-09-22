@@ -55,6 +55,10 @@ struct DesktopSettingsPanel: View {
     /// "running extension version" line.
     @ObservedObject private var statusMonitor = WallpaperStatusMonitor.shared
     @State private var isRestartingAgent = false
+    /// Mirror of `Preferences.showRestartWallpaperButton` — the
+    /// Troubleshooting checkbox that adds a restart button to the menu
+    /// bar popover and the Home dashboard.
+    @State private var showRestartButton = false
 
     private let autoAdvanceIntervals: [(label: String, minutes: Int)] = [
         ("15 minutes", 15),
@@ -515,6 +519,23 @@ struct DesktopSettingsPanel: View {
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Divider()
+
+                Toggle("Show a restart button in the menu bar and on the Home screen", isOn: $showRestartButton)
+                    .font(.system(size: 14))
+                    .onChange(of: showRestartButton) { newValue in
+                        Preferences.showRestartWallpaperButton = newValue
+                        NotificationCenter.default.post(
+                            name: .showRestartWallpaperButtonDidChange,
+                            object: newValue
+                        )
+                    }
+
+                Text("Handy if you need to restart the wallpaper agent regularly.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
         } label: {
@@ -557,15 +578,10 @@ struct DesktopSettingsPanel: View {
     }
 
     private func restartWallpaperAgent() {
-        isRestartingAgent = true
-        WallpaperExtensionHealth.restartAgent(reason: "Settings → Wallpaper button") {
-            // The respawned appex writes its identity at init within
-            // ~1 s; 3 s covers a slow disk before re-reading the status.
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(3))
-                WallpaperStatusMonitor.shared.reload()
-                isRestartingAgent = false
-            }
+        Task { @MainActor in
+            isRestartingAgent = true
+            await WallpaperExtensionHealth.restartAgentAndReload(reason: "Settings → Wallpaper button")
+            isRestartingAgent = false
         }
     }
 
@@ -584,6 +600,7 @@ struct DesktopSettingsPanel: View {
         pauseOnCamera = Preferences.desktopPauseOnCamera
         autoAdvanceEnabled = Preferences.desktopAutoAdvance
         autoAdvanceMinutes = Preferences.desktopAutoAdvanceMinutes
+        showRestartButton = Preferences.showRestartWallpaperButton
     }
 
     private func startCoveragePolling() {

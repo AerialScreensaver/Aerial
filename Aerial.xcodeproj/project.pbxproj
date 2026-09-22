@@ -205,6 +205,7 @@
 		F0OVC0302F30000000000001 /* BatteryOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00B2F30000000000001 /* BatteryOverlayProvider.swift */; };
 		F0OVC0312F30000000000001 /* VerticalSpacerOverlayProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OVP00C2F30000000000001 /* VerticalSpacerOverlayProvider.swift */; };
 		F0PBM0022F30000000000001 /* PlaybackMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PBM0012F30000000000001 /* PlaybackMath.swift */; };
+		F0PBM0032F30000000000001 /* PlaybackMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PBM0012F30000000000001 /* PlaybackMath.swift */; };
 		F0PL00022F30000000000001 /* PlaylistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00012F30000000000001 /* PlaylistModels.swift */; };
 		F0PL00062F30000000000001 /* PlaylistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00052F30000000000001 /* PlaylistManager.swift */; };
 		F0PL00082F30000000000001 /* DownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PL00072F30000000000001 /* DownloadCoordinator.swift */; };
@@ -311,6 +312,12 @@
 		F0WPX0072F30000000000001 /* ExtensionDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0WPX0162F30000000000001 /* ExtensionDiagnostics.swift */; };
 		F0PRG0022F30000000000001 /* PresentingRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PRG0012F30000000000001 /* PresentingRing.swift */; };
 		F0PRG0032F30000000000001 /* PresentingRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PRG0012F30000000000001 /* PresentingRing.swift */; };
+		F0BSY0022F30000000000001 /* BoundedSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BSY0012F30000000000001 /* BoundedSync.swift */; };
+		F0BSY0032F30000000000001 /* BoundedSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BSY0012F30000000000001 /* BoundedSync.swift */; };
+		F0PWP0022F30000000000001 /* PumpWatchdogPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */; };
+		F0PWP0032F30000000000001 /* PumpWatchdogPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */; };
+		F0PWT0022F30000000000001 /* PumpWatchdogPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */; };
+		F0BST0022F30000000000001 /* BoundedSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BST0012F30000000000001 /* BoundedSyncTests.swift */; };
 		F0GSN0022F30000000000001 /* GeometrySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GSN0012F30000000000001 /* GeometrySanitizer.swift */; };
 		F0GSN0032F30000000000001 /* GeometrySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GSN0012F30000000000001 /* GeometrySanitizer.swift */; };
 		F0OBX0032F30000000000001 /* ObjCExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = F0OBX0022F30000000000001 /* ObjCExceptionCatcher.m */; };
@@ -704,6 +711,10 @@
 		F0WPX0152F30000000000001 /* SettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsProvider.swift; sourceTree = "<group>"; };
 		F0WPX0162F30000000000001 /* ExtensionDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDiagnostics.swift; sourceTree = "<group>"; };
 		F0PRG0012F30000000000001 /* PresentingRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentingRing.swift; sourceTree = "<group>"; };
+		F0BSY0012F30000000000001 /* BoundedSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedSync.swift; sourceTree = "<group>"; };
+		F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PumpWatchdogPolicy.swift; sourceTree = "<group>"; };
+		F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PumpWatchdogPolicyTests.swift; sourceTree = "<group>"; };
+		F0BST0012F30000000000001 /* BoundedSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedSyncTests.swift; sourceTree = "<group>"; };
 		F0GSN0012F30000000000001 /* GeometrySanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometrySanitizer.swift; sourceTree = "<group>"; };
 		F0OBX0012F30000000000001 /* ObjCExceptionCatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ObjCExceptionCatcher.h; sourceTree = "<group>"; };
 		F0OBX0022F30000000000001 /* ObjCExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ObjCExceptionCatcher.m; sourceTree = "<group>"; };
@@ -1228,6 +1239,7 @@
 				F0WPL00132F30000000000001 /* OverlayRenderingDriver.swift */,
 				F0LSR0042F30000000000001 /* PlaybackRenderer.swift */,
 				F0PRG0012F30000000000001 /* PresentingRing.swift */,
+				F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */,
 				F0WPX01B2F30000000000001 /* VideoRenderer.swift */,
 				F0TRN0022F30000000000001 /* VideoTransitionCoordinator.swift */,
 				F0WPX01C2F30000000000001 /* WallpaperSnapshotCache.swift */,
@@ -1250,6 +1262,7 @@
 			isa = PBXGroup;
 			children = (
 				F0EXT0412F30000000000001 /* ExtensionHelpers.swift */,
+				F0BSY0012F30000000000001 /* BoundedSync.swift */,
 				F0C060B82E4F70580066F2C4 /* Locations.swift */,
 				F0C0609B2E4F70580066F2C4 /* NightShift.swift */,
 			);
@@ -1470,6 +1483,8 @@
 				F0TST0092F30000000000001 /* CodableRoundTripTests.swift */,
 				F0TST0132F30000000000001 /* CodableShimsABITests.swift */,
 				F0PRT0072F30000000000001 /* ConcurrencyTests.swift */,
+				F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */,
+				F0BST0012F30000000000001 /* BoundedSyncTests.swift */,
 				F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */,
 				F0VOT0012F30000000000001 /* VideoOrientationTests.swift */,
 				F0SDT0012F30000000000001 /* SaverDetectionTests.swift */,
@@ -1730,6 +1745,8 @@
 				F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */,
 				F0SPG0022F30000000000001 /* SpannedGeometry.swift in Sources */,
 				F0PRG0032F30000000000001 /* PresentingRing.swift in Sources */,
+				F0BSY0032F30000000000001 /* BoundedSync.swift in Sources */,
+				F0PWP0032F30000000000001 /* PumpWatchdogPolicy.swift in Sources */,
 				F0GSN0032F30000000000001 /* GeometrySanitizer.swift in Sources */,
 				F0OBX0042F30000000000001 /* ObjCExceptionCatcher.m in Sources */,
 				F0OBX0072F30000000000001 /* ObjCException.swift in Sources */,
@@ -1952,6 +1969,8 @@
 				F0PRT0152F30000000000001 /* SolarSlicePropertyTests.swift in Sources */,
 				F0PRT0162F30000000000001 /* SidecarJSONFuzzTests.swift in Sources */,
 				F0PRT0172F30000000000001 /* ConcurrencyTests.swift in Sources */,
+				F0PWT0022F30000000000001 /* PumpWatchdogPolicyTests.swift in Sources */,
+				F0BST0022F30000000000001 /* BoundedSyncTests.swift in Sources */,
 				F0EXH0042F30000000000001 /* WallpaperExtensionIdentityTests.swift in Sources */,
 				F0TST0122F30000000000001 /* CodableShimsABITests.swift in Sources */,
 			);
@@ -1969,6 +1988,8 @@
 				F0WPX0062F30000000000001 /* SettingsProvider.swift in Sources */,
 				F0WPX0072F30000000000001 /* ExtensionDiagnostics.swift in Sources */,
 				F0PRG0022F30000000000001 /* PresentingRing.swift in Sources */,
+				F0BSY0022F30000000000001 /* BoundedSync.swift in Sources */,
+				F0PWP0022F30000000000001 /* PumpWatchdogPolicy.swift in Sources */,
 				F0GSN0022F30000000000001 /* GeometrySanitizer.swift in Sources */,
 				F0OBX0032F30000000000001 /* ObjCExceptionCatcher.m in Sources */,
 				F0OBX0062F30000000000001 /* ObjCException.swift in Sources */,
@@ -2021,6 +2042,7 @@
 				F0WPX0BD2F30000000000001 /* Locations.swift in Sources */,
 				F0WPX0BE2F30000000000001 /* NightShift.swift in Sources */,
 				F0WPX0BF2F30000000000001 /* AVAsset+VideoOrientation.swift in Sources */,
+				F0PBM0032F30000000000001 /* PlaybackMath.swift in Sources */,
 				F0WPX0C02F30000000000001 /* DownloadManager.swift in Sources */,
 				F0WPX0C12F30000000000001 /* AsynchronousOperation.swift in Sources */,
 				F0WPX0C22F30000000000001 /* FileHelpers.swift in Sources */,
@@ -2213,7 +2235,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.1;
+				MARKETING_VERSION = 4.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2244,7 +2266,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.1;
+				MARKETING_VERSION = 4.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2311,7 +2333,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.1;
+				MARKETING_VERSION = 4.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2345,7 +2367,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.1;
+				MARKETING_VERSION = 4.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

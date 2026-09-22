@@ -288,3 +288,129 @@ struct BoundedLoopAccumulatorTests {
         #expect(ticks2 >= 148 && ticks2 <= 152)  // twice the playtime per tick → ~half the ticks
     }
 }
+
+// MARK: - Bounded Loop Plan (file engine)
+
+/// Tests for the pass-boundary decision behind the wallpaper extension's
+/// bounded looping (PlaybackMath.boundedLoopPlan). Times are timebase
+/// seconds; a pass runs from passStart to passStart + clipDuration.
+@Suite("Bounded Loop Plan")
+struct BoundedLoopPlanTests {
+
+    @Test("60 s on a 10 s clip queues five more passes, then advances at the sixth pass end")
+    func sixPassesExactly() {
+        var passStart = 0.0
+        var loops = 0
+        while true {
+            let plan = PlaybackMath.boundedLoopPlan(passStart: passStart, clipDuration: 10, budgetStart: 0, budget: 60)
+            guard plan.loopAgain else {
+                #expect(plan.cutAt == nil)   // budget ends exactly at the pass end → natural EOF
+                break
+            }
+            loops += 1
+            passStart += 10
+        }
+        #expect(loops == 5)
+        #expect(passStart == 50)
+    }
+
+    @Test("Budget shorter than the clip cuts mid-pass at budgetStart + budget")
+    func shortBudgetCutsMidPass() {
+        let plan = PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 600, budgetStart: 0, budget: 60)
+        #expect(plan.loopAgain == false)
+        #expect(plan.cutAt == 60)
+    }
+
+    @Test("Budget not a multiple of the clip: loops while a pass fits, then cuts inside the last pass")
+    func nonMultipleBudget() {
+        // 25 s on a 10 s clip: the passes at 0 and 10 loop, the pass at 20 cuts at 25.
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: 0, budget: 25).loopAgain == true)
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 10, clipDuration: 10, budgetStart: 0, budget: 25).loopAgain == true)
+        let last = PlaybackMath.boundedLoopPlan(passStart: 20, clipDuration: 10, budgetStart: 0, budget: 25)
+        #expect(last.loopAgain == false)
+        #expect(last.cutAt == 25)
+    }
+
+    @Test("Cold-start resume: the window opens at the resumed position, passes start at their PTS base")
+    func resumedWindow() {
+        // Resumed 22.7 s into a 30 s clip with a 60 s budget → the window ends at 82.7.
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 30, budgetStart: 22.7, budget: 60).loopAgain == true)
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 30, clipDuration: 30, budgetStart: 22.7, budget: 60).loopAgain == true)
+        let last = PlaybackMath.boundedLoopPlan(passStart: 60, clipDuration: 30, budgetStart: 22.7, budget: 60)
+        #expect(last.loopAgain == false)
+        #expect(last.cutAt.map { abs($0 - 82.7) < 1e-9 } == true)
+    }
+
+    @Test("Stubs shorter than minTail snap to the pass edges")
+    func minTailSnapping() {
+        // 10.5 s on a 10 s clip: the extra half second isn't worth another pass.
+        let tail = PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: 0, budget: 10.5)
+        #expect(tail.loopAgain == false)
+        #expect(tail.cutAt == nil)
+        // 9.6 s on a 10 s clip: cutting 0.4 s before the natural end is pointless.
+        let nearEnd = PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: 0, budget: 9.6)
+        #expect(nearEnd.loopAgain == false)
+        #expect(nearEnd.cutAt == nil)
+        // 0.3 s budget: no sub-second stub either.
+        let stub = PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: 0, budget: 0.3)
+        #expect(stub.loopAgain == false)
+        #expect(stub.cutAt == nil)
+    }
+
+    @Test("No budget, no clip length, or non-finite input → play once")
+    func degenerateInputs() {
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: 0, budget: 0).loopAgain == false)
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 0, budgetStart: 0, budget: 60).loopAgain == false)
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: .nan, budgetStart: 0, budget: 60).cutAt == nil)
+        #expect(PlaybackMath.boundedLoopPlan(passStart: 0, clipDuration: 10, budgetStart: .infinity, budget: 60).loopAgain == false)
+    }
+}
+
+@Suite("Resume clamp + gapless re-base")
+struct ResumeClampTests {
+    @Test("resume position inside the clip is kept")
+    func inRange() {
+        #expect(PlaybackMath.resumeStart(requested: 5, clipDuration: 12) == 5)
+        #expect(PlaybackMath.resumeStart(requested: 10.9, clipDuration: 12) == 10.9)
+    }
+
+    @Test("stale positions past the clip, inside the tail, negative or nil start from 0")
+    func outOfRange() {
+        #expect(PlaybackMath.resumeStart(requested: 16.3, clipDuration: 12) == 0)
+        #expect(PlaybackMath.resumeStart(requested: 11.2, clipDuration: 12) == 0)   // inside the 1 s tail
+        #expect(PlaybackMath.resumeStart(requested: 12.0, clipDuration: 12) == 0)
+        #expect(PlaybackMath.resumeStart(requested: -3, clipDuration: 12) == 0)
+        #expect(PlaybackMath.resumeStart(requested: 0, clipDuration: 12) == 0)
+        #expect(PlaybackMath.resumeStart(requested: nil, clipDuration: 12) == 0)
+        #expect(PlaybackMath.resumeStart(requested: .nan, clipDuration: 12) == 0)
+    }
+
+    @Test("unknown clip duration trusts the request")
+    func unknownDuration() {
+        #expect(PlaybackMath.resumeStart(requested: 16.3, clipDuration: 0) == 16.3)
+        #expect(PlaybackMath.resumeStart(requested: 16.3, clipDuration: .nan) == 16.3)
+    }
+
+    @Test("gapless swap keeps the enqueued end when the decoder is ahead")
+    func swapAhead() {
+        let ahead = PlaybackMath.gaplessSwapBase(enqueuedEnd: 12.0, now: 11.3)
+        #expect(ahead.base == 12.0)
+        #expect(ahead.rebased == false)
+        let equal = PlaybackMath.gaplessSwapBase(enqueuedEnd: 12.0, now: 12.0)
+        #expect(equal.base == 12.0)
+        #expect(equal.rebased == false)
+    }
+
+    @Test("gapless swap re-bases to now when the decoder is behind")
+    func swapBehind() {
+        let cold = PlaybackMath.gaplessSwapBase(enqueuedEnd: 0, now: 16.31)
+        #expect(cold.base == 16.31)
+        #expect(cold.rebased == true)
+        let late = PlaybackMath.gaplessSwapBase(enqueuedEnd: 5.93, now: 16.31)
+        #expect(late.base == 16.31)
+        #expect(late.rebased == true)
+        let bad = PlaybackMath.gaplessSwapBase(enqueuedEnd: 5.93, now: .nan)
+        #expect(bad.base == 5.93)
+        #expect(bad.rebased == false)
+    }
+}

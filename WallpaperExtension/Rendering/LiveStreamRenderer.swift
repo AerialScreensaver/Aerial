@@ -23,6 +23,7 @@ import AppKit
 import AVFoundation
 import CoreImage
 import CoreMedia
+import os
 
 final class LiveStreamRenderer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "aerial-wallpaper-live-renderer", qos: .userInitiated)
@@ -65,6 +66,26 @@ final class LiveStreamRenderer: @unchecked Sendable {
     /// Throttle for the failed-renderer 🚑 log in the 60 Hz pull loop.
     private var lastFailedFlushLogAt: CFAbsoluteTime = 0
 
+    /// Off-queue mirror of the queue-confined state (same rationale as
+    /// `VideoRenderer.Published`): status, snapshot and diagnostics reads
+    /// must never wait on this queue. Written by `publish()` on `queue`.
+    struct LivePublished {
+        var streamURL: URL
+        var feedName: String
+        var pauseReasons: PauseReasons = []
+        var isPaused = false
+        var saverActive = false
+        var ssCount = 0
+        var ssNotif = false
+        var lockedCount = 0
+        var subscriberIDs: [ObjectIdentifier] = []
+        var lastSample: CMSampleBuffer?
+        var framesEnqueued = 0
+        var lastFrameAt: CFAbsoluteTime
+        var recoveryAttempts = 0
+    }
+    private let published: OSAllocatedUnfairLock<LivePublished>
+
     // MARK: - Handler hooks (installed at creation, off-protocol)
 
     /// Pop the next/previous playlist entry (same selection layer as the
@@ -93,6 +114,29 @@ final class LiveStreamRenderer: @unchecked Sendable {
         self.videoId = videoId
         self.feedName = name
         self.playSeconds = max(playSeconds, 10)
+        self.published = OSAllocatedUnfairLock(uncheckedState: LivePublished(
+            streamURL: url, feedName: name, lastFrameAt: CFAbsoluteTimeGetCurrent()
+        ))
+    }
+
+    /// Refresh the off-queue mirror. Must run on `queue`.
+    private func publish() {
+        let snap = LivePublished(
+            streamURL: streamURL,
+            feedName: feedName,
+            pauseReasons: pauseReasons,
+            isPaused: isPaused,
+            saverActive: screensaverSubscriberCount > 0 || screensaverActiveFromNotification,
+            ssCount: screensaverSubscriberCount,
+            ssNotif: screensaverActiveFromNotification,
+            lockedCount: lockedScreenCount,
+            subscriberIDs: subscribers.map { ObjectIdentifier($0) },
+            lastSample: lastSample,
+            framesEnqueued: framesEnqueued,
+            lastFrameAt: lastFrameAt,
+            recoveryAttempts: recoveryAttempts
+        )
+        published.withLockUnchecked { $0 = snap }
     }
 
     /// Build the player + output and start pulling. Mirrors
@@ -105,13 +149,19 @@ final class LiveStreamRenderer: @unchecked Sendable {
         }
     }
 
+    /// Bounded hop (see `VideoRenderer.stop()`): a teardown must never
+    /// hang behind a wedged queue; the body still runs when it frees up.
     func stop() {
-        queue.sync {
+        let finished: Void? = BoundedSync.run(on: queue, timeout: .seconds(5)) { [self] in
             isRunning = false
             teardownPlayer()
             rotationTimer?.cancel()
             rotationTimer = nil
             cancelDeepPauseTimer()
+            publish()
+        }
+        if finished == nil {
+            debugLog("⚠️ [LiveStream] stop(): queue unresponsive after 5s — teardown left queued")
         }
     }
 
@@ -224,6 +274,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
         lastFrameAt = CFAbsoluteTimeGetCurrent()
         framesEnqueued &+= 1
         recoveryAttempts = 0
+        publish()
     }
 
     // MARK: - Rotation
@@ -258,6 +309,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
             self.feedName = name
             buildPlayer(url: url)
             scheduleRotation()
+            publish()
             onVideoChanged?()
         case .file:
             debugLog("  [LiveStream] next entry is a file — requesting renderer switch")
@@ -289,6 +341,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
                 }
                 lastFrameAt = CFAbsoluteTimeGetCurrent()   // full window for the rebuild
                 buildPlayer(url: streamURL)
+                publish()
             } else {
                 debugLog("⚠️ [LiveStream] \(feedName) unrecoverable — falling back to cached video")
                 requestCachedFallback?()
@@ -311,6 +364,9 @@ final class LiveStreamRenderer: @unchecked Sendable {
     /// would give 0.25 s anyway).
     private func convergePlaybackState(context: String) {
         guard isRunning else { return }
+        // Every intent change lands here (pause reasons, saver/lock
+        // counters) — mirror it whether or not the physical state moved.
+        defer { publish() }
         if effectivePaused {
             guard !isPaused else { return }
             isPaused = true
@@ -471,7 +527,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
     /// pixel buffers are IOSurface-backed (see buildPlayer) — zero-copy
     /// for `CALayer.contents`.
     func presentingImageBuffer() -> CVPixelBuffer? {
-        queue.sync { lastSample.flatMap { CMSampleBufferGetImageBuffer($0) } }
+        published.withLockUnchecked { $0.lastSample }.flatMap { CMSampleBufferGetImageBuffer($0) }
     }
 
     // MARK: - Live config (no-ops: live is rate-locked, no transitions)
@@ -513,6 +569,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
             if let sample = lastSample {
                 layer.sampleBufferRenderer.enqueue(sample)
             }
+            publish()
         }
     }
 
@@ -521,15 +578,16 @@ final class LiveStreamRenderer: @unchecked Sendable {
             guard let self else { return }
             subscribers.removeAll { $0 === layer }
             debugLog("  [LiveStream] subscriber -1 → \(subscribers.count) total")
+            publish()
         }
     }
 
     func feedsLayer(_ layer: AVSampleBufferDisplayLayer) -> Bool {
-        queue.sync { subscribers.contains { $0 === layer } }
+        published.withLockUnchecked { $0.subscriberIDs.contains(ObjectIdentifier(layer)) }
     }
 
     var subscriberCount: Int {
-        queue.sync { subscribers.count }
+        published.withLockUnchecked { $0.subscriberIDs.count }
     }
 
     /// Wake recovery — see `PlaybackRenderer.recoverAllLayers`. The live
@@ -578,7 +636,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
     // MARK: - Status / diagnostics
 
     var currentAssetURL: URL {
-        queue.sync { streamURL }
+        published.withLockUnchecked { $0.streamURL }
     }
 
     /// Live position is meaningless for resume — 0 keeps it out of the
@@ -589,32 +647,52 @@ final class LiveStreamRenderer: @unchecked Sendable {
         (name: feedName, id: videoId)
     }
 
+    /// Identity/pause fields from the mirror; the player's live
+    /// position and rate via a bounded hop (0 on timeout — the status
+    /// writer must never block on this queue).
     func statusSnapshot() -> VideoRenderer.StatusSnapshot {
-        queue.sync {
-            VideoRenderer.StatusSnapshot(
-                assetURL: streamURL,
-                position: player?.currentItem?.currentTime().seconds ?? 0,
-                rate: Double(player?.rate ?? 0),
-                pauseReasons: pauseReasons,
-                saverActive: screensaverSubscriberCount > 0 || screensaverActiveFromNotification
-            )
+        let p = published.withLockUnchecked { $0 }
+        let live: (position: Double, rate: Double)? = BoundedSync.run(on: queue, timeout: .seconds(1)) { [weak self] in
+            guard let self else { return (0, 0) }
+            return (player?.currentItem?.currentTime().seconds ?? 0, Double(player?.rate ?? 0))
         }
+        return VideoRenderer.StatusSnapshot(
+            assetURL: p.streamURL,
+            position: live?.position ?? 0,
+            rate: live?.rate ?? 0,
+            pauseReasons: p.pauseReasons,
+            saverActive: p.saverActive
+        )
     }
 
     func diagnosticsSnapshot() -> String {
-        queue.sync {
-            let sinceFrame = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - lastFrameAt)
-            return "LIVE subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) feed=\(feedName) rate=\(player?.rate ?? 0) paused=\(isPaused) reasons=\(pauseReasons.summary) fed=\(framesEnqueued) lastFrame=\(sinceFrame)s recovery=\(recoveryAttempts)"
+        if let line = BoundedSync.run(on: queue, timeout: .seconds(2), { [weak self] in
+            self?.diagnosticsLineOnQueue() ?? "renderer gone"
+        }) {
+            return line
         }
+        let p = published.withLockUnchecked { $0 }
+        let sinceFrame = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - p.lastFrameAt)
+        return "LIVE subs=\(p.subscriberIDs.count) ssCount=\(p.ssCount) locked=\(p.lockedCount) ssNotif=\(p.ssNotif) feed=\(p.feedName) paused=\(p.isPaused) reasons=\(p.pauseReasons.summary) fed=\(p.framesEnqueued) lastFrame=\(sinceFrame)s recovery=\(p.recoveryAttempts) QUEUE-UNRESPONSIVE (degraded: mirror)"
+    }
+
+    private func diagnosticsLineOnQueue() -> String {
+        let sinceFrame = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - lastFrameAt)
+        return "LIVE subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) feed=\(feedName) rate=\(player?.rate ?? 0) paused=\(isPaused) reasons=\(pauseReasons.summary) fed=\(framesEnqueued) lastFrame=\(sinceFrame)s recovery=\(recoveryAttempts)"
     }
 
     private static let snapshotContext = CIContext(options: [.useSoftwareRenderer: false])
 
-    func captureCurrentFrame() async -> CGImage? {
-        let recent: CMSampleBuffer? = queue.sync { lastSample }
-        guard let recent, let pixelBuffer = CMSampleBufferGetImageBuffer(recent) else { return nil }
+    /// Mirror read + CIContext — never waits on the queue.
+    func captureFromLastSample() -> CGImage? {
+        guard let recent = published.withLockUnchecked({ $0.lastSample }),
+              let pixelBuffer = CMSampleBufferGetImageBuffer(recent) else { return nil }
         let ci = CIImage(cvPixelBuffer: pixelBuffer)
         return Self.snapshotContext.createCGImage(ci, from: ci.extent)
+    }
+
+    func captureCurrentFrame() async -> CGImage? {
+        captureFromLastSample()
     }
 }
 

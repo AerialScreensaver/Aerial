@@ -28,6 +28,7 @@ import AppKit
 import AVFoundation
 import CoreImage
 import CoreMedia
+import os
 
 /// Why playback is paused. Pause intent is the UNION of four independent
 /// sources; the renderer converges the physical timebase state to the
@@ -192,6 +193,38 @@ final class VideoRenderer: @unchecked Sendable {
     /// at the swap.
     private var nextFrameRate: Float?
 
+    // MARK: Bounded looping (per-entry play duration)
+
+    /// The current entry's play-duration override, in seconds of
+    /// playtime; nil = play once. Measured on the timebase, so it is
+    /// speed-factored and pause-safe by construction (the AVPlayer engine
+    /// had to accumulate wall-clock × rate for the same effect).
+    /// Queue-confined after init.
+    private var currentPlayDuration: Double?
+    /// Rides with the next reader like `nextFrameRate`; adopted at the swap.
+    private var nextPlayDuration: Double?
+    /// Timebase time the current entry's budget window opened at: its
+    /// first pass start, or the resumed position on a cold start /
+    /// recreate. Untouched by same-clip re-primes so playtime accumulates
+    /// across passes.
+    private var budgetStartTB: CMTime = .zero
+    /// Absolute timebase time at which the current pass ends early
+    /// because the budget runs out mid-clip (armed by
+    /// `prepareNextReaderOnQueue`, consumed by the pump). nil = play to EOF.
+    private var budgetCutTB: CMTime?
+    /// The pump hit `budgetCutTB` — the swap that follows is a budget
+    /// cut, not a clean EOF: audio restarts anchored instead of queueing
+    /// the old clip's tail behind the new base. One-shot.
+    private var budgetCutFired = false
+    /// Same-clip passes queued so far for the current budget (diagnostics).
+    private var boundedLoopPasses = 0
+    /// Where the pending next reader came from. Re-primes never consulted
+    /// the provider, so an explicit advance must pop it itself instead of
+    /// replaying the clip (`advanceNow`), and the budget window survives
+    /// the swap (`swapToNextReader`).
+    private enum NextReaderOrigin { case provider, repeatOne, boundedLoop }
+    private var nextOrigin: NextReaderOrigin = .provider
+
     /// Wall-clock duration of every adaptive ease — pause landings,
     /// resume ramps, and saver/lock rate transitions. High-fps content
     /// glides beautifully; low-fps content would frame-step through a
@@ -233,8 +266,11 @@ final class VideoRenderer: @unchecked Sendable {
     /// displayable). Powers instant join (`addSubscriber` shows it via a
     /// DisplayImmediately copy instead of black-until-PTS-catch-up) and
     /// the cheap `captureCurrentFrame` path. Touched only on `queue`;
-    /// cleared on explicit swaps/recreates so a stale video never
-    /// replays.
+    /// cleared on explicit swaps so a stale video never replays. A
+    /// recreate (deep-pause wake, error/watchdog recovery) KEEPS it: it
+    /// is always the same asset, and the wake recovery + snapshot reply
+    /// need a frame exactly then (2026-09-20: "no frame to re-prime —
+    /// deep-paused" on every wake, poster decode on a suspect decoder).
     private var lastSample: CMSampleBuffer?
 
     /// Feed heartbeat (touched only on `queue`): wall-clock of the last
@@ -242,6 +278,75 @@ final class VideoRenderer: @unchecked Sendable {
     /// dead feed loop; both surface in `diagnosticsSnapshot()`.
     private var lastEnqueueAt: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
     private var framesEnqueued: Int = 0
+
+    // MARK: - Off-queue mirror + pump watchdog state
+
+    /// Snapshot of the queue-confined state that off-queue readers need
+    /// (status writer, snapshot XPC, diagnostics, control listener).
+    /// Written from `queue` by `publish()` at every state change and at
+    /// the end of every pump pass; read under the lock everywhere else.
+    /// Exists so that NO cross-queue read ever waits on the renderer
+    /// queue: when that queue wedged inside AVFoundation (a
+    /// `copyNextSampleBuffer` that never returned after a wake — the
+    /// 2026-09-20 DisplayLink bundle), the old `queue.sync` readers piled
+    /// up on the main thread, the XPC handler tasks and the diagnostics
+    /// queue until WallpaperAgent killed the process 30 s later.
+    struct Published {
+        var asset: AVURLAsset
+        var ptsOffset: CMTime = .zero
+        var pauseReasons: PauseReasons = []
+        var isPaused = false
+        var saverActive = false
+        var lockedCount = 0
+        var ssCount = 0
+        var ssNotif = false
+        var nominalRate: Double = 0.125
+        var extraRotation = 0
+        var subscriberIDs: [ObjectIdentifier] = []
+        var stuckIDs: Set<ObjectIdentifier> = []
+        var lastSample: CMSampleBuffer?
+        var currentReader: AVAssetReader?
+        var nextReader: AVAssetReader?
+        var lastEnqueueAt: CFAbsoluteTime
+        var framesEnqueued = 0
+        /// Watchdog counters. `wdCancels` / `lastWatchdogCancelAt` are
+        /// written by the watchdog thread and preserved across publishes.
+        var wdCancels = 0
+        var lastWatchdogCancelAt: CFAbsoluteTime = 0
+        var wdRecreates = 0
+        var wdAttempt = 0
+    }
+    private let published: OSAllocatedUnfairLock<Published>
+
+    /// The blocking AVFoundation call the pump is inside right now (nil
+    /// between calls). Set/cleared on `queue` around `copyNextSampleBuffer`
+    /// and `startReading`; the off-queue watchdog reads it to detect a
+    /// wedge and records its cancel in it.
+    struct PumpBlock {
+        let reader: AVAssetReader
+        let phase: String
+        let enteredAt: CFAbsoluteTime
+        var cancelIssuedAt: CFAbsoluteTime?
+        var escalated = false
+    }
+    private let pumpBlock = OSAllocatedUnfairLock<PumpBlock?>(uncheckedState: nil)
+    /// Reader the watchdog cancelled — consumed by the pump's nil branch
+    /// so a watchdog cancel is never mistaken for EOF (which would advance
+    /// the playlist) or for a decoder failure (immediate re-wedge).
+    private let watchdogCancelledReader = OSAllocatedUnfairLock<AVAssetReader?>(uncheckedState: nil)
+    /// Once-per-episode gate for the "queue unresponsive" diagnostics line.
+    private let queueUnresponsiveLogged = OSAllocatedUnfairLock(initialState: false)
+    /// Debug-only stall injector (see `pollStallInjector`).
+    private let armedStall = OSAllocatedUnfairLock<String?>(initialState: nil)
+    /// Watchdog rebuild ladder (queue-confined): attempts since the last
+    /// healthy frame, lifetime rebuilds, and the pending backoff timer.
+    private var wdAttempt = 0
+    private var wdRecreates = 0
+    private var watchdogRecreateTimer: (any DispatchSourceTimer)?
+    /// Escalation hook: the watchdog cancelled the reader and the queue
+    /// is STILL blocked `PumpWatchdogPolicy.escalateAfterCancel` later —
+    /// AVFoundation ignored the cancel. Installed by the handler.
+    var onQueueWedged: (() -> Void)?
 
     /// Refresh-cap thinning state (touched only on `queue`). High-fps
     /// sources feed more frames than any display can present (240 fps
@@ -476,25 +581,26 @@ final class VideoRenderer: @unchecked Sendable {
     /// Sync hop onto the renderer queue; called rarely (churn-eviction
     /// checks on acquire).
     func isSubscriberStuck(_ layer: AVSampleBufferDisplayLayer) -> Bool {
-        queue.sync { (consecutiveSkips[ObjectIdentifier(layer)] ?? 0) >= Self.stuckSkipThreshold }
+        published.withLockUnchecked { $0.stuckIDs.contains(ObjectIdentifier(layer)) }
     }
 
     /// Pixel buffer of the newest DECODED frame — may run ≤~2 s ahead
-    /// of the visible frame (decode order). Survives deep pause (only
-    /// `recreatePlayback` clears `lastSample`), which is exactly why
-    /// the acquire prime uses it as the deep-pause fallback when the
-    /// presenting ring is empty. Sync hop; called once per acquire.
+    /// of the visible frame (decode order). Survives deep pause and
+    /// recreates (only an explicit swap clears `lastSample`), which is
+    /// exactly why the acquire prime and the snapshot reply use it as
+    /// the fallback when the presenting ring is empty. Mirror read — never
+    /// waits on the renderer queue.
     func lastDecodedImageBuffer() -> CVPixelBuffer? {
-        queue.sync { lastSample.flatMap { CMSampleBufferGetImageBuffer($0) } }
+        published.withLockUnchecked { $0.lastSample }.flatMap { CMSampleBufferGetImageBuffer($0) }
     }
 
     /// Cheap content identity for the disk-snapshot dedupe: current
     /// asset + coarse timebase position. Identical while paused —
     /// nothing new presents, and re-encoding that unchanged frame was
     /// the bulk of the 2026-08-29 disk-write diagnostics (505 × ~4 MB).
-    /// Sync hop; call off the renderer queue.
+    /// Mirror read; safe from any thread.
     func snapshotIdentity() -> String {
-        let name = queue.sync { asset.url.lastPathComponent }
+        let name = published.withLockUnchecked { $0.asset.url.lastPathComponent }
         let time = CMTimebaseGetTime(timebase).seconds
         return "\(name)@\(String(format: "%.1f", time))"
     }
@@ -520,9 +626,19 @@ final class VideoRenderer: @unchecked Sendable {
     /// impossible with every reader decoded — scream once if it returns.
     private var warnedCompressedSamples = false
 
+    /// What the playlist hooks hand over for a loop boundary or a jump:
+    /// the file to play and the entry's play-duration override (seconds
+    /// of playtime; nil = play once). Carried with the pop rather than
+    /// looked up by URL — the same video can sit twice in a playlist
+    /// with different durations.
+    struct NextVideo {
+        let url: URL
+        let playDuration: Double?
+    }
+
     /// Loop-boundary hook for forward direction. The handler installs
     /// this with `ExtensionVideoLoader.getNextVideo(...)`.
-    var nextVideoProvider: (() -> URL?)?
+    var nextVideoProvider: (() -> NextVideo?)?
     /// Extra rotation (degrees, clockwise) the user set for the video at
     /// a URL — the Library's per-video override. Consulted whenever a
     /// reader is built for a URL the hooks handed us (next / previous /
@@ -531,7 +647,7 @@ final class VideoRenderer: @unchecked Sendable {
     var rotationOverrideProvider: ((URL) -> Int)?
 
     /// Mirror for backward direction, called by `regressNow()`.
-    var previousVideoProvider: (() -> URL?)?
+    var previousVideoProvider: (() -> NextVideo?)?
 
     /// Fired on the renderer queue whenever the playing video CHANGES
     /// (natural EOF rotation and manual swaps alike; same-URL loops
@@ -543,11 +659,17 @@ final class VideoRenderer: @unchecked Sendable {
 
     // MARK: - Construction
 
+    /// " playFor=Ns" for log lines; empty without an override.
+    private static func playForSuffix(_ playDuration: Double?) -> String {
+        playDuration.map { String(format: " playFor=%.0fs", $0) } ?? ""
+    }
+
     /// Build a renderer for the given video. The caller must attach
     /// at least one subscriber via `addSubscriber(_:)` before — or
     /// shortly after — calling `start()`; until then the timebase
     /// stays at rate 0 and no feeding happens.
-    static func create(videoURL: URL, startAt: Double? = nil, extraRotation: Int = 0) async throws -> VideoRenderer {
+    static func create(videoURL: URL, startAt: Double? = nil, extraRotation: Int = 0,
+                       playDuration: Double? = nil) async throws -> VideoRenderer {
         let asset = AVURLAsset(url: videoURL)
         let tracks = try await asset.loadTracks(withMediaType: .video)
         guard let track = tracks.first else {
@@ -557,9 +679,9 @@ final class VideoRenderer: @unchecked Sendable {
         }
         let fps = (try? await track.load(.nominalFrameRate)) ?? 30
         let presentation = await loadPresentation(track: track, extraRotation: extraRotation)
-        debugLog("🔄 [Renderer] \(videoURL.lastPathComponent): \(presentation.summary)")
+        debugLog("🔄 [Renderer] \(videoURL.lastPathComponent): \(presentation.summary)\(playForSuffix(playDuration))")
         return try VideoRenderer(asset: asset, videoTrack: track, frameRate: fps, startAt: startAt,
-                                 presentation: presentation)
+                                 presentation: presentation, playDuration: playDuration)
     }
 
     /// Resume offset for the FIRST video only (cold-start resume from
@@ -575,12 +697,16 @@ final class VideoRenderer: @unchecked Sendable {
     private var deepPauseResumePosition: CMTime = .zero
 
     private init(asset: AVURLAsset, videoTrack: AVAssetTrack, frameRate: Float, startAt: Double? = nil,
-                 presentation: TrackPresentation) throws {
+                 presentation: TrackPresentation, playDuration: Double? = nil) throws {
         self.asset = asset
         self.videoTrack = videoTrack
         self.presentation = presentation
         self.currentFrameRate = frameRate
+        self.currentPlayDuration = playDuration
         self.startOffset = startAt.map { CMTime(sanitizedSeconds: $0, "start offset") } ?? .zero
+        self.published = OSAllocatedUnfairLock(uncheckedState: Published(
+            asset: asset, extraRotation: presentation.extraRotation, lastEnqueueAt: CFAbsoluteTimeGetCurrent()
+        ))
 
         // Practically never fails, but a crash here takes down the
         // whole extension (black wallpaper on every display) — throw
@@ -699,9 +825,16 @@ final class VideoRenderer: @unchecked Sendable {
             // anything the window/readiness gate held back stays in the
             // ring for catchUpLaggards() once the layer has room.
             // First subscriber after an idle gap kicks the timebase
-            // (start() leaves it at rate 0 while there's nobody to feed).
-            if wasEmpty, currentReader != nil {
+            // (start() leaves it at rate 0 while there's nobody to feed,
+            // and reassert holds it at 0 whenever the last one leaves). A
+            // paused renderer with no reader is a deep pause or a resume
+            // deferred while idle — the reassert rebuilds it.
+            if wasEmpty, currentReader != nil || isPaused {
                 reassertPlaybackState(context: "subscriber+1")
+            } else if wasEmpty, currentReader == nil, wdAttempt > 0, watchdogRecreateTimer == nil {
+                // The watchdog killed the reader while nobody was
+                // subscribed — rebuild now that someone is.
+                scheduleWatchdogRecreate(after: 0)
             }
             // Join the driver pool — every subscriber drives its own feed,
             // so no single layer is the pacer. Skipped while paused or
@@ -709,6 +842,7 @@ final class VideoRenderer: @unchecked Sendable {
             if currentReader != nil, !isPaused, !feedSuspended {
                 registerFeed(on: layer)
             }
+            publish()
         }
     }
 
@@ -729,15 +863,27 @@ final class VideoRenderer: @unchecked Sendable {
             // No pacer handoff: every remaining layer drives its own feed,
             // so dropping one (screen disconnect / Space churn) never stalls
             // the rest and needs no re-election.
+            if subscribers.isEmpty {
+                // Nobody watching: hold the timebase. It used to keep
+                // running at the nominal rate while the pump idled, so the
+                // timeline drifted seconds ahead of the decoder, the
+                // persisted position ran past short clips, and the next
+                // join/cold start fast-forwarded through late frames
+                // (2026-09-21 saver-only bundle). A pause landing (.down)
+                // finishes on its own — it ends at rate 0 anyway.
+                if activeRampKind != .down { cancelRamp() }
+                reassertPlaybackState(context: "subscriber-0")
+            }
+            publish()
         }
     }
 
     func feedsLayer(_ layer: AVSampleBufferDisplayLayer) -> Bool {
-        queue.sync { subscribers.contains { $0 === layer } }
+        published.withLockUnchecked { $0.subscriberIDs.contains(ObjectIdentifier(layer)) }
     }
 
     var subscriberCount: Int {
-        queue.sync { subscribers.count }
+        published.withLockUnchecked { $0.subscriberIDs.count }
     }
 
     // MARK: - Lifecycle
@@ -751,9 +897,19 @@ final class VideoRenderer: @unchecked Sendable {
         // timebase to match — samples arrive with PTS ≥ offset, so the
         // first frame presents immediately at the resumed position. Loop
         // math is unaffected (ptsOffset stays 0; lastEnqueuedEnd tracks
-        // absolute PTS).
-        if startOffset > .zero {
-            reader.timeRange = CMTimeRange(start: startOffset, duration: .positiveInfinity)
+        // absolute PTS). A stale position past the clip (older builds let
+        // the idle timebase drift and persisted it) would seek past the
+        // last sample — instant EOF and a late-frame fast-forward through
+        // the next clip — so it is clamped to the clip here, the only
+        // place that knows the duration synchronously.
+        let clipSeconds = videoTrack.timeRange.duration.seconds
+        let resumeSeconds = PlaybackMath.resumeStart(requested: startOffset.seconds, clipDuration: clipSeconds)
+        let effectiveStart: CMTime = resumeSeconds > 0 ? startOffset : .zero
+        if startOffset > .zero, resumeSeconds == 0 {
+            debugLog("⏱ [Renderer] resume position \(String(format: "%.1f", startOffset.seconds))s beyond clip (\(String(format: "%.1f", clipSeconds))s) — starting from 0")
+        }
+        if effectiveStart > .zero {
+            reader.timeRange = CMTimeRange(start: effectiveStart, duration: .positiveInfinity)
         }
         let output = Self.makeOutput(track: videoTrack, presentation: presentation, frameRate: currentFrameRate)
         reader.add(output)
@@ -767,12 +923,18 @@ final class VideoRenderer: @unchecked Sendable {
         // Nothing in here re-enters `queue` synchronously: prepareNextReader
         // is queue.async, startFeeding only registers callbacks on `queue`.
         queue.sync {
-            CMTimebaseSetTime(timebase, time: startOffset > .zero ? startOffset : .zero)
+            CMTimebaseSetTime(timebase, time: effectiveStart)
 
             currentReader = reader
             currentOutput = output
             ptsOffset = .zero
             lastEnqueuedEnd = .zero
+            // Bounded loop: the entry's budget window opens where playback
+            // starts (the resumed position on a cold start).
+            budgetStartTB = effectiveStart
+            budgetCutTB = nil
+            budgetCutFired = false
+            boundedLoopPasses = 0
 
             // Only start the timebase if we have a subscriber to feed.
             // Otherwise it advances while we're waiting and the first
@@ -785,15 +947,24 @@ final class VideoRenderer: @unchecked Sendable {
             if !subscribers.isEmpty {
                 startFeeding()
             }
+            publish()
         }
     }
 
-    /// Stop playback. Dispatches synchronously to ensure no callback
-    /// is mid-flight before canceling the reader.
+    /// Stop playback. Cancels the readers FIRST, from this thread — the
+    /// one AVFoundation call that unblocks a pump stuck inside
+    /// `copyNextSampleBuffer` — then hops onto the queue with a bound so
+    /// a teardown can never hang behind a wedged pump (the teardown
+    /// timer thread used to block forever). The queued body still runs
+    /// once the queue frees up, which is the intended teardown.
     func stop() {
         cancelDeepPauseTimer()
         cancelRamp()
-        queue.sync {
+        cancelWatchdogRecreateTimer()
+        let (current, next) = published.withLockUnchecked { ($0.currentReader, $0.nextReader) }
+        current?.cancelReading()
+        next?.cancelReading()
+        let finished: Void? = BoundedSync.run(on: queue, timeout: .seconds(5)) { [self] in
             isRunning = false
             deepPauseResumePosition = .zero
             audio.teardown()
@@ -801,6 +972,10 @@ final class VideoRenderer: @unchecked Sendable {
             stopFeedingAll()
             currentReader?.cancelReading()
             nextReader?.cancelReading()
+            publish()
+        }
+        if finished == nil {
+            debugLog("⚠️ [Renderer] stop(): queue unresponsive after 5s — readers cancelled, teardown left queued")
         }
     }
 
@@ -884,7 +1059,10 @@ final class VideoRenderer: @unchecked Sendable {
         // Audio converges after every playback-state decision; the defer
         // covers every return path (ramp starts, instant pauses, direct
         // rate sets). The reconcile no-ops when nothing changed.
-        defer { reconcileAudio(context: context) }
+        defer {
+            reconcileAudio(context: context)
+            publish()
+        }
         if effectivePaused {
             guard !isPaused else { return }
             // Display-asleep pauses (and Reduce Motion) land instantly —
@@ -925,6 +1103,14 @@ final class VideoRenderer: @unchecked Sendable {
                 cancelRamp()
             }
             if isPaused {
+                // Nobody to feed: leave the pause (and its deep-pause
+                // timer) in place; the next subscriber's reassert resumes.
+                // Resuming here used to rampUp an idle renderer and let the
+                // timeline run away from the decoder.
+                guard !subscribers.isEmpty else {
+                    debugLog("  [Renderer] resume deferred — no subscribers (\(context))")
+                    return
+                }
                 isPaused = false
                 cancelDeepPauseTimer()
                 if currentReader == nil {
@@ -941,15 +1127,33 @@ final class VideoRenderer: @unchecked Sendable {
                 }
                 debugLog("  [Renderer] resumed \(context)\(deferred)")
             }
-            if rampTimer == nil, !subscribers.isEmpty {
-                let target = effectiveRate
-                if easeRate, !reduceMotion, abs(Double(CMTimebaseGetRate(timebase)) - target) > 0.01 {
-                    // Saver/lock mode transitions glide between rates
-                    // (1.0× ↔ nominal) instead of snapping.
-                    debugLog("  [Renderer] rate ease → \(target) over \(String(format: "%.2f", adaptiveRampDuration))s (\(context))")
-                    rampRate(to: target, duration: adaptiveRampDuration)
+            // Watchdog belt: a reader the watchdog killed while the
+            // renderer was (or ended up) physically playing gets no
+            // `isPaused` transition to rebuild it above — re-arm now.
+            if currentReader == nil, wdAttempt > 0, watchdogRecreateTimer == nil {
+                scheduleWatchdogRecreate(after: 0)
+            }
+            if rampTimer == nil {
+                if subscribers.isEmpty {
+                    // Invariant: no subscribers ⇒ physical rate 0. The
+                    // intent stays "playing" (no pause reason, no deep
+                    // pause — readers stay warm for the teardown grace);
+                    // only the timeline stops so it can't run ahead of a
+                    // decoder that isn't decoding.
+                    if CMTimebaseGetRate(timebase) > 0 {
+                        CMTimebaseSetRate(timebase, rate: 0)
+                        debugLog("⏱ [Renderer] idle — no subscribers, timebase held at \(String(format: "%.1f", CMTimebaseGetTime(timebase).seconds))s (\(context))")
+                    }
                 } else {
-                    CMTimebaseSetRate(timebase, rate: target)
+                    let target = effectiveRate
+                    if easeRate, !reduceMotion, abs(Double(CMTimebaseGetRate(timebase)) - target) > 0.01 {
+                        // Saver/lock mode transitions glide between rates
+                        // (1.0× ↔ nominal) instead of snapping.
+                        debugLog("  [Renderer] rate ease → \(target) over \(String(format: "%.2f", adaptiveRampDuration))s (\(context))")
+                        rampRate(to: target, duration: adaptiveRampDuration)
+                    } else {
+                        CMTimebaseSetRate(timebase, rate: target)
+                    }
                 }
             }
         }
@@ -1052,7 +1256,7 @@ final class VideoRenderer: @unchecked Sendable {
     /// control listener to decide whether a playlist change requires
     /// cutting the current video.
     var currentAssetURL: URL {
-        queue.sync { asset.url }
+        published.withLockUnchecked { $0.asset.url }
     }
 
     /// One coherent snapshot for the status reporter — a single queue
@@ -1067,24 +1271,26 @@ final class VideoRenderer: @unchecked Sendable {
         let saverActive: Bool
     }
 
+    /// Mirror read + thread-safe timebase reads — never waits on the
+    /// renderer queue (the status writer runs on the main thread from
+    /// the control-notification observer).
     func statusSnapshot() -> StatusSnapshot {
-        queue.sync {
-            StatusSnapshot(
-                assetURL: asset.url,
-                position: max(0, CMTimeSubtract(CMTimebaseGetTime(timebase), ptsOffset).seconds),
-                rate: Double(CMTimebaseGetRate(timebase)),
-                pauseReasons: pauseReasons,
-                saverActive: (screensaverSubscriberCount > 0 || screensaverActiveFromNotification)
-                    && !screensaverRateSuspended
-            )
-        }
+        let p = published.withLockUnchecked { $0 }
+        return StatusSnapshot(
+            assetURL: p.asset.url,
+            position: max(0, CMTimeSubtract(CMTimebaseGetTime(timebase), p.ptsOffset).seconds),
+            rate: Double(CMTimebaseGetRate(timebase)),
+            pauseReasons: p.pauseReasons,
+            saverActive: p.saverActive
+        )
     }
 
     /// Position within the current asset, in seconds (the timebase runs
     /// continuously across gapless boundaries; ptsOffset corrects it).
-    /// Read by the progress flusher.
+    /// Read by the progress flusher. Mirror read.
     var currentContentPosition: Double {
-        queue.sync { CMTimeSubtract(CMTimebaseGetTime(timebase), ptsOffset).seconds }
+        let offset = published.withLockUnchecked { $0.ptsOffset }
+        return CMTimeSubtract(CMTimebaseGetTime(timebase), offset).seconds
     }
 
     /// The saver visually exited (its wids got `update(mode: default)`)
@@ -1172,6 +1378,18 @@ final class VideoRenderer: @unchecked Sendable {
             pendingPlaylistJump = false
             graceJumpGeneration &+= 1
             debugLog("  [Renderer] advanceNow() invoked")
+            // A bounded-loop re-prime is buffered: swapping to it would
+            // replay the clip, but an explicit advance means the NEXT
+            // entry — pop the provider now and rebuild (jumpNow's shape).
+            // Repeat-one keeps its pin; the control listener routes that
+            // case to jumpNow() itself.
+            if nextOrigin == .boundedLoop, let pick = nextVideoProvider?() {
+                nextPlayDuration = pick.playDuration
+                if pick.url != asset.url {
+                    rebuildAndSwap(to: pick.url)
+                    return
+                }
+            }
             transition.performImmediateTransition(subscribers: transitionTargets()) { [weak self] in
                 guard let self, isRunning else { return }
                 swapToNextReader(flushDisplayBuffer: true)
@@ -1188,14 +1406,16 @@ final class VideoRenderer: @unchecked Sendable {
             pendingPlaylistJump = false
             graceJumpGeneration &+= 1
             debugLog("  [Renderer] regressNow() invoked")
-            guard let prevURL = previousVideoProvider?(), prevURL != asset.url else {
+            let pick = previousVideoProvider?()
+            if let pick { nextPlayDuration = pick.playDuration }
+            guard let pick, pick.url != asset.url else {
                 transition.performImmediateTransition(subscribers: transitionTargets()) { [weak self] in
                     guard let self, isRunning else { return }
                     swapToNextReader(flushDisplayBuffer: true)
                 }
                 return
             }
-            rebuildAndSwap(to: prevURL)
+            rebuildAndSwap(to: pick.url)
         }
     }
 
@@ -1210,14 +1430,19 @@ final class VideoRenderer: @unchecked Sendable {
             pendingPlaylistJump = false
             graceJumpGeneration &+= 1
             debugLog("  [Renderer] jumpNow() invoked")
-            guard let nextURL = nextVideoProvider?(), nextURL != asset.url else {
+            let pick = nextVideoProvider?()
+            // The picked entry's budget applies even for the same file (a
+            // duplicate entry with its own duration, or a re-jump to the
+            // current one, which restarts the window at the flush).
+            if let pick { nextPlayDuration = pick.playDuration }
+            guard let pick, pick.url != asset.url else {
                 transition.performImmediateTransition(subscribers: transitionTargets()) { [weak self] in
                     guard let self, isRunning else { return }
                     swapToNextReader(flushDisplayBuffer: true)
                 }
                 return
             }
-            rebuildAndSwap(to: nextURL)
+            rebuildAndSwap(to: pick.url)
         }
     }
 
@@ -1449,6 +1674,205 @@ final class VideoRenderer: @unchecked Sendable {
         timer.resume()
     }
 
+    // MARK: - Off-queue mirror
+
+    /// Refresh the off-queue mirror from the queue-confined state. Must
+    /// run on `queue`. Cheap (one lock write, a few retains); called at
+    /// every state change and at the end of every pump pass, so a site
+    /// this list misses is corrected within one callback while playing.
+    private func publish() {
+        let stuck = Set(consecutiveSkips.lazy.filter { $0.value >= Self.stuckSkipThreshold }.map { $0.key })
+        let snap = Published(
+            asset: asset,
+            ptsOffset: ptsOffset,
+            pauseReasons: pauseReasons,
+            isPaused: isPaused,
+            saverActive: (screensaverSubscriberCount > 0 || screensaverActiveFromNotification) && !screensaverRateSuspended,
+            lockedCount: lockedScreenCount,
+            ssCount: screensaverSubscriberCount,
+            ssNotif: screensaverActiveFromNotification,
+            nominalRate: nominalRate,
+            extraRotation: presentation.extraRotation,
+            subscriberIDs: subscribers.map { ObjectIdentifier($0) },
+            stuckIDs: stuck,
+            lastSample: lastSample,
+            currentReader: currentReader,
+            nextReader: nextReader,
+            lastEnqueueAt: lastEnqueueAt,
+            framesEnqueued: framesEnqueued,
+            wdRecreates: wdRecreates,
+            wdAttempt: wdAttempt
+        )
+        published.withLockUnchecked { p in
+            let cancels = p.wdCancels
+            let cancelAt = p.lastWatchdogCancelAt
+            p = snap
+            p.wdCancels = cancels
+            p.lastWatchdogCancelAt = cancelAt
+        }
+    }
+
+    // MARK: - Pump watchdog (off-queue)
+
+    /// Seconds the pump has been inside its current blocking AVFoundation
+    /// call; nil when it is not in one. Lock read — any thread.
+    var pumpBlockedSeconds: TimeInterval? {
+        pumpBlock.withLockUnchecked { block in
+            block.map { CFAbsoluteTimeGetCurrent() - $0.enteredAt }
+        }
+    }
+
+    /// Run `body` (a call that may block inside AVFoundation) with the
+    /// pump marker set, so the off-queue watchdog can see it. On `queue`.
+    private func withPumpMarker<T>(reader: AVAssetReader, phase: String, _ body: () -> T) -> T {
+        pumpBlock.withLockUnchecked { $0 = PumpBlock(reader: reader, phase: phase, enteredAt: CFAbsoluteTimeGetCurrent()) }
+        defer { pumpBlock.withLockUnchecked { $0 = nil } }
+        injectStallIfArmed(reader: reader, phase: phase)
+        return body()
+    }
+
+    private func blockingCopyNext() -> CMSampleBuffer? {
+        guard let output = currentOutput, let reader = currentReader else { return nil }
+        return withPumpMarker(reader: reader, phase: "copyNext") { output.copyNextSampleBuffer() }
+    }
+
+    private func startReadingUnderMarker(_ reader: AVAssetReader) {
+        _ = withPumpMarker(reader: reader, phase: "startReading") { reader.startReading() }
+    }
+
+    /// The watchdog proper: runs from the 2 s feed-health timer OFF the
+    /// renderer queue. Reads the marker, and past `stallThreshold` cancels
+    /// the stuck reader (the one call that makes a pending
+    /// `copyNextSampleBuffer` return); if the queue is still inside the
+    /// same call `escalateAfterCancel` later, AVFoundation ignored the
+    /// cancel and the handler's escalation hook fires. Never calls
+    /// AVFoundation under the lock.
+    private func runPumpWatchdogOffQueue() {
+        pollStallInjector()
+        let now = CFAbsoluteTimeGetCurrent()
+        var cancelTarget: AVAssetReader?
+        var escalate = false
+        var blockedFor: TimeInterval = 0
+        var phase = ""
+        pumpBlock.withLockUnchecked { block in
+            guard var b = block else { return }
+            blockedFor = now - b.enteredAt
+            phase = b.phase
+            switch PumpWatchdogPolicy.decide(enteredAt: b.enteredAt, cancelIssuedAt: b.cancelIssuedAt,
+                                             escalated: b.escalated, now: now) {
+            case .none:
+                return
+            case .cancel:
+                b.cancelIssuedAt = now
+                cancelTarget = b.reader
+            case .escalate:
+                b.escalated = true
+                escalate = true
+            }
+            block = b
+        }
+        if let cancelTarget {
+            watchdogCancelledReader.withLockUnchecked { $0 = cancelTarget }
+            let (cancels, name) = published.withLockUnchecked { p -> (Int, String) in
+                p.wdCancels += 1
+                p.lastWatchdogCancelAt = now
+                return (p.wdCancels, p.asset.url.lastPathComponent)
+            }
+            debugLog("⚠️🐕 [Renderer] pump watchdog: \(phase) blocked \(String(format: "%.1f", blockedFor))s (asset=\(name)) — cancelReading() from watchdog (#\(cancels))")
+            cancelTarget.cancelReading()
+        }
+        if escalate {
+            debugLog("⚠️🐕 [Renderer] pump still blocked \(String(format: "%.1f", blockedFor))s after cancelReading — renderer queue wedged; escalating")
+            onQueueWedged?()
+        }
+    }
+
+    /// The pump's nil branch for a watchdog-cancelled reader. Marks the
+    /// reader dead, keeps the last frame on screen (no flush, ring and
+    /// subscribers untouched, `nextReader` was never started) and arms
+    /// the backoff rebuild. On `queue`.
+    private func readerDiedUnderWatchdog() {
+        let inAsset = CMTimeSubtract(CMTimebaseGetTime(timebase), ptsOffset)
+        let clipDuration = videoTrack.timeRange.duration
+        deepPauseResumePosition = (inAsset > .zero && inAsset < clipDuration) ? inAsset : .zero
+        currentReader = nil
+        currentOutput = nil
+        wdAttempt += 1
+        let delay = PumpWatchdogPolicy.backoffDelay(attempt: wdAttempt)
+        debugLog("⚠️🐕 [Renderer] reader cancelled by watchdog — keeping last frame, rebuild in \(Int(delay))s (attempt #\(wdAttempt), resume at \(String(format: "%.1f", deepPauseResumePosition.seconds))s)")
+        scheduleWatchdogRecreate(after: delay)
+        publish()
+    }
+
+    private func scheduleWatchdogRecreate(after delay: TimeInterval) {
+        watchdogRecreateTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + delay)
+        timer.setEventHandler { [weak self] in
+            self?.runWatchdogRecreate()
+        }
+        watchdogRecreateTimer = timer
+        timer.resume()
+    }
+
+    private func cancelWatchdogRecreateTimer() {
+        watchdogRecreateTimer?.cancel()
+        watchdogRecreateTimer = nil
+    }
+
+    /// Backoff rebuild. Skips (and re-arms) while the renderer has no
+    /// reason to decode — paused, or nobody subscribed; a resume that
+    /// finds `currentReader == nil` rebuilds through the normal path and
+    /// this handler then no-ops. On `queue`.
+    private func runWatchdogRecreate() {
+        watchdogRecreateTimer = nil
+        guard isRunning, currentReader == nil, wdAttempt > 0 else { return }
+        guard !effectivePaused, !subscribers.isEmpty else {
+            let why = effectivePaused ? "paused [\(pauseReasons.summary)]" : "no subscribers"
+            debugLog("🐕 [Renderer] watchdog rebuild deferred — \(why) (re-check in \(Int(PumpWatchdogPolicy.recheckDelay))s)")
+            scheduleWatchdogRecreate(after: PumpWatchdogPolicy.recheckDelay)
+            return
+        }
+        wdRecreates += 1
+        debugLog("🐕 [Renderer] watchdog rebuild attempt #\(wdAttempt)")
+        recreatePlayback()
+        reassertPlaybackState(context: "watchdog-rebuild")
+    }
+
+    // MARK: - Debug stall injector
+
+    /// One-shot trigger file: `soft` (spins until the watchdog's
+    /// cancelReading lands, max 60 s) or `hard` (sleeps 60 s no matter
+    /// what). Debug mode only; consumed on arm. Exercises the whole
+    /// watchdog / mirror chain locally without a real post-wake wedge.
+    private static let stallTriggerURL = URL(fileURLWithPath: "/Users/Shared/Aerial/Logs/debug-stall-pump")
+
+    private func pollStallInjector() {
+        guard PrefsAdvanced.debugMode,
+              FileManager.default.fileExists(atPath: Self.stallTriggerURL.path),
+              let raw = try? String(contentsOf: Self.stallTriggerURL, encoding: .utf8) else { return }
+        try? FileManager.default.removeItem(at: Self.stallTriggerURL)
+        let mode = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !mode.isEmpty else { return }
+        armedStall.withLock { $0 = mode }
+        debugLog("🧪 [Renderer] pump stall armed (\(mode)) — fires on the next blocking read")
+    }
+
+    private func injectStallIfArmed(reader: AVAssetReader, phase: String) {
+        let mode = armedStall.withLock { armed -> String? in
+            defer { armed = nil }
+            return armed
+        }
+        guard let mode else { return }
+        debugLog("🧪 [Renderer] injected pump stall (\(mode), 60s) in \(phase) — debugMode")
+        let deadline = CFAbsoluteTimeGetCurrent() + 60
+        while CFAbsoluteTimeGetCurrent() < deadline {
+            if mode == "soft", reader.status == .cancelled { break }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        debugLog("🧪 [Renderer] injected pump stall over (\(mode), reader status=\(reader.status.rawValue))")
+    }
+
     // MARK: - Deep Pause
 
     private static let deepPauseDelay: TimeInterval = 30
@@ -1492,6 +1916,7 @@ final class VideoRenderer: @unchecked Sendable {
         nextOutput = nil
         pendingSwapWhenPrepared = false
         debugLog("  [Renderer] Deep-paused — freed asset readers")
+        publish()
     }
 
     /// Rebuild the playback pipeline from scratch on the renderer queue.
@@ -1502,6 +1927,11 @@ final class VideoRenderer: @unchecked Sendable {
     private func recreatePlayback() {
         let resumeAt = deepPauseResumePosition
         deepPauseResumePosition = .zero
+        // Bounded loop: the budget window lives on the timeline being
+        // reset — carry the playtime consumed so far over to the new
+        // origin, so a deep-pause wake (or error recovery) neither
+        // restarts nor forfeits the entry's budget.
+        let budgetElapsed = max(CMTimeSubtract(CMTimebaseGetTime(timebase), budgetStartTB), .zero)
         // Timeline restarts below — a pending boundary fire would park
         // forever (backwards SetTime), the ring's PTS are stale, and
         // any ghost belongs to the old timeline.
@@ -1520,8 +1950,12 @@ final class VideoRenderer: @unchecked Sendable {
         }
         ptsOffset = .zero
         lastEnqueuedEnd = .zero
-        lastSample = nil
+        // `lastSample` deliberately survives: same asset, and the wake
+        // recovery / snapshot reply need a frame right now (see its doc).
         CMTimebaseSetTime(timebase, time: resumeAt)
+        budgetStartTB = CMTimeSubtract(resumeAt, budgetElapsed)
+        budgetCutTB = nil
+        budgetCutFired = false
 
         currentReader?.cancelReading()
         nextReader?.cancelReading()
@@ -1530,9 +1964,15 @@ final class VideoRenderer: @unchecked Sendable {
         pendingSwapWhenPrepared = false
 
         guard let reader = try? AVAssetReader(asset: asset) else {
-            debugLog("  [Renderer] Failed to create reader during recreate")
+            // Used to leave the renderer readerless forever — retry on
+            // the watchdog ladder instead.
             currentReader = nil
             currentOutput = nil
+            wdAttempt += 1
+            let delay = PumpWatchdogPolicy.backoffDelay(attempt: wdAttempt)
+            debugLog("⚠️🐕 [Renderer] Failed to create reader during recreate — retry in \(Int(delay))s (attempt #\(wdAttempt))")
+            scheduleWatchdogRecreate(after: delay)
+            publish()
             return
         }
         if resumeAt > .zero {
@@ -1541,12 +1981,13 @@ final class VideoRenderer: @unchecked Sendable {
         }
         let output = Self.makeOutput(track: videoTrack, presentation: presentation, frameRate: currentFrameRate)
         reader.add(output)
-        reader.startReading()
+        startReadingUnderMarker(reader)
         currentReader = reader
         currentOutput = output
 
         prepareNextReader()
         startFeeding()
+        publish()
     }
 
     // MARK: - Preloaded Loop Reader
@@ -1566,13 +2007,51 @@ final class VideoRenderer: @unchecked Sendable {
     }
 
     /// Body of `prepareNextReader` — must be called on `queue`.
-    private func prepareNextReaderOnQueue() {
+    ///
+    /// `skipBudget`: an explicit advance is completing through the
+    /// deferred-swap path — the current entry's budget must not re-prime
+    /// the clip the user just skipped.
+    private func prepareNextReaderOnQueue(skipBudget: Bool = false) {
         if loopCurrentVideo {
-            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation)
+            nextPlayDuration = currentPlayDuration
+            installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation,
+                              origin: .repeatOne)
             return
         }
-        let nextURL = nextVideoProvider?()
-        if let nextURL, nextURL != asset.url {
+        // Bounded loop: decide at the start of this pass whether the clip
+        // gets another pass after it (re-prime, no pop — repeat-one's
+        // shape) or the playlist advances, and whether the budget runs
+        // out before this pass ends (mid-pass cut, armed below once the
+        // provider has confirmed a DIFFERENT clip follows — a
+        // single-entry playlist keeps its seamless loop).
+        var pendingCut: Double?
+        if !skipBudget, let budget = currentPlayDuration, budget > 0 {
+            let clip = videoTrack.timeRange.duration.seconds
+            let plan = PlaybackMath.boundedLoopPlan(
+                passStart: ptsOffset.seconds, clipDuration: clip,
+                budgetStart: budgetStartTB.seconds, budget: budget
+            )
+            if plan.loopAgain {
+                boundedLoopPasses += 1
+                let playedAtPassEnd = ptsOffset.seconds + clip - budgetStartTB.seconds
+                debugLog("  [Renderer] bounded loop: pass \(boundedLoopPasses + 1) queued — \(String(format: "%.1f", playedAtPassEnd))/\(String(format: "%.0f", budget))s at this pass end")
+                nextPlayDuration = currentPlayDuration
+                installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation,
+                                  origin: .boundedLoop)
+                return
+            }
+            pendingCut = plan.cutAt
+        }
+        let pick = nextVideoProvider?()
+        // nil pick = loop the current clip until a queued engine switch
+        // lands; that stopgap loop carries no budget.
+        nextPlayDuration = pick?.playDuration
+        if let pick, pick.url != asset.url {
+            if let cut = pendingCut {
+                budgetCutTB = CMTime(sanitizedSeconds: cut, "bounded loop cut")
+                debugLog("  [Renderer] bounded loop: budget ends mid-pass — cut at tb=\(String(format: "%.2f", cut))s")
+            }
+            let nextURL = pick.url
             let newAsset = AVURLAsset(url: nextURL)
             let rotationFor = rotationOverrideProvider
             Task.detached { @Sendable [weak self] in
@@ -1594,7 +2073,7 @@ final class VideoRenderer: @unchecked Sendable {
                 }
             }
         } else {
-            if nextURL == nil {
+            if pick == nil {
                 debugLog("  [Renderer] nextVideoProvider returned nil — looping current asset")
             }
             installNextReader(asset: asset, track: videoTrack, frameRate: currentFrameRate, presentation: presentation)
@@ -1602,15 +2081,17 @@ final class VideoRenderer: @unchecked Sendable {
     }
 
     private func installNextReader(asset: AVURLAsset, track: AVAssetTrack, frameRate: Float,
-                                   presentation nextPres: TrackPresentation) {
+                                   presentation nextPres: TrackPresentation,
+                                   origin: NextReaderOrigin = .provider) {
         guard let reader = try? AVAssetReader(asset: asset) else {
             debugLog("  [Renderer] Failed to create next reader")
             pendingSwapWhenPrepared = false
             return
         }
         if asset.url != self.asset.url {
-            debugLog("🔄 [Renderer] next \(asset.url.lastPathComponent): \(nextPres.summary)")
+            debugLog("🔄 [Renderer] next \(asset.url.lastPathComponent): \(nextPres.summary)\(Self.playForSuffix(nextPlayDuration))")
         }
+        nextOrigin = origin
         let output = Self.makeOutput(track: track, presentation: nextPres, frameRate: frameRate)
         reader.add(output)
         nextReader = reader
@@ -1618,6 +2099,7 @@ final class VideoRenderer: @unchecked Sendable {
         nextTrack = track
         nextPresentation = nextPres
         nextFrameRate = frameRate
+        publish()
         if pendingSwapWhenPrepared {
             pendingSwapWhenPrepared = false
             debugLog("  [Renderer] completing deferred swap (next reader prepared)")
@@ -1640,6 +2122,11 @@ final class VideoRenderer: @unchecked Sendable {
         // captured at an earlier deep pause must not leak into a later
         // recreate of a different video.
         deepPauseResumePosition = .zero
+        // A bounded-loop cut is one-shot per pass; the prepare that
+        // follows the swap re-arms it for the new pass when needed.
+        let cutFired = budgetCutFired
+        budgetCutFired = false
+        budgetCutTB = nil
 
         if flushDisplayBuffer {
             // Defensive even when the caller already ran the manual
@@ -1657,10 +2144,25 @@ final class VideoRenderer: @unchecked Sendable {
             lastSample = nil   // never instant-join with the outgoing video
             CMTimebaseSetTime(timebase, time: .zero)
         } else {
-            ptsOffset = lastEnqueuedEnd
+            // Continue where the decoder left off — but never in the
+            // past. After a decode gap (cold-start EOF, a stall) the
+            // enqueued end trails the timebase, and basing the next clip
+            // there presented its first seconds late in a burst
+            // (fast-forward). Re-basing to now costs nothing in the normal
+            // case, where the decoder runs ahead.
+            let now = CMTimebaseGetTime(timebase)
+            let base = PlaybackMath.gaplessSwapBase(enqueuedEnd: lastEnqueuedEnd.seconds, now: now.seconds)
+            if base.rebased {
+                debugLog("⏱ [Renderer] gapless swap re-based: enqueuedEnd=\(String(format: "%.2f", lastEnqueuedEnd.seconds))s < now=\(String(format: "%.2f", now.seconds))s")
+                ptsOffset = now
+            } else {
+                ptsOffset = lastEnqueuedEnd
+            }
         }
 
         if let nr = nextReader, let no = nextOutput {
+            let origin = nextOrigin
+            nextOrigin = .provider
             if let nrAsset = nr.asset as? AVURLAsset, nrAsset.url != asset.url {
                 debugLog("  [Renderer] Switched to next video: \(nrAsset.url.lastPathComponent)")
                 if !flushDisplayBuffer {
@@ -1677,6 +2179,18 @@ final class VideoRenderer: @unchecked Sendable {
                 onVideoChanged?()
             }
             if let nextPresentation { presentation = nextPresentation }
+            // Bounded loop bookkeeping: a re-prime (repeat-one / bounded
+            // loop) continues the current entry's window so playtime
+            // accumulates across passes; anything the provider chose — a
+            // different clip, the same clip again (single-entry playlist)
+            // or an explicit restart — opens a new window at this pass
+            // start (zero after a flush).
+            if flushDisplayBuffer || origin == .provider {
+                budgetStartTB = ptsOffset
+                boundedLoopPasses = 0
+            }
+            currentPlayDuration = nextPlayDuration
+            nextPlayDuration = nil
             currentReader = nr
             currentOutput = no
             nextReader = nil
@@ -1701,23 +2215,27 @@ final class VideoRenderer: @unchecked Sendable {
             debugLog("  [Renderer] Next reader not ready — deferring swap until prepared")
             pendingSwapWhenPrepared = true
             pendingSwapFlush = flushDisplayBuffer
-            prepareNextReaderOnQueue()
+            prepareNextReaderOnQueue(skipBudget: flushDisplayBuffer)
+            publish()
             return
         }
 
-        currentReader?.startReading()
+        if let reader = currentReader { startReadingUnderMarker(reader) }
         prepareNextReader()
         startFeeding()
 
         // Audio follows the swap: flush path re-anchors at the reset
         // timeline; the gapless path queues the new video's audio behind
         // the outgoing tail with the fresh ptsOffset.
+        // A bounded-loop cut ends the outgoing clip mid-stream: its audio
+        // was read past the cut, so restart anchored (as a flush would)
+        // instead of queueing the next segment behind that tail.
         audio.videoDidSwap(
             asset: asset,
             shouldPlay: audioShouldPlay,
             videoTime: CMTimebaseGetTime(timebase),
             ptsBase: ptsOffset,
-            flushed: flushDisplayBuffer
+            flushed: flushDisplayBuffer || cutFired
         )
 
         // A paused explicit skip presents its one due frame and must then
@@ -1726,6 +2244,7 @@ final class VideoRenderer: @unchecked Sendable {
         // ring and NO deep-pause timer until the next resume — the
         // 2026-08-29 saver-join jam's precondition.
         if isPaused { scheduleDeepPause() }
+        publish()
     }
 
     // MARK: - Playback Loop (multi-driver)
@@ -1989,6 +2508,9 @@ final class VideoRenderer: @unchecked Sendable {
             driver.stopRequestingMediaData()
             return
         }
+        // Every pass refreshes the off-queue mirror (lastSample, ptsOffset,
+        // counters) — one lock write per callback, not per frame.
+        defer { publish() }
 
         // Per-layer recovery — one stuck layer never forces a full renderer
         // reset. Two shapes:
@@ -2014,17 +2536,31 @@ final class VideoRenderer: @unchecked Sendable {
         catchUpLaggards()
 
         while driver.isReadyForMoreMediaData {
-            guard let sample = currentOutput?.copyNextSampleBuffer() else {
-                // End of this reader. A genuine reader failure rebuilds; a
-                // clean EOF gaplessly swaps to the next video. The
-                // `feedSuspended` latch stops a second already-queued driver
-                // callback from racing into a double swap.
+            guard let sample = blockingCopyNext() else {
+                // End of this reader. Three shapes, checked in this
+                // order: the watchdog cancelled a stuck read (rebuild on
+                // the backoff ladder — never advance, never rebuild
+                // inline); a genuine reader failure rebuilds; a clean EOF
+                // gaplessly swaps to the next video. The `feedSuspended`
+                // latch stops a second already-queued driver callback
+                // from racing into a double swap.
                 feedSuspended = true
                 stopFeedingAll()
+                let cancelledByWatchdog = watchdogCancelledReader.withLockUnchecked { (slot: inout AVAssetReader?) -> Bool in
+                    defer { slot = nil }
+                    guard let flagged = slot, let current = currentReader else { return false }
+                    return flagged === current
+                }
                 let readerFailed = (currentReader?.status == .failed)
                 queue.async { [weak self] in
                     guard let self, isRunning else { return }
-                    if readerFailed { recoverFromError() } else { swapToNextReader() }
+                    if cancelledByWatchdog {
+                        readerDiedUnderWatchdog()
+                    } else if readerFailed {
+                        recoverFromError()
+                    } else {
+                        swapToNextReader()
+                    }
                 }
                 return
             }
@@ -2032,6 +2568,24 @@ final class VideoRenderer: @unchecked Sendable {
             let adjusted = offsetTimingForLoop(sample)
 
             let pts = CMSampleBufferGetPresentationTimeStamp(adjusted)
+            // Bounded loop: the entry's budget ends inside this pass — stop
+            // feeding at the cut and swap exactly like a clean EOF (gapless
+            // base at the last enqueued end, ghost transition armed there).
+            // Waits for the next reader so the cut never takes the
+            // deferred-swap path, which would pop the playlist a second
+            // time; a slow load just delays the cut by a few frames.
+            if let cut = budgetCutTB, pts.isValid, pts >= cut, nextReader != nil {
+                budgetCutTB = nil
+                budgetCutFired = true
+                debugLog("  [Renderer] bounded loop: cut reached at tb=\(String(format: "%.2f", pts.seconds))s — advancing")
+                feedSuspended = true
+                stopFeedingAll()
+                queue.async { [weak self] in
+                    guard let self, isRunning else { return }
+                    swapToNextReader()
+                }
+                return
+            }
             let dur = CMSampleBufferGetDuration(adjusted)
             if pts.isValid {
                 // Invalid duration: assume one frame at the source rate —
@@ -2106,6 +2660,13 @@ final class VideoRenderer: @unchecked Sendable {
             }
             lastEnqueueAt = CFAbsoluteTimeGetCurrent()
             framesEnqueued &+= 1
+            if wdAttempt > 0 {
+                // A frame reached the fan-out on a rebuilt reader — the
+                // watchdog episode is over.
+                let sinceCancel = published.withLockUnchecked { CFAbsoluteTimeGetCurrent() - $0.lastWatchdogCancelAt }
+                debugLog("🐕 [Renderer] pump recovered after watchdog rebuild (attempt #\(wdAttempt), \(String(format: "%.1f", sinceCancel))s since cancel)")
+                wdAttempt = 0
+            }
         }
     }
 
@@ -2224,33 +2785,76 @@ final class VideoRenderer: @unchecked Sendable {
         reassertPlaybackState(context: "recover")
     }
 
-    /// One-line state summary for `dumpTopology` traces. Hops to the
-    /// renderer queue synchronously so the counters read coherently —
-    /// never call from `queue` itself (deadlock).
+    /// One-line state summary for `dumpTopology` traces. Bounded hop onto
+    /// the renderer queue so the counters read coherently; when the queue
+    /// is wedged (or already known to be inside a long blocking call)
+    /// the line is served from the off-queue mirror instead of piling
+    /// another block behind the wedge. Never call from `queue` itself.
     func diagnosticsSnapshot() -> String {
-        queue.sync {
-            let tbTime = String(format: "%.1f", CMTimebaseGetTime(timebase).seconds)
-            let tbRate = CMTimebaseGetRate(timebase)
-            let sinceFeed = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - lastEnqueueAt)
-            // Per-subscriber skip totals in subscription order — a large
-            // or growing number on one layer is the stuck-not-ready
-            // signature (see reviveStuckLayer).
-            let skips = subscribers
-                .map { "\(totalSkips[ObjectIdentifier($0)] ?? 0)" }
-                .joined(separator: "/")
-            // Subscriber attach ages in the same order as skips= — an
-            // OLD subscriber with a runaway skip total is a window the
-            // agent abandoned without invalidating (Tahoe churn).
-            let nowAbs = CFAbsoluteTimeGetCurrent()
-            let ages = subscribers
-                .map { "\(Int(nowAbs - (subscribedAt[ObjectIdentifier($0)] ?? nowAbs)))s" }
-                .joined(separator: "/")
-            // locked=/ssNotif= : the pause-inhibition inputs. A non-zero
-            // locked count while every window is mode=default is the
-            // leaked-counter signature (2026-07-10) — rate pinned at
-            // 1.0×, every Companion pause deferred forever.
-            return "subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) nominal=\(nominalRate) tbRate=\(tbRate) tbTime=\(tbTime)s paused=\(isPaused) reasons=\(pauseReasons.summary) audio=\(audioEnabled ? audio.diagnostics() : "off") fed=\(framesEnqueued) dropped=\(framesDroppedForRefresh) skips=\(skips) age=\(ages) caughtUp=\(framesCaughtUp) revived=\(layerRevives) lastFeed=\(sinceFeed)s asset=\(asset.url.lastPathComponent)"
+        if let blocked = pumpBlockedSeconds, blocked > PumpWatchdogPolicy.skipHopAfter {
+            noteQueueUnresponsive(blocked)
+            return degradedDiagnosticsLine(blockedFor: blocked)
         }
+        let started = CFAbsoluteTimeGetCurrent()
+        if let line = BoundedSync.run(on: queue, timeout: .seconds(2), { [weak self] in
+            self?.diagnosticsLineOnQueue() ?? "renderer gone"
+        }) {
+            queueUnresponsiveLogged.withLock { $0 = false }
+            return line
+        }
+        noteQueueUnresponsive(pumpBlockedSeconds ?? (CFAbsoluteTimeGetCurrent() - started))
+        return degradedDiagnosticsLine(blockedFor: pumpBlockedSeconds)
+    }
+
+    private func noteQueueUnresponsive(_ seconds: TimeInterval) {
+        let first = queueUnresponsiveLogged.withLock { logged -> Bool in
+            if logged { return false }
+            logged = true
+            return true
+        }
+        if first {
+            debugLog("⚠️ [Renderer] renderer queue unresponsive for \(String(format: "%.1f", seconds))s — degraded diagnostics from mirror")
+        }
+    }
+
+    private func degradedDiagnosticsLine(blockedFor: TimeInterval?) -> String {
+        let p = published.withLockUnchecked { $0 }
+        let phase = pumpBlock.withLockUnchecked { $0?.phase }
+        return RendererDegradedLine.format(
+            subs: p.subscriberIDs.count, paused: p.isPaused, reasons: p.pauseReasons.summary,
+            fed: p.framesEnqueued, sinceFeed: CFAbsoluteTimeGetCurrent() - p.lastEnqueueAt,
+            tbTime: CMTimebaseGetTime(timebase).seconds, tbRate: Double(CMTimebaseGetRate(timebase)),
+            asset: p.asset.url.lastPathComponent, blockedFor: blockedFor, phase: phase,
+            wdCancels: p.wdCancels, wdRecreates: p.wdRecreates, wdAttempt: p.wdAttempt
+        )
+    }
+
+    /// The live diagnostics line. Runs on `queue`.
+    private func diagnosticsLineOnQueue() -> String {
+        let tbTime = String(format: "%.1f", CMTimebaseGetTime(timebase).seconds)
+        let tbRate = CMTimebaseGetRate(timebase)
+        let sinceFeed = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - lastEnqueueAt)
+        // Per-subscriber skip totals in subscription order — a large
+        // or growing number on one layer is the stuck-not-ready
+        // signature (see reviveStuckLayer).
+        let skips = subscribers
+            .map { "\(totalSkips[ObjectIdentifier($0)] ?? 0)" }
+            .joined(separator: "/")
+        // Subscriber attach ages in the same order as skips= — an
+        // OLD subscriber with a runaway skip total is a window the
+        // agent abandoned without invalidating (Tahoe churn).
+        let nowAbs = CFAbsoluteTimeGetCurrent()
+        let ages = subscribers
+            .map { "\(Int(nowAbs - (subscribedAt[ObjectIdentifier($0)] ?? nowAbs)))s" }
+            .joined(separator: "/")
+        // locked=/ssNotif= : the pause-inhibition inputs. A non-zero
+        // locked count while every window is mode=default is the
+        // leaked-counter signature (2026-07-10) — rate pinned at
+        // 1.0×, every Companion pause deferred forever.
+        let budget = currentPlayDuration.map { String(format: " playFor=%.0fs pass=%d", $0, boundedLoopPasses + 1) } ?? ""
+        let cancels = published.withLockUnchecked { $0.wdCancels }
+        let wd = (cancels > 0 || wdRecreates > 0) ? " wd=cancels:\(cancels)/recreates:\(wdRecreates)/attempt:\(wdAttempt)" : ""
+        return "subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) nominal=\(nominalRate) tbRate=\(tbRate) tbTime=\(tbTime)s paused=\(isPaused) reasons=\(pauseReasons.summary) audio=\(audioEnabled ? audio.diagnostics() : "off") fed=\(framesEnqueued) dropped=\(framesDroppedForRefresh) skips=\(skips) age=\(ages) caughtUp=\(framesCaughtUp) revived=\(layerRevives) lastFeed=\(sinceFeed)s\(budget)\(wd) asset=\(asset.url.lastPathComponent)"
     }
 
     /// Watchdog: a renderer that claims to play but hasn't enqueued a
@@ -2266,6 +2870,10 @@ final class VideoRenderer: @unchecked Sendable {
     /// `recoverFromError()` (full flush + reader rebuild + pacer
     /// re-registration). Called from a dedicated ~2 s feed-watchdog timer.
     func checkFeedHealth() {
+        // Off-queue first: the on-queue check below can't run while the
+        // pump is wedged — it would sit behind the very call it should
+        // be catching. This phase reads only lock-protected markers.
+        runPumpWatchdogOffQueue()
         queue.async { [weak self] in
             guard let self,
                   isRunning,
@@ -2305,26 +2913,31 @@ final class VideoRenderer: @unchecked Sendable {
 
     /// Capture a CGImage of the current playback frame for snapshot
     /// use (cold-start prime, picker snapshot reply).
-    func captureCurrentFrame() async -> CGImage? {
-        // Fast path: the most recent decoded frame, converted directly —
-        // no file decode at all. This is what the per-acquire defensive
-        // prime hits, keeping AVAssetImageGenerator (a full 4K decode)
-        // out of the multi-display startup window.
-        let recent: CMSampleBuffer? = queue.sync { lastSample }
-        if let recent, let pixelBuffer = CMSampleBufferGetImageBuffer(recent) {
-            let ci = CIImage(cvPixelBuffer: pixelBuffer)
-            if let cg = Self.snapshotContext.createCGImage(ci, from: ci.extent) {
-                return cg
-            }
-        }
+    /// Cheap capture of the newest decoded frame (mirror read +
+    /// CIContext). No AVFoundation reader involved — safe while the pump
+    /// is wedged, and the rung the snapshot XPC tries before anything
+    /// that could open a decoder session.
+    func captureFromLastSample() -> CGImage? {
+        guard let recent = published.withLockUnchecked({ $0.lastSample }),
+              let pixelBuffer = CMSampleBufferGetImageBuffer(recent) else { return nil }
+        let ci = CIImage(cvPixelBuffer: pixelBuffer)
+        return Self.snapshotContext.createCGImage(ci, from: ci.extent)
+    }
 
+    func captureCurrentFrame() async -> CGImage? {
+        if let cg = captureFromLastSample() { return cg }
+        // The poster decode below is a fresh VideoToolbox session. Don't
+        // open one while the pump's own decode is stuck — same decoder.
+        if let blocked = pumpBlockedSeconds, blocked > PumpWatchdogPolicy.posterSkipAfter {
+            return nil
+        }
         // Fallback (no frame fed yet): decode a poster frame from the
         // asset at the current position. The timebase runs continuously
         // across gapless loop / next-video boundaries — `ptsOffset`
         // accumulates there without resetting it — so subtract the
-        // offset to get the position within the current asset; read both
-        // on `queue` so they're coherent.
-        let (offset, currentAsset, extraRotation) = queue.sync { (ptsOffset, asset, presentation.extraRotation) }
+        // offset to get the position within the current asset; both come
+        // from one mirror read so they're coherent.
+        let (offset, currentAsset, extraRotation) = published.withLockUnchecked { ($0.ptsOffset, $0.asset, $0.extraRotation) }
         let captureTime = CMTimeSubtract(CMTimebaseGetTime(timebase), offset)
         let requestTime: CMTime = captureTime.isValid && captureTime.seconds > 0 ? captureTime : .zero
         let generator = AVAssetImageGenerator(asset: currentAsset)

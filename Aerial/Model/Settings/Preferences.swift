@@ -317,10 +317,19 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.desktopAutoAdvanceMinutes) }
     }
 
+    /// Show a "Restart Wallpaper Agent" button in the menu bar popover
+    /// and on Home — Settings → Wallpaper → Troubleshooting checkbox.
+    /// Surfaces observe `.showRestartWallpaperButtonDidChange`.
+    static var showRestartWallpaperButton: Bool {
+        get { manager.getValue(forKeyPath: \.showRestartWallpaperButton) }
+        set { manager.setValue(newValue, forKeyPath: \.showRestartWallpaperButton) }
+    }
+
 }
 
 extension Notification.Name {
     static let popoverSolidBackgroundDidChange = Notification.Name("com.glouel.aerial.popoverSolidBackgroundDidChange")
+    static let showRestartWallpaperButtonDidChange = Notification.Name("com.glouel.aerial.showRestartWallpaperButtonDidChange")
 }
 
 // MARK: - Legacy Property Wrappers (Deprecated)

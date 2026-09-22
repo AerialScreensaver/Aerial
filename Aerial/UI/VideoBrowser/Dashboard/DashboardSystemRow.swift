@@ -25,6 +25,13 @@ struct DashboardSystemRow: View {
     @State private var isSettingWallpaper = false
     @State private var isSettingScreensaver = false
 
+    /// Opt-in "Restart" button in the Wallpaper card (Settings →
+    /// Wallpaper → Troubleshooting). Live-updated via the pref
+    /// notification: the Video Library window can stay open while the
+    /// Settings checkbox is toggled.
+    @State private var showRestartButton = Preferences.showRestartWallpaperButton
+    @State private var isRestartingAgent = false
+
     var body: some View {
         HStack(spacing: 12) {
             screensaverCard
@@ -32,11 +39,23 @@ struct DashboardSystemRow: View {
         }
         .onAppear {
             wallpaperPaused = WallpaperControl.shared.currentPaused
+            showRestartButton = Preferences.showRestartWallpaperButton
             refreshSetState()
         }
         .onReceive(statusMonitor.$status) { _ in
             wallpaperPaused = WallpaperControl.shared.currentPaused
             refreshSetState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showRestartWallpaperButtonDidChange)) { notification in
+            showRestartButton = (notification.object as? Bool) ?? Preferences.showRestartWallpaperButton
+        }
+    }
+
+    private func restartWallpaperAgent() {
+        Task { @MainActor in
+            isRestartingAgent = true
+            await WallpaperExtensionHealth.restartAgentAndReload(reason: "Home button")
+            isRestartingAgent = false
         }
     }
 
@@ -150,6 +169,18 @@ struct DashboardSystemRow: View {
                 }
                 .buttonStyle(.bordered)
                 .help("Next video (all displays)")
+
+                if showRestartButton {
+                    Button {
+                        restartWallpaperAgent()
+                    } label: {
+                        Label("Restart", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isRestartingAgent)
+                    .padding(.leading, 8)
+                    .help("Restart the wallpaper agent — use it if you see the default wallpaper or a black screen")
+                }
 
                 Spacer(minLength: 0)
             }

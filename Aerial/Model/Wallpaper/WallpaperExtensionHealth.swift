@@ -120,6 +120,21 @@ enum WallpaperExtensionHealth {
         }
     }
 
+    /// UI-button variant of `restartAgent`: kill the agent, wait for the
+    /// respawned appex to write its identity (~1 s; 3 s covers a slow
+    /// disk), then re-read the status file so "running version" lines
+    /// refresh. Callers gate their button on a local flag around the
+    /// await. Shared by Settings → Wallpaper, the menu bar popover and
+    /// the Home dashboard.
+    @MainActor
+    static func restartAgentAndReload(reason: String) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            restartAgent(reason: reason) { continuation.resume() }
+        }
+        try? await Task.sleep(for: .seconds(3))
+        WallpaperStatusMonitor.shared.reload()
+    }
+
     // MARK: - Startup check
 
     /// Armed for ONE evaluation per app launch. Stays armed until a live

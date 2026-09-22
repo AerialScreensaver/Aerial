@@ -20,6 +20,13 @@ struct BottomBarView: View {
     var onOpenSettings: () -> Void
     var onExit: () -> Void
 
+    /// Opt-in restart chip (Settings → Wallpaper → Troubleshooting).
+    /// Seeded on every popover open — the whole popover tree is
+    /// dismounted while closed — and live-updated via the pref
+    /// notification for the rare open-while-toggling case.
+    @State private var showRestartButton = Preferences.showRestartWallpaperButton
+    @State private var isRestarting = false
+
     var body: some View {
         HStack(spacing: 8) {
             // Info button
@@ -62,6 +69,18 @@ struct BottomBarView: View {
 
             Spacer()
 
+            // Restart wallpaper agent (opt-in)
+            if showRestartButton {
+                Button(action: restartWallpaperAgent) {
+                    chipLabel(icon: "arrow.clockwise")
+                }
+                .buttonStyle(.plain)
+                .disabled(isRestarting)
+                .opacity(isRestarting ? 0.5 : 1)
+                .help("Restart the wallpaper agent")
+                .accessibilityLabel("Restart Wallpaper Agent")
+            }
+
             // Exit button
             Button(action: onExit) {
                 chipLabel(icon: "xmark.circle")
@@ -71,6 +90,17 @@ struct BottomBarView: View {
             .accessibilityLabel("Quit Aerial")
         }
         .padding(.top, 8)
+        .onReceive(NotificationCenter.default.publisher(for: .showRestartWallpaperButtonDidChange)) { notification in
+            showRestartButton = (notification.object as? Bool) ?? Preferences.showRestartWallpaperButton
+        }
+    }
+
+    private func restartWallpaperAgent() {
+        Task { @MainActor in
+            isRestarting = true
+            await WallpaperExtensionHealth.restartAgentAndReload(reason: "Menu bar button")
+            isRestarting = false
+        }
     }
 
     private func chipLabel(icon: String) -> some View {
