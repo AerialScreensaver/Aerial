@@ -73,6 +73,12 @@ final class OverlayRenderingDriver {
         state.setVideo(video, positionProvider: positionProvider)
     }
 
+    /// The playing file is not in the library: clear the Location overlay
+    /// rather than keep the previous video's text.
+    func clearCurrentVideo() {
+        state.clearVideo()
+    }
+
     /// How a `create()` caller asks for the startup version banner. The
     /// banner is an EXPLICIT handler-driven request tied to windows that
     /// actually present the screensaver — never inferred from the

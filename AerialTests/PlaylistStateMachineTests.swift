@@ -481,3 +481,25 @@ struct PlaylistPopRuleTests {
         #expect(wrapPop?.didReshuffle == true)
     }
 }
+
+// MARK: - Overlay cut delay
+
+@Suite("Overlay cut delay")
+struct OverlayCutDelayTests {
+
+    @Test("apply now once the content position reached zero")
+    func applyNow() {
+        #expect(PlaybackMath.overlayCutDelay(position: 0, rate: 1) == nil)
+        #expect(PlaybackMath.overlayCutDelay(position: 3.2, rate: 0.125) == nil)
+        #expect(PlaybackMath.overlayCutDelay(position: .nan, rate: 1) == nil)
+    }
+
+    @Test("hold for the remaining time to the cut, floored and capped")
+    func hold() {
+        #expect(PlaybackMath.overlayCutDelay(position: -0.5, rate: 1) == 0.5)
+        #expect(PlaybackMath.overlayCutDelay(position: -2, rate: 1) == 1.0)
+        #expect(PlaybackMath.overlayCutDelay(position: -2, rate: 0.125) == 1.0)
+        #expect(PlaybackMath.overlayCutDelay(position: -0.05, rate: 1) == 0.1)
+        #expect(PlaybackMath.overlayCutDelay(position: -2, rate: 0) == 1.0)
+    }
+}

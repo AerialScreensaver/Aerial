@@ -651,10 +651,13 @@ final class VideoRenderer: @unchecked Sendable {
 
     /// Fired on the renderer queue whenever the playing video CHANGES
     /// (natural EOF rotation and manual swaps alike; same-URL loops
-    /// don't fire). The handler debounces this into a status write so
-    /// the Companion's now-playing follows organic rotation — do NOT do
-    /// synchronous work here, and never call back into `queue.sync`
-    /// readers from it.
+    /// don't fire), AFTER the off-queue mirror names the new asset and
+    /// its ptsOffset — `currentAssetURL` / `statusSnapshot()` read from
+    /// or after this hook see the new video (the Location overlay used to
+    /// resolve the previous one). The handler debounces this into a
+    /// status write so the Companion's now-playing follows organic
+    /// rotation — do NOT do synchronous work here, and never call back
+    /// into `queue.sync` readers from it.
     var onVideoChanged: (() -> Void)?
 
     // MARK: - Construction
@@ -2163,6 +2166,7 @@ final class VideoRenderer: @unchecked Sendable {
         if let nr = nextReader, let no = nextOutput {
             let origin = nextOrigin
             nextOrigin = .provider
+            var videoChanged = false
             if let nrAsset = nr.asset as? AVURLAsset, nrAsset.url != asset.url {
                 debugLog("  [Renderer] Switched to next video: \(nrAsset.url.lastPathComponent)")
                 if !flushDisplayBuffer {
@@ -2176,7 +2180,7 @@ final class VideoRenderer: @unchecked Sendable {
                 }
                 asset = nrAsset
                 if let nextTrack { videoTrack = nextTrack }
-                onVideoChanged?()
+                videoChanged = true
             }
             if let nextPresentation { presentation = nextPresentation }
             // Bounded loop bookkeeping: a re-prime (repeat-one / bounded
@@ -2199,6 +2203,16 @@ final class VideoRenderer: @unchecked Sendable {
             nextPresentation = nil
             currentFrameRate = nextFrameRate ?? currentFrameRate
             nextFrameRate = nil
+            // Mirror BEFORE the hook: the handler resolves the Location
+            // overlay's video and the status write from `currentAssetURL`
+            // / `statusSnapshot()` off-queue, and `startReadingUnderMarker`
+            // below can block — firing first let them read the OUTGOING
+            // asset (overlay one video behind, 2026-09-24 report). Every
+            // mirrored field already holds its post-swap value here, so
+            // this snapshot equals the trailing publish. Same order as
+            // LiveStreamRenderer.rotate(using:).
+            publish()
+            if videoChanged { onVideoChanged?() }
         } else {
             // No pre-buffered next reader. The old fallback rebuilt the
             // CURRENT asset with `outputSettings: nil` — passthrough,

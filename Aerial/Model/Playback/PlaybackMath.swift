@@ -74,4 +74,17 @@ enum PlaybackMath {
         guard now.isFinite, enqueuedEnd.isFinite else { return (enqueuedEnd, false) }
         return now > enqueuedEnd ? (now, true) : (enqueuedEnd, false)
     }
+
+    /// Overlay text follows the picture, not the decoder: after a gapless
+    /// swap the new clip's content position (timebase − ptsOffset) is
+    /// negative until the cut presents. nil = apply now; otherwise the
+    /// seconds to wait before re-checking — the remaining time at the
+    /// current rate, floored at 0.1 s, capped at 1 s so a rate change is
+    /// picked up (rate 0 = paused: 1 s polls, the old text stays with the
+    /// old picture).
+    static func overlayCutDelay(position: Double, rate: Double) -> Double? {
+        guard position.isFinite, position < 0 else { return nil }
+        guard rate.isFinite, rate > 0 else { return 1.0 }
+        return min(max(-position / rate, 0.1), 1.0)
+    }
 }

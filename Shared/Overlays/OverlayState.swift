@@ -341,6 +341,15 @@ class OverlayState: ObservableObject {
         updateLocationOverlay()
     }
 
+    /// The playing file can't be identified (random cached fallback, a
+    /// clip outside the library): drop the Location text instead of
+    /// leaving the previous video's on screen.
+    func clearVideo() {
+        currentVideo = nil
+        positionProvider = nil
+        updateLocationOverlay()
+    }
+
     /// Clean up timers and state
     func cleanup() {
         clockTimer?.invalidate()

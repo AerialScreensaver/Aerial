@@ -991,7 +991,7 @@ func attachWallpaper(
             // Initial Location-overlay feed: a fresh renderer's FIRST
             // video never fires onVideoChanged (that hook only fires on
             // swaps), so push it here now that the asset is loaded.
-            pushCurrentVideoToOverlays(rendererKey: rendererKey)
+            pushCurrentVideoToOverlays(rendererKey: rendererKey, reason: "renderer-install")
             // The install may have changed which renderer owns audio
             // (broadcast ↔ independent races, main-display arrivals).
             reassertAudioOwnership(context: "renderer-install")
@@ -1476,10 +1476,11 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
     // rotation within ~1 s instead of the next 30 s periodic flush.
     // Fired on the renderer queue — only enqueues; the write runs on
     // statusWriteQueue. The overlay push resolves off-thread too
-    // (it reads the renderer's mirror for the asset URL).
+    // (it reads the renderer's mirror for the asset URL, which the
+    // renderer publishes BEFORE firing this hook).
     renderer.onVideoChanged = {
         scheduleVideoChangeStatusWrite()
-        pushCurrentVideoToOverlays(rendererKey: rendererKey)
+        pushCurrentVideoToOverlays(rendererKey: rendererKey, reason: "video-change")
     }
 
     // Watchdog escalation: the reader cancel did not free the pump. Log
@@ -1525,45 +1526,104 @@ private func installLiveHooks(on renderer: LiveStreamRenderer, rendererKey: Stri
     }
     renderer.onVideoChanged = {
         scheduleVideoChangeStatusWrite()
-        pushCurrentVideoToOverlays(rendererKey: rendererKey)
+        pushCurrentVideoToOverlays(rendererKey: rendererKey, reason: "live-change")
     }
 }
 
+/// Overlay pushes resolve on ONE serial queue so a skip-skip lands on main
+/// in fire order.
+private let overlayPushQueue = DispatchQueue(label: "aerial-wallpaper-overlay-push", qos: .utility)
+/// Per renderer key: a newer push supersedes one held for the cut.
+private let overlayPushGeneration = OSAllocatedUnfairLock<[String: UInt64]>(initialState: [:])
+/// Per renderer key: the last asset path logged as unresolvable (once).
+private let overlayUnresolvedLogged = OSAllocatedUnfairLock<[String: String]>(initialState: [:])
+
 /// Push the renderer's current video into every overlay driver on that
-/// renderer — the Location overlay needs the video (POI timeline) plus
-/// a playback-position source, and the AVPlayer-less engine can't feed
-/// it any other way. Safe from any thread: resolution hops to a utility
-/// queue (reading the asset URL queue.syncs into the renderer, which
-/// must never happen from the renderer's own queue — onVideoChanged
-/// fires there).
-func pushCurrentVideoToOverlays(rendererKey: String) {
-    DispatchQueue.global(qos: .utility).async {
-        guard let shared = sharedHandlerState.allRenderers()
-            .first(where: { $0.rendererKey == rendererKey }) else { return }
-        let renderer = shared.renderer
+/// renderer — the Location overlay needs the video (POI timeline) plus a
+/// playback-position source, and the AVPlayer-less engine can't feed it
+/// any other way. Safe from any thread: resolution hops to a serial
+/// utility queue and reads the renderer's off-queue mirror, which
+/// `swapToNextReader` publishes BEFORE firing `onVideoChanged` (it used
+/// to fire first, so the overlay named the outgoing video for the whole
+/// next clip). The text then follows the PICTURE, not the decoder: on a
+/// gapless swap the cut presents when the timebase reaches the new
+/// ptsOffset — the content position crossing zero, up to ~16 s of wall
+/// time at the wallpaper's 0.125× — so the update is held and re-checked
+/// until then, and a newer push for the renderer supersedes a held one.
+/// A file that resolves to no library video (random cached fallback, a
+/// clip outside the library) CLEARS the text instead of leaving the
+/// previous video's on screen.
+func pushCurrentVideoToOverlays(rendererKey: String, reason: String) {
+    let generation = overlayPushGeneration.withLock { gens -> UInt64 in
+        let next = (gens[rendererKey] ?? 0) &+ 1
+        gens[rendererKey] = next
+        return next
+    }
+    overlayPushQueue.async {
+        applyOverlayVideo(rendererKey: rendererKey, reason: reason, generation: generation, held: false)
+    }
+}
 
-        let video: AerialVideo?
-        if let override = renderer.nowPlayingOverride {
-            video = VideoList.instance.videos.first { $0.id == override.id }
-        } else if let id = ExtensionVideoLoader.shared.videoId(forLocalPath: renderer.currentAssetURL.path) {
-            video = VideoList.instance.videos.first { $0.id == id }
-        } else {
-            video = nil
+/// One evaluation of a push on `overlayPushQueue`: hold until the cut, or
+/// resolve and apply.
+private func applyOverlayVideo(rendererKey: String, reason: String, generation: UInt64, held: Bool) {
+    guard overlayPushGeneration.withLock({ $0[rendererKey] == generation }) else { return }   // superseded
+    guard let shared = sharedHandlerState.allRenderers()
+        .first(where: { $0.rendererKey == rendererKey }) else { return }
+    let renderer = shared.renderer
+    let targets = sharedHandlerState.allWallpapers()
+        .filter { $0.wallpaper.rendererKey == rendererKey }
+        .compactMap { $0.wallpaper.overlayDriver }
+    guard !targets.isEmpty else { return }
+
+    let file = renderer.currentAssetURL.lastPathComponent
+    let position = renderer.currentContentPosition
+    let rate = (renderer as? VideoRenderer)?.statusSnapshot().rate ?? 1.0
+    if let delay = PlaybackMath.overlayCutDelay(position: position, rate: rate) {
+        if !held {
+            debugLog("🎬 [Overlay] video → \(file) (\(reason)) holding until the cut (pos=\(String(format: "%.1f", position))s, rate=\(String(format: "%.3f", rate)))")
         }
-        guard let video else { return }
-
-        let targets = sharedHandlerState.allWallpapers()
-            .filter { $0.wallpaper.rendererKey == rendererKey }
-            .compactMap { $0.wallpaper.overlayDriver }
-        guard !targets.isEmpty else { return }
-
-        let positionProvider: () -> Double = { [weak renderer] in
-            renderer?.currentContentPosition ?? 0
+        overlayPushQueue.asyncAfter(deadline: .now() + delay) {
+            applyOverlayVideo(rendererKey: rendererKey, reason: reason, generation: generation, held: true)
         }
-        debugLog("  📍 location → \(video.secondaryName) (\(video.poi.count) POI entries) → \(targets.count) overlay(s)")
-        Task { @MainActor in
+        return
+    }
+
+    let video: AerialVideo?
+    if let override = renderer.nowPlayingOverride {
+        video = VideoList.instance.videos.first { $0.id == override.id }
+    } else if let id = ExtensionVideoLoader.shared.videoId(forLocalPath: renderer.currentAssetURL.path) {
+        video = VideoList.instance.videos.first { $0.id == id }
+    } else {
+        video = nil
+    }
+    // Clamped: right after a gapless swap the position is briefly negative
+    // and the POI poll would pick the first entry.
+    let positionProvider: () -> Double = { [weak renderer] in
+        max(0, renderer?.currentContentPosition ?? 0)
+    }
+    if let video {
+        overlayUnresolvedLogged.withLock { _ = $0.removeValue(forKey: rendererKey) }
+        debugLog("🎬 [Overlay] video → \(file) = \(video.secondaryName) (\(video.poi.count) POI, \(reason), pos=\(String(format: "%.1f", max(0, position)))s) → \(targets.count) overlay(s)")
+    } else {
+        let path = renderer.currentAssetURL.path
+        let firstTime = overlayUnresolvedLogged.withLock { logged -> Bool in
+            guard logged[rendererKey] != path else { return false }
+            logged[rendererKey] = path
+            return true
+        }
+        if firstTime {
+            debugLog("🎬 [Overlay] video → \(file) unresolved (\(reason)) — clearing \(targets.count) overlay(s), key=\(shortKey(rendererKey))")
+        }
+    }
+    DispatchQueue.main.async {
+        MainActor.assumeIsolated {
             for driver in targets {
-                driver.setCurrentVideo(video, positionProvider: positionProvider)
+                if let video {
+                    driver.setCurrentVideo(video, positionProvider: positionProvider)
+                } else {
+                    driver.clearCurrentVideo()
+                }
             }
         }
     }
@@ -1841,7 +1901,7 @@ func rebuildOverlayDriver(
         if driver != nil {
             // Fresh driver knows nothing about the playing video —
             // feed the Location overlay.
-            pushCurrentVideoToOverlays(rendererKey: w.rendererKey)
+            pushCurrentVideoToOverlays(rendererKey: w.rendererKey, reason: "driver-rebuild")
         }
     }
 }
@@ -2234,7 +2294,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 // renderer is already playing (a REUSED renderer never
                 // fires onVideoChanged for the current video; a fresh
                 // renderer pushes again from its install completion).
-                pushCurrentVideoToOverlays(rendererKey: parked.rendererKey)
+                pushCurrentVideoToOverlays(rendererKey: parked.rendererKey, reason: "driver-create")
             }
         }
 
