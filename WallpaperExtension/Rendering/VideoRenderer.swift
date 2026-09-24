@@ -972,6 +972,11 @@ final class VideoRenderer: @unchecked Sendable {
             stopFeedingAll()
             currentReader?.cancelReading()
             nextReader?.cancelReading()
+            // cancelReading() is async; release the readers so their file handles close before the process suspends (0xdead10cc).
+            currentReader = nil
+            currentOutput = nil
+            nextReader = nil
+            nextOutput = nil
             publish()
         }
         if finished == nil {
