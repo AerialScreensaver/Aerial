@@ -756,10 +756,12 @@ struct CacheSettingsPanel: View {
         // location (a rename) — the recommended way out there.
         let canMoveToDefault = !LegacyExternalCacheMigration.isOnExternalVolume(folder)
         return VStack(alignment: .leading, spacing: 6) {
-            Label("This folder is on an external drive", systemImage: "exclamationmark.triangle.fill")
+            Label(canMoveToDefault ? "The wallpaper extension can't read this folder" : "This folder needs a cache disk image",
+                  systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.orange)
-            Text("Aerial 4.1 keeps external caches in a disk image so the wallpaper extension can play them. Nothing plays on the desktop until this folder is converted. The videos in it are moved into the image; nothing is deleted.")
+            Text("Aerial keeps caches outside /Users/Shared in a disk image so the wallpaper extension can play them. Nothing plays on the desktop until this folder is converted. The videos in it are moved into the image; nothing is deleted."
+                 + (canMoveToDefault ? " A folder on this disk can instead be moved to the default location." : ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
