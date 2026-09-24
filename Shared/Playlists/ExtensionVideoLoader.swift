@@ -68,6 +68,15 @@ class ExtensionVideoLoader {
     /// there. One-shot. Guarded by `stateLock`.
     private var pendingTeardownResume: [String: (index: Int, timestamp: Double?)] = [:]
 
+    /// Saver-launch advance, per scope key ("Don't resume video at launch").
+    /// Armed by the extension right before an acquire's FIRST pop; that pop
+    /// advances instead of resuming — sidecar position and teardown record
+    /// both dropped. Consumed on ENTRY to the next `getNextVideo` for the
+    /// scope, whatever it returns, so it can never leak into the renderer's
+    /// pre-pop or a later pop. Survives `resetPlaylistCache()`. Guarded by
+    /// `stateLock`.
+    private var pendingLaunchAdvance: Set<String> = []
+
     /// Resume timestamp set by PlaylistManager's override closure (Companion only).
     /// Used as a side-channel since the override returns (AerialVideo?, Bool) without timestamp.
     var pendingResumeTimestamp: Double? {
@@ -110,6 +119,9 @@ class ExtensionVideoLoader {
     /// resumeTimestamp is non-nil only on first video resume; playDuration is the
     /// popped entry's optional per-video play-duration override (nil otherwise).
     func getNextVideo(isVertical: Bool, screenUUID: String? = nil) -> LoaderResult {
+        // A saver-launch advance request is consumed by this call whatever
+        // it returns, so it can never leak into the renderer's pre-pop.
+        let advanceRequested = stateLock.withLock { pendingLaunchAdvance.remove(screenUUID ?? "shared") != nil }
         // In Companion mode (override installed), PlaylistManager is the single source of truth.
         // Skip tryPersistedPlaylist() so we go through videoList.randomVideo() → the override.
         if videoList.nextVideoOverride != nil {
@@ -124,7 +136,7 @@ class ExtensionVideoLoader {
         }
 
         // Extension mode: use persisted playlist directly from disk
-        if let pop = tryPersistedPlaylist(screenUUID: screenUUID) {
+        if let pop = tryPersistedPlaylist(screenUUID: screenUUID, advanceRequested: advanceRequested) {
             debugLog("ExtensionVideoLoader: Using persisted playlist → \(pop.video.secondaryName), shouldLoop=\(pop.shouldLoop), resumeAt=\(pop.resumeTimestamp.map { String(format: "%.1fs", $0) } ?? "nil"), playFor=\(pop.playDuration.map { String(format: "%.0fs", $0) } ?? "nil")")
             return LoaderResult(video: pop.video, shouldLoop: pop.shouldLoop, resumeTimestamp: pop.resumeTimestamp, playDuration: pop.playDuration)
         }
@@ -132,6 +144,17 @@ class ExtensionVideoLoader {
         debugLog("ExtensionVideoLoader: No persisted playlist, falling back to VideoList")
         let (video, loop) = videoList.randomVideo(excluding: [], isVertical: isVertical)
         return LoaderResult(video: video, shouldLoop: loop, resumeTimestamp: nil, playDuration: nil)
+    }
+
+    /// "Don't resume video at launch" (saver-only installs): the next pop
+    /// for this scope advances instead of resuming — see
+    /// `pendingLaunchAdvance`. The extension arms it right before an
+    /// acquire's first pop; the renderer's pre-pop that follows is an
+    /// ordinary advance.
+    func requestAdvanceOnNextPop(screenUUID: String?) {
+        let scopeKey = screenUUID ?? "shared"
+        stateLock.withLock { _ = pendingLaunchAdvance.insert(scopeKey) }
+        debugLog("ExtensionVideoLoader: launch advance armed (scope=\(scopeKey.prefix(8)))")
     }
 
     /// Get the local file path for a video
@@ -241,7 +264,7 @@ class ExtensionVideoLoader {
 
     // MARK: - Persisted Playlist
 
-    private func tryPersistedPlaylist(screenUUID: String?) -> (video: AerialVideo, shouldLoop: Bool, resumeTimestamp: Double?, playDuration: Double?)? {
+    private func tryPersistedPlaylist(screenUUID: String?, advanceRequested: Bool = false) -> (video: AerialVideo, shouldLoop: Bool, resumeTimestamp: Double?, playDuration: Double?)? {
         loadPlaylistIfNeeded()
 
         guard var playlist = resolvePlaylist(screenUUID) else { return nil }
@@ -281,16 +304,33 @@ class ExtensionVideoLoader {
         let scopeKey = screenUUID ?? "shared"
         let teardownResume = stateLock.withLock { pendingTeardownResume.removeValue(forKey: scopeKey) }
         let isFirstActivation = stateLock.withLock { isFirstVideoThisActivation }
-        var isResume = isFirstActivation
-        var resumeTimestamp: Double? = isFirstActivation ? playlist.playbackTimestamp : nil
-        if !isFirstActivation, let teardownResume, playlist.entries.indices.contains(teardownResume.index) {
-            // A renderer for this scope was torn down after its idle
-            // grace: put the cursor back on the entry that was on screen
-            // and resume it at the held position instead of advancing.
-            playlist.currentIndex = teardownResume.index
-            isResume = true
-            resumeTimestamp = teardownResume.timestamp
-            debugLog("ExtensionVideoLoader: resuming after renderer teardown → index \(teardownResume.index) at \(teardownResume.timestamp.map { String(format: "%.1fs", $0) } ?? "start") (scope=\(scopeKey.prefix(8)))")
+        let decision = PlaylistPopRule.decide(
+            isFirstActivation: isFirstActivation,
+            sidecarTimestamp: playlist.playbackTimestamp,
+            teardownResume: teardownResume.flatMap { playlist.entries.indices.contains($0.index) ? $0 : nil },
+            advanceRequested: advanceRequested
+        )
+        if let cursor = decision.cursorOverride {
+            // A renderer for this scope was torn down after its idle grace:
+            // put the cursor back on the entry that was on screen (the
+            // stored cursor is one ahead of it — the pre-pop).
+            playlist.currentIndex = cursor
+        }
+        let isResume = decision.isResume
+        let resumeTimestamp = decision.resumeTimestamp
+        switch decision.path {
+        case .teardownResume:
+            debugLog("ExtensionVideoLoader: resuming after renderer teardown → index \(playlist.currentIndex) at \(resumeTimestamp.map { String(format: "%.1fs", $0) } ?? "start") (scope=\(scopeKey.prefix(8)))")
+        case .launchAdvance(let overrode):
+            let what: String
+            switch overrode {
+            case .coldResume: what = "cold resume"
+            case .teardownResume: what = "teardown resume"
+            case .nothing: what = "plain advance"
+            }
+            debugLog("⏭ ExtensionVideoLoader: launch advance — popping next instead of \(what) (scope=\(scopeKey.prefix(8)), cursor=\(playlist.currentIndex))")
+        case .coldResume, .advance:
+            break
         }
 
         debugLog("ExtensionVideoLoader: Playlist has \(playlist.entries.count) entries, currentIndex=\(playlist.currentIndex), resume=\(isResume)")
@@ -616,4 +656,51 @@ class ExtensionVideoLoader {
         return videoList.videos.contains(where: { $0.isAvailableOffline })
     }
 
+}
+
+// MARK: - Pop rule (pure)
+
+/// How a playlist pop treats the cursor: resume the entry under it (cold
+/// start from the sidecar, or a renderer torn down after its idle grace),
+/// advance past it (every later pop), or — the saver's "Don't resume video
+/// at launch" — advance even where a resume was due. Pure so the override
+/// is testable without the loader's file IO.
+enum PlaylistPopRule {
+    enum Overrode: Equatable { case nothing, coldResume, teardownResume }
+    enum Path: Equatable {
+        case coldResume, teardownResume, advance
+        case launchAdvance(overrode: Overrode)
+    }
+    struct Decision: Equatable {
+        let isResume: Bool
+        let resumeTimestamp: Double?
+        /// Cursor to install before popping — the teardown record's ON-SCREEN
+        /// index (the stored cursor is one ahead after the pre-pop, so
+        /// advancing from it would skip an entry). nil = keep the cursor.
+        let cursorOverride: Int?
+        let path: Path
+    }
+
+    /// `teardownResume`: nil when there is no record or its index is out of
+    /// range for the playlist.
+    static func decide(isFirstActivation: Bool, sidecarTimestamp: Double?,
+                       teardownResume: (index: Int, timestamp: Double?)?,
+                       advanceRequested: Bool) -> Decision {
+        // A record only applies to a pop that is not the activation's
+        // first: a playlist reset in between makes its index meaningless.
+        let teardown = isFirstActivation ? nil : teardownResume
+        if advanceRequested {
+            let overrode: Overrode = isFirstActivation ? .coldResume : (teardown != nil ? .teardownResume : .nothing)
+            return Decision(isResume: false, resumeTimestamp: nil, cursorOverride: teardown?.index,
+                            path: .launchAdvance(overrode: overrode))
+        }
+        if isFirstActivation {
+            return Decision(isResume: true, resumeTimestamp: sidecarTimestamp, cursorOverride: nil, path: .coldResume)
+        }
+        if let teardown {
+            return Decision(isResume: true, resumeTimestamp: teardown.timestamp, cursorOverride: teardown.index,
+                            path: .teardownResume)
+        }
+        return Decision(isResume: false, resumeTimestamp: nil, cursorOverride: nil, path: .advance)
+    }
 }

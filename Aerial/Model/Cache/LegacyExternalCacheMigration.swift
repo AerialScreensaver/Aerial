@@ -70,12 +70,44 @@ enum LegacyExternalCacheMigration {
         return folder == volume || folder.hasPrefix(root)
     }
 
+    /// Whether `folder` is on an external volume — path-based on purpose
+    /// (a volume query would wake a sleeping drive). Decides which way out
+    /// is offered: a folder on the boot volume can simply move to the
+    /// default location (a rename), a /Volumes folder gets the disk image.
+    static func isOnExternalVolume(_ folder: String) -> Bool {
+        folder.hasPrefix("/Volumes/")
+    }
+
+    struct MoveJob: Equatable {
+        let src: String
+        let dst: String
+    }
+
+    /// What `moveToDefaultLocation` will do: root-level `.mov` files of
+    /// `folder` → `cacheDir`, pack folders of `<folder>/Expansions` →
+    /// `sourcesDir`. Only reads `folder` (no prefs) so it is unit-tested;
+    /// destination collisions are decided per item at move time.
+    static func plan(folder: String, cacheDir: String, sourcesDir: String) -> [MoveJob] {
+        let packsSource = (folder as NSString).appendingPathComponent("Expansions")
+        let videos = ExternalCacheImage.siblingVideos(inFolder: folder).map {
+            MoveJob(src: (folder as NSString).appendingPathComponent($0),
+                    dst: (cacheDir as NSString).appendingPathComponent($0))
+        }
+        let packs = ExternalCacheImage.siblingPacks(inFolder: folder).map {
+            MoveJob(src: (packsSource as NSString).appendingPathComponent($0),
+                    dst: (sourcesDir as NSString).appendingPathComponent($0))
+        }
+        return videos + packs
+    }
+
     enum Step: Equatable {
         case creatingImage
         case attaching
         case moving(done: Int, total: Int)
     }
 
+    /// `alreadyInImage`: items already at the destination (the image for
+    /// `convert`, the default location for `moveToDefaultLocation`).
     struct Outcome: Equatable {
         let moved: Int
         let alreadyInImage: Int
@@ -114,19 +146,101 @@ enum LegacyExternalCacheMigration {
         await MainActor.run {
             ExternalCacheImage.refreshConsumers(reason: "legacy external cache converted")
         }
-        debugLog("💽 converted legacy external cache \(folder): \(adoption.moved) video(s) moved, \(adoption.alreadyInImage) already in the image, \(adoption.failed) failed")
+        debugLog("💽 converted legacy external cache \(folder): \(adoption.moved) item(s) moved, \(adoption.alreadyInImage) already in the image, \(adoption.failed) failed")
         return Outcome(moved: adoption.moved, alreadyInImage: adoption.alreadyInImage, failed: adoption.failed)
     }
 
-    /// The other way out: back to the internal cache. The videos stay on
-    /// the drive untouched (Settings › Cache can still convert the folder
-    /// later); the internal cache fills up again as needed.
-    static func useInternalCache() {
+    /// Back to the default location, prefs only. Shared by
+    /// `useInternalCache` and `moveToDefaultLocation`.
+    private static func applyDefaultLocationPrefs() {
         PrefsCache.overrideCache = false
         PrefsCache.cachePath = nil
         PrefsCache.expansionsAtCacheLocation = false
         Cache.invalidateCachePath()
+    }
+
+    /// The other way out for a drive folder: back to the internal cache.
+    /// The videos stay on the drive untouched (Settings › Cache can still
+    /// convert the folder later); the internal cache fills up again as
+    /// needed.
+    static func useInternalCache() {
+        // Read before the flip — nil once the prefs point at the default.
+        let folder = Cache.legacyExternalFolderPath ?? "the folder"
+        applyDefaultLocationPrefs()
         ExternalCacheImage.refreshConsumers(reason: "legacy external cache: internal cache chosen")
-        debugLog("💽 legacy external cache: user chose the internal cache — videos left on the drive")
+        debugLog("💽 legacy external cache: user chose the internal cache — videos left in \(folder)")
+    }
+
+    /// The other real way out for a folder on the boot volume: the videos
+    /// and packs move to the default location (a rename on the same
+    /// volume) and the custom location is switched off. Prefs FIRST:
+    /// downloads resolve their destination when they finish, so after the
+    /// flip nothing new can land in `folder` and the plan enumerated next
+    /// is complete (same order as the Settings panel's plain-folder path).
+    /// Mirrors `ExternalCacheImage.adoptSiblingVideos`: items already at
+    /// the destination are left in place and counted separately, per-item
+    /// failures are logged and skipped, nothing is ever deleted. Never
+    /// throws and is idempotent, so "Retry" just picks up the leftovers.
+    /// `step` is delivered on main. `notifyConsumers: false` skips the
+    /// consumer refresh — the first-launch wizard calls this before
+    /// `continueStartup()` has brought the consumers up on the final prefs.
+    static func moveToDefaultLocation(folder: String, notifyConsumers: Bool = true,
+                                      step: @escaping (Step) -> Void) async -> Outcome {
+        debugLog("💽 legacy cache: moving \(folder) to the default location")
+        await MainActor.run { step(.moving(done: 0, total: 0)) }
+
+        // Was the folder excluded from Time Machine? `tmutil addexclusion`
+        // is an xattr on the folder, so the renamed files lose it — carry
+        // it over to the default cache. Read BEFORE the prefs flip (the
+        // helper targets the current cache location), applied after.
+        let wasExcluded = await Task.detached(priority: .utility) { TimeMachine.isExcluded() }.value
+        await MainActor.run { applyDefaultLocationPrefs() }
+
+        let cacheDir = Cache.defaultCachePath
+        let sourcesDir = Cache.defaultSourcesRoot
+        let jobs = plan(folder: folder, cacheDir: cacheDir, sourcesDir: sourcesDir)
+        let packCount = jobs.filter { $0.dst.hasPrefix(sourcesDir + "/") }.count
+        let videoCount = jobs.count - packCount
+
+        let outcome: Outcome = await Task.detached(priority: .userInitiated) {
+            let fm = FileManager.default
+            try? fm.createDirectory(atPath: cacheDir, withIntermediateDirectories: true)
+            if packCount > 0 {
+                try? fm.createDirectory(atPath: sourcesDir, withIntermediateDirectories: true)
+            }
+            // tmutil needs the destination to exist. Awaited here (sub-second
+            // on a plain folder, unlike a sparsebundle) because Settings
+            // re-reads the checkbox as soon as this returns.
+            if wasExcluded {
+                TimeMachine.exclude()
+            }
+            var moved = 0
+            var already = 0
+            var failed = 0
+            for (index, job) in jobs.enumerated() {
+                if fm.fileExists(atPath: job.dst) {
+                    already += 1
+                } else {
+                    do {
+                        try fm.moveItem(atPath: job.src, toPath: job.dst)
+                        moved += 1
+                    } catch {
+                        failed += 1
+                        errorLog("💽 legacy cache: could not move \((job.src as NSString).lastPathComponent) to \((job.dst as NSString).deletingLastPathComponent): \(error.localizedDescription)")
+                    }
+                }
+                let done = index + 1
+                DispatchQueue.main.async { step(.moving(done: done, total: jobs.count)) }
+            }
+            return Outcome(moved: moved, alreadyInImage: already, failed: failed)
+        }.value
+
+        if notifyConsumers {
+            await MainActor.run {
+                ExternalCacheImage.refreshConsumers(reason: "legacy cache moved to the default location")
+            }
+        }
+        debugLog("💽 legacy cache: moved \(outcome.moved) of \(videoCount) video(s) and \(packCount) pack(s) from \(folder) into the default cache (\(outcome.alreadyInImage) already there, \(outcome.failed) failed)")
+        return outcome
     }
 }

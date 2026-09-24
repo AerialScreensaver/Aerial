@@ -77,9 +77,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if FirstLaunch.shouldShowWizard {
             debugLog("First launch / migration wizard needed")
             runFirstLaunchWizard { [weak self] in
-                self?.continueStartup()
-                // The wizard's presentation step always records a choice.
-                self?.finishStartup(userJustChosePresentation: true)
+                guard let self else { return }
+                self.continueStartup()
+                // A 3.x custom cache imported by the wizard may sit outside
+                // /Users/Shared: same Move / Convert / Later page existing
+                // 4.0 users get. Mode and presentation were chosen in the
+                // wizard, so only the cache page can be pending. The
+                // wizard's presentation step always records a choice.
+                self.maybeShowUpgradePrompt { _ in
+                    self.finishStartup(userJustChosePresentation: true)
+                }
             }
             return
         }

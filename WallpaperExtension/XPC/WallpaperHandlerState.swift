@@ -280,13 +280,19 @@ final class HandlerState: @unchecked Sendable {
 
     /// Get the SharedRenderer for a key, incrementing refCount and
     /// canceling any pending teardown. Returns nil if none exists yet.
-    func acquireExistingRenderer(key: String) -> SharedRenderer? {
+    /// Bind another acquire to a live renderer. `wasIdle`: no acquire was
+    /// bound before this one — the renderer sat inside its teardown grace
+    /// with zero subscribers and its timebase held at rate 0 (the warm
+    /// saver-restart case). Decided under the lock, so a second display
+    /// racing in behind this one never sees idle.
+    func acquireExistingRenderer(key: String) -> (shared: SharedRenderer, wasIdle: Bool)? {
         lock.lock(); defer { lock.unlock() }
         guard let shared = renderers[key] else { return nil }
+        let wasIdle = shared.refCount == 0
         shared.refCount += 1
         shared.teardownTimer?.cancel()
         shared.teardownTimer = nil
-        return shared
+        return (shared, wasIdle)
     }
 
     /// Install a freshly-created SharedRenderer for a key. If another

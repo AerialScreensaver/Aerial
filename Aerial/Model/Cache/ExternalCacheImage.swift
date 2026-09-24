@@ -446,43 +446,68 @@ final class ExternalCacheImage {
         var failed = 0
     }
 
-    /// Move the sibling videos of `folder` into `<mount>/Cache`. Requires
+    /// The Expansion pack folders in `<folder>/Expansions` — where packs
+    /// lived while `expansionsAtCacheLocation` pointed at the plain folder.
+    static func siblingPacks(inFolder folder: String) -> [String] {
+        let root = (folder as NSString).appendingPathComponent("Expansions")
+        let url = URL(fileURLWithPath: root, isDirectory: true)
+        return ((try? FileManager.default.contentsOfDirectory(
+            at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+        )) ?? [])
+            .filter(\.hasDirectoryPath)
+            .map(\.lastPathComponent)
+            .sorted()
+    }
+
+    /// Move the sibling videos of `folder` into `<mount>/Cache`, and its
+    /// Expansion packs (`<folder>/Expansions/*`) into `<mount>/Expansions`
+    /// — once the image is adopted the Expansions root follows the mount
+    /// point, so packs left outside would silently disappear. Requires
     /// the image to be attached (after `adopt`). Helper queue; `progress`
-    /// (done, total) is delivered on main. Cross-volume, so each file is
-    /// a copy + delete — never on the main thread. Files already present
+    /// (done, total) is delivered on main. Cross-volume, so each item is
+    /// a copy + delete — never on the main thread. Items already present
     /// in the image are left where they are and counted separately; per-
-    /// file failures are logged and skipped, nothing is ever deleted.
+    /// item failures are logged and skipped, nothing is ever deleted.
     func adoptSiblingVideos(inFolder folder: String, progress: ((Int, Int) -> Void)? = nil) async -> AdoptionResult {
         await withCheckedContinuation { continuation in
             queue.async {
                 let fm = FileManager.default
-                let files = Self.siblingVideos(inFolder: folder)
+                let cacheDir = Self.mountPoint.appending("/Cache")
+                let packsDir = Self.mountPoint.appending("/Expansions")
+                let packsSource = (folder as NSString).appendingPathComponent("Expansions")
+                let videos = Self.siblingVideos(inFolder: folder)
+                let packs = Self.siblingPacks(inFolder: folder)
+                let jobs: [(src: String, dst: String)] =
+                    videos.map { ((folder as NSString).appendingPathComponent($0),
+                                  (cacheDir as NSString).appendingPathComponent($0)) }
+                    + packs.map { ((packsSource as NSString).appendingPathComponent($0),
+                                   (packsDir as NSString).appendingPathComponent($0)) }
                 var result = AdoptionResult()
-                guard !files.isEmpty else {
+                guard !jobs.isEmpty else {
                     continuation.resume(returning: result)
                     return
                 }
                 guard Self.isAttached(), fm.fileExists(atPath: Cache.externalCacheMarkerPath) else {
-                    errorLog("💽 adopt: image not attached — leaving \(files.count) video(s) in \(folder)")
-                    result.failed = files.count
+                    errorLog("💽 adopt: image not attached — leaving \(videos.count) video(s) and \(packs.count) pack(s) in \(folder)")
+                    result.failed = jobs.count
                     continuation.resume(returning: result)
                     return
                 }
-                let cacheDir = Self.mountPoint.appending("/Cache")
                 try? fm.createDirectory(atPath: cacheDir, withIntermediateDirectories: true)
-                let total = files.count
-                for (index, file) in files.enumerated() {
-                    let src = (folder as NSString).appendingPathComponent(file)
-                    let dst = (cacheDir as NSString).appendingPathComponent(file)
-                    if fm.fileExists(atPath: dst) {
+                if !packs.isEmpty {
+                    try? fm.createDirectory(atPath: packsDir, withIntermediateDirectories: true)
+                }
+                let total = jobs.count
+                for (index, job) in jobs.enumerated() {
+                    if fm.fileExists(atPath: job.dst) {
                         result.alreadyInImage += 1
                     } else {
                         do {
-                            try fm.moveItem(atPath: src, toPath: dst)
+                            try fm.moveItem(atPath: job.src, toPath: job.dst)
                             result.moved += 1
                         } catch {
                             result.failed += 1
-                            errorLog("💽 adopt: could not move \(file) into the image: \(error.localizedDescription)")
+                            errorLog("💽 adopt: could not move \((job.src as NSString).lastPathComponent) into the image: \(error.localizedDescription)")
                         }
                     }
                     if let progress {
@@ -490,7 +515,7 @@ final class ExternalCacheImage {
                         DispatchQueue.main.async { progress(done, total) }
                     }
                 }
-                debugLog("💽 adopted \(result.moved) legacy video(s) from \(folder) into Cache/ (\(result.alreadyInImage) already there, \(result.failed) failed)")
+                debugLog("💽 adopted \(videos.count) video(s) and \(packs.count) pack(s) from \(folder) into the image: \(result.moved) moved, \(result.alreadyInImage) already there, \(result.failed) failed")
                 continuation.resume(returning: result)
             }
         }

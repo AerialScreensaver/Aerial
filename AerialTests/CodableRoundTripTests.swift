@@ -510,6 +510,37 @@ struct CodableRoundTripTests {
         #expect(decoded.timeOfDayOverride.isEmpty)
     }
 
+    @Test("VideoSettings saverAdvanceAtLaunch defaults to false when missing and round-trips")
+    func videoSettingsSaverAdvanceAtLaunch() throws {
+        let json = """
+        {
+            "intNewShouldPlay": 0,
+            "newShouldPlayString": [],
+            "intOnBatteryMode": 0,
+            "intVideoFormat": 0,
+            "intFadeMode": 2,
+            "intRefreshPeriodicity": 1,
+            "allowSkips": true,
+            "sourcesEnabled": {},
+            "favorites": [],
+            "hidden": [],
+            "vibrance": {},
+            "globalVibrance": 0,
+            "allowPerVideoVibrance": false,
+            "durationCache": {},
+            "playbackSpeed": {},
+            "lastVideoCheck": "2024-01-01"
+        }
+        """
+        let decoded = try JSONDecoder().decode(VideoSettings.self, from: json.data(using: .utf8)!)
+        #expect(decoded.saverAdvanceAtLaunch == false)
+
+        var settings = VideoSettings.default
+        settings.saverAdvanceAtLaunch = true
+        let reencoded = try JSONDecoder().decode(VideoSettings.self, from: JSONEncoder().encode(settings))
+        #expect(reencoded.saverAdvanceAtLaunch)
+    }
+
     @Test("TimeSettings nightShift fields default to 0 when missing")
     func timeSettingsNightShiftFallback() throws {
         let json = """

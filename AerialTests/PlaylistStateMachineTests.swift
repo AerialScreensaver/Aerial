@@ -414,3 +414,70 @@ struct ResumeClampTests {
         #expect(bad.rebased == false)
     }
 }
+
+// MARK: - Saver launch pop rule
+
+@Suite("Saver launch pop rule")
+struct PlaylistPopRuleTests {
+
+    private let record: (index: Int, timestamp: Double?) = (index: 0, timestamp: 12.5)
+
+    private func makePlaylist(ids: [String], currentIndex: Int, cycleMode: PlaylistCycleMode = .loop) -> PersistedPlaylist {
+        let entries = ids.map { PlaylistEntry(videoId: $0, videoName: $0, secondaryName: "", duration: nil) }
+        return PersistedPlaylist(entries: entries, currentIndex: currentIndex, playbackTimestamp: nil,
+                                 filterMode: 0, filterStrings: [], generatedAt: Date(), cycleMode: cycleMode)
+    }
+
+    @Test("without a request: cold resume, teardown resume, plain advance")
+    func baseline() {
+        let cold = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: 30, teardownResume: nil, advanceRequested: false)
+        #expect(cold == .init(isResume: true, resumeTimestamp: 30, cursorOverride: nil, path: .coldResume))
+        let teardown = PlaylistPopRule.decide(isFirstActivation: false, sidecarTimestamp: nil, teardownResume: record, advanceRequested: false)
+        #expect(teardown == .init(isResume: true, resumeTimestamp: 12.5, cursorOverride: 0, path: .teardownResume))
+        let advance = PlaylistPopRule.decide(isFirstActivation: false, sidecarTimestamp: nil, teardownResume: nil, advanceRequested: false)
+        #expect(advance == .init(isResume: false, resumeTimestamp: nil, cursorOverride: nil, path: .advance))
+    }
+
+    @Test("a launch advance drops the resume position but keeps the teardown record's cursor")
+    func launchAdvance() {
+        let cold = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: 30, teardownResume: nil, advanceRequested: true)
+        #expect(cold == .init(isResume: false, resumeTimestamp: nil, cursorOverride: nil, path: .launchAdvance(overrode: .coldResume)))
+        let teardown = PlaylistPopRule.decide(isFirstActivation: false, sidecarTimestamp: nil, teardownResume: record, advanceRequested: true)
+        #expect(teardown == .init(isResume: false, resumeTimestamp: nil, cursorOverride: 0, path: .launchAdvance(overrode: .teardownResume)))
+        let plain = PlaylistPopRule.decide(isFirstActivation: false, sidecarTimestamp: nil, teardownResume: nil, advanceRequested: true)
+        #expect(plain == .init(isResume: false, resumeTimestamp: nil, cursorOverride: nil, path: .launchAdvance(overrode: .nothing)))
+    }
+
+    @Test("a teardown record never applies to an activation's first pop")
+    func recordIgnoredOnFirstActivation() {
+        let resume = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: 3, teardownResume: record, advanceRequested: false)
+        #expect(resume.cursorOverride == nil)
+        #expect(resume.path == .coldResume)
+        let advance = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: 3, teardownResume: record, advanceRequested: true)
+        #expect(advance.cursorOverride == nil)
+        #expect(advance.path == .launchAdvance(overrode: .coldResume))
+    }
+
+    @Test("end to end: the launch advance lands on the entry after the one on screen")
+    func popLandsOnNext() {
+        // After a teardown: on screen A (index 0), stored cursor 1 (pre-popped B).
+        var playlist = makePlaylist(ids: ["A", "B", "C"], currentIndex: 1)
+        let decision = PlaylistPopRule.decide(isFirstActivation: false, sidecarTimestamp: nil,
+                                              teardownResume: (index: 0, timestamp: 5), advanceRequested: true)
+        if let cursor = decision.cursorOverride { playlist.currentIndex = cursor }
+        let popped = playlist.popNextVideo(isResume: decision.isResume, resolveVideo: { FakeVideo(id: $0) })
+        #expect(popped?.video == FakeVideo(id: "B"))
+
+        // Cold start: the sidecar cursor IS the on-screen entry.
+        var cold = makePlaylist(ids: ["A", "B", "C"], currentIndex: 0)
+        let coldDecision = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: 9, teardownResume: nil, advanceRequested: true)
+        let coldPop = cold.popNextVideo(isResume: coldDecision.isResume, resolveVideo: { FakeVideo(id: $0) })
+        #expect(coldPop?.video == FakeVideo(id: "B"))
+
+        // Shuffle wrap on an advance still reshuffles.
+        var wrap = makePlaylist(ids: ["A", "B", "C"], currentIndex: 2, cycleMode: .shuffle)
+        let wrapDecision = PlaylistPopRule.decide(isFirstActivation: true, sidecarTimestamp: nil, teardownResume: nil, advanceRequested: true)
+        let wrapPop = wrap.popNextVideo(isResume: wrapDecision.isResume, resolveVideo: { FakeVideo(id: $0) })
+        #expect(wrapPop?.didReshuffle == true)
+    }
+}

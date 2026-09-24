@@ -46,7 +46,7 @@ struct PathMigrationView: View {
                 .resizable()
                 .frame(width: 64, height: 64)
 
-            Text("Aerial Data Migration")
+            Text(isCustomCacheUser ? "Custom cache location found" : "Aerial Data Migration")
                 .font(.title)
                 .fontWeight(.bold)
 
@@ -56,15 +56,19 @@ struct PathMigrationView: View {
 
             VStack(spacing: 12) {
                 if isCustomCacheUser {
-                    // Custom cache user options
+                    // Custom cache user options — the wizard's button chrome.
                     Button("Migrate to Standard Location") {
                         startMigration(type: .moveData)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                     .keyboardShortcut(.defaultAction)
 
                     Button("Keep Custom Location") {
                         startMigration(type: .keepCustom)
                     }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
                 } else {
                     // Standard user options
                     Button("Move Data to New Location") {

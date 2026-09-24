@@ -134,6 +134,12 @@ struct CompanionSettings: Codable {
     /// or the one-time upgrade prompt). Optional for back-compat decode.
     var appPresentationChosen: Bool?
 
+    /// True when the first-launch wizard found Aerial 3 data it could not
+    /// read (Full Disk Access) and the user skipped: the upgrade prompt
+    /// offers the migration again once the data is readable. Cleared by a
+    /// completed migration. Optional for back-compat decode.
+    var legacyMigrationPending: Bool?
+
     /// Dock presentation: true once the one-time quit explanation has
     /// been shown and suppressed. Optional for back-compat decode.
     var dockQuitExplained: Bool?
@@ -227,6 +233,7 @@ struct CompanionSettings: Codable {
         lastLaunchedVersion: nil,
         intAppPresentation: nil,
         appPresentationChosen: nil,
+        legacyMigrationPending: nil,
         dockQuitExplained: nil,
         dockDownloadBadge: nil,
         agentRestartedForIdentity: nil
@@ -287,6 +294,7 @@ struct CompanionSettings: Codable {
          lastLaunchedVersion: String? = nil,
          intAppPresentation: Int? = nil,
          appPresentationChosen: Bool? = nil,
+         legacyMigrationPending: Bool? = nil,
          dockQuitExplained: Bool? = nil,
          dockDownloadBadge: Bool? = nil,
          agentRestartedForIdentity: String? = nil) {
@@ -322,6 +330,7 @@ struct CompanionSettings: Codable {
         self.lastLaunchedVersion = lastLaunchedVersion
         self.intAppPresentation = intAppPresentation
         self.appPresentationChosen = appPresentationChosen
+        self.legacyMigrationPending = legacyMigrationPending
         self.dockQuitExplained = dockQuitExplained
         self.dockDownloadBadge = dockDownloadBadge
         self.agentRestartedForIdentity = agentRestartedForIdentity
@@ -365,6 +374,7 @@ struct CompanionSettings: Codable {
         lastLaunchedVersion = try container.decodeIfPresent(String.self, forKey: .lastLaunchedVersion)
         intAppPresentation = try container.decodeIfPresent(Int.self, forKey: .intAppPresentation)
         appPresentationChosen = try container.decodeIfPresent(Bool.self, forKey: .appPresentationChosen)
+        legacyMigrationPending = try container.decodeIfPresent(Bool.self, forKey: .legacyMigrationPending)
         dockQuitExplained = try container.decodeIfPresent(Bool.self, forKey: .dockQuitExplained)
         dockDownloadBadge = try container.decodeIfPresent(Bool.self, forKey: .dockDownloadBadge)
         agentRestartedForIdentity = try container.decodeIfPresent(String.self, forKey: .agentRestartedForIdentity)

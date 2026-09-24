@@ -240,6 +240,14 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.wallpaperModeChosen) }
     }
 
+    /// Aerial 3 data was found but could not be read (Full Disk Access)
+    /// and the user skipped the migration: offer it again at launch once
+    /// the data is readable. Cleared by a completed migration.
+    static var legacyMigrationPending: Bool {
+        get { manager.getValue(forKeyPath: \.legacyMigrationPending) ?? false }
+        set { manager.setValue(newValue, forKeyPath: \.legacyMigrationPending) }
+    }
+
     /// App version string (`CFBundleShortVersionString`) seen at the
     /// previous launch, for upgrade detection. Nil on the first launch
     /// that records it.

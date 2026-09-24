@@ -11,6 +11,7 @@ import SwiftUI
 
 enum SettingsPanel: String, CaseIterable, Identifiable {
     case desktop = "Wallpaper"
+    case screensaver = "Screensaver"
     case displays = "Displays"
     case cache = "Cache"
     case storage = "Storage"
@@ -39,6 +40,8 @@ enum SettingsPanel: String, CaseIterable, Identifiable {
             return "display.2"
         case .desktop:
             return "desktopcomputer"
+        case .screensaver:
+            return "tv"
         case .accessibility:
             return "accessibility"
         case .autoUpdates:
@@ -64,6 +67,8 @@ enum SettingsPanel: String, CaseIterable, Identifiable {
             return "Screen layout"
         case .desktop:
             return "Live wallpaper"
+        case .screensaver:
+            return "Screensaver-only options"
         case .accessibility:
             return "Shortcuts & visuals"
         case .autoUpdates:
@@ -165,6 +170,8 @@ struct SettingsView: View {
                     DisplaysSettingsPanel()
                 case .desktop:
                     DesktopSettingsPanel()
+                case .screensaver:
+                    ScreensaverSettingsPanel()
                 case .accessibility:
                     AccessibilityPanel()
                 case .autoUpdates:

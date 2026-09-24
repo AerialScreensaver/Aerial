@@ -143,6 +143,14 @@ struct PrefsVideos {
         set { manager.setValue(newValue, forKeyPath: \.videos.allowSkips) }
     }
 
+    /// Settings › Screensaver "Don't resume video at launch". Read by the
+    /// extension at saver acquire; Companion bumps the settings generation
+    /// after writing it so a running extension re-reads its load-once cache.
+    static var saverAdvanceAtLaunch: Bool {
+        get { manager.getValue(forKeyPath: \.videos.saverAdvanceAtLaunch) }
+        set { manager.setValue(newValue, forKeyPath: \.videos.saverAdvanceAtLaunch) }
+    }
+
     static var enabledSources: [String: Bool] {
         get { manager.getValue(forKeyPath: \.videos.sourcesEnabled) }
         set { manager.setValue(newValue, forKeyPath: \.videos.sourcesEnabled) }

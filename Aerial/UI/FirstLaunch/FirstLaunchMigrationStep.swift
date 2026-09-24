@@ -41,6 +41,7 @@ struct FirstLaunchMigrationStep: View {
     private enum Phase: Equatable {
         case choosing
         case running
+        case failed(String)   // the operation reported an error (not a permission one)
         case complete   // intermediary confirmation + optional cleanup
         case done       // terminal; immediately advances out of the step
     }
@@ -67,6 +68,8 @@ struct FirstLaunchMigrationStep: View {
             }
         case .running:
             runningView
+        case .failed(let message):
+            failedView(message)
         case .complete:
             completeView
         case .done:
@@ -233,20 +236,59 @@ struct FirstLaunchMigrationStep: View {
                     progressMessage = message
                 }
             },
-            completion: { _ in
+            completion: { result in
                 // Same story for the terminal callback — the legacy
                 // `.moveData` path completes on its background queue.
-                // Hop to main, populate cleanup options, transition to
-                // the intermediary `.complete` screen for user
-                // confirmation + optional cleanup.
+                // Hop to main. A failure is shown, never swallowed: the
+                // usual cause is that macOS refuses the container without
+                // Full Disk Access, and the wizard state then swaps in the
+                // permission screen. Otherwise populate cleanup options
+                // and transition to the intermediary `.complete` screen.
                 DispatchQueue.main.async {
-                    let options = Self.detectCleanupOptions()
-                    cleanupOptions = options
-                    cleanupSelections = Dictionary(uniqueKeysWithValues: options.map { ($0.id, true) })
-                    phase = .complete
+                    switch result {
+                    case .failure(let error, _):
+                        if state.migrationFailed() { return }
+                        phase = .failed(error)
+                    case .success, .skipped:
+                        let options = Self.detectCleanupOptions()
+                        cleanupOptions = options
+                        cleanupSelections = Dictionary(uniqueKeysWithValues: options.map { ($0.id, true) })
+                        phase = .complete
+                    }
                 }
             }
         )
+    }
+
+    // MARK: - Failure view
+
+    private func failedView(_ message: String) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: "xmark.octagon.fill")
+                .font(.system(size: 56, weight: .light))
+                .foregroundStyle(.red)
+            Text("Migration failed")
+                .font(.system(size: 26, weight: .semibold))
+            Text(message)
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 520)
+            Spacer(minLength: 0)
+            HStack(spacing: 12) {
+                Spacer()
+                Button("Skip") { state.skipMigration() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                Button("Try Again") { phase = .choosing }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 12)
     }
 
     // MARK: - Complete view + cleanup
@@ -389,5 +431,66 @@ struct FirstLaunchMigrationStep: View {
         }
         phase = .done
         state.advanceFromMigration()
+    }
+}
+
+// MARK: - Permission screen
+
+/// Aerial 3 data was found but this process may not read it. On macOS 26
+/// and later the legacy screen saver engine has no app record, so macOS
+/// cannot show its "access data from other apps" prompt for the container:
+/// only Full Disk Access opens it, and nothing asks for that on its own.
+/// Explain, open System Settings, re-check — or skip and get the offer
+/// again at a later launch (`Preferences.legacyMigrationPending`).
+struct LegacyDataPermissionStep: View {
+    @ObservedObject var state: FirstLaunchWizardState
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "lock.shield")
+                .font(.system(size: 56, weight: .light))
+                .foregroundColor(.aerial)
+
+            VStack(spacing: 13) {
+                Text("Aerial needs permission to read Aerial 3's data")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                Text("Aerial found data from a previous version, but macOS doesn't let it read the old screen saver's files. On this version of macOS that only works with **Full Disk Access**, and macOS won't ask for it on its own.")
+                Text("1. Click **Open System Settings** and add Aerial to Full Disk Access.\n2. Come back here and click **Check Again**. If it still fails, quit and reopen Aerial.")
+                Text("You can also skip this: Aerial will offer the migration again the next time it starts, once it can read the data.")
+            }
+            .font(.system(size: 15))
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 650)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 12) {
+                Button("Skip") {
+                    state.skipMigration()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                Button("Open System Settings") {
+                    PathMigration.openFullDiskAccessSettings()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                Button("Check Again") {
+                    state.reprobeLegacyData()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+            }
+            .padding(.bottom, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 16)
     }
 }

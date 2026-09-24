@@ -40,6 +40,12 @@ final class FirstLaunchWizardState: ObservableObject {
     /// step appears in `visibleSteps`. Set only by `advanceFromWelcome`.
     @Published private(set) var migrationNeeded: Bool = false
 
+    /// False when the probe found 3.x data this process may not read
+    /// (Full Disk Access — see `PathMigration.legacyDataReadable`). The
+    /// migration step then shows the permission screen instead of the
+    /// choices, until "Check Again" succeeds or the user skips.
+    @Published private(set) var legacyDataReadable: Bool = true
+
     init() {
         self.wallpaperMode = FirstLaunch.initialWallpaperMode
     }
@@ -95,22 +101,59 @@ final class FirstLaunchWizardState: ObservableObject {
     ///   - `probe: false` → Skip; never touch the legacy container path.
     ///     macOS TCC prompt never fires.
     ///   - `probe: true`  → Go ahead; call `PathMigration.needsMigration()`
-    ///     (which triggers the TCC prompt on first read). If old data
-    ///     is found we transition to `.migration`, otherwise straight
-    ///     to `.mode`. Permission denial returns false and we fall
-    ///     through to `.mode` without surfacing an error.
+    ///     (which triggers the TCC prompt on first read, where macOS can
+    ///     show one). If old data is found we transition to `.migration`,
+    ///     otherwise straight to `.mode`. Data that exists but cannot be
+    ///     read still counts as found: the step shows the permission
+    ///     screen.
     func advanceFromWelcome(probe: Bool) {
         if probe {
             migrationNeeded = PathMigration.needsMigration()
+            legacyDataReadable = PathMigration.legacyDataReadable
         } else {
             migrationNeeded = false
         }
         step = migrationNeeded ? .migration : .mode
     }
 
+    /// "Check Again" on the permission screen: re-probe after the user
+    /// granted Full Disk Access. Readable now → the choices appear; gone
+    /// entirely → straight to the mode step.
+    func reprobeLegacyData() {
+        PathMigration.probeLegacyData()
+        migrationNeeded = PathMigration.legacyDataFound
+        legacyDataReadable = PathMigration.legacyDataReadable
+        if !migrationNeeded { step = .mode }
+    }
+
+    /// Skip a migration Aerial could not perform (unreadable data or a
+    /// failed attempt): remember to offer it again at a later launch.
+    func skipMigration() {
+        Preferences.legacyMigrationPending = true
+        debugLog("🚚 Migration: skipped in the wizard — will be offered again once the data is readable")
+        step = .mode
+    }
+
+    /// A migration attempt failed: when the cause is that the data cannot
+    /// be read, swap in the permission screen and return true; otherwise
+    /// the step shows its own failure view.
+    func migrationFailed() -> Bool {
+        PathMigration.probeLegacyData()
+        guard PathMigration.legacyDataFound, !PathMigration.legacyDataReadable else { return false }
+        legacyDataReadable = false
+        return true
+    }
+
     /// Called by the migration step once the chosen operation finishes.
     func advanceFromMigration() {
         step = .mode
+    }
+
+    /// The custom-cache step's Done, which does not say whether the
+    /// operation succeeded: a permission failure gets the permission
+    /// screen, anything else moves on.
+    func finishMigration() {
+        if !migrationFailed() { step = .mode }
     }
 }
 
@@ -145,10 +188,13 @@ struct FirstLaunchWizardView: View {
         case .welcome:
             FirstLaunchWelcomeStep(state: state)
         case .migration:
+            // Data Aerial may not read gets the permission screen first.
             // Custom-cache scenario keeps the legacy `PathMigrationView`
             // (its own UI). The "found a previous version" container
             // case uses the polished `FirstLaunchMigrationStep`.
-            if PathMigration.isCustomCacheUser() {
+            if !state.legacyDataReadable {
+                LegacyDataPermissionStep(state: state)
+            } else if PathMigration.isCustomCacheUser() {
                 customCacheMigrationStep
             } else {
                 FirstLaunchMigrationStep(state: state)
@@ -179,7 +225,7 @@ struct FirstLaunchWizardView: View {
             },
             onShowOldLocation: { PathMigration.showOldContainerInFinder() },
             onShowNewLocation: { PathMigration.showNewLocationInFinder() },
-            onDismiss: { state.advanceFromMigration() }
+            onDismiss: { state.finishMigration() }
         )
     }
 

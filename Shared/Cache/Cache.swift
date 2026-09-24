@@ -145,36 +145,46 @@ struct Cache {
     enum LocationKind: Equatable {
         /// `/Users/Shared/Aerial/Cache`.
         case internalFolder
-        /// A user-chosen folder the extension can read (not under /Volumes).
+        /// A user-chosen folder the extension can read (under /Users/Shared).
         case customFolder(String)
-        /// A 4.0-style plain folder on an external volume. Companion reads
-        /// it fine; the sandboxed extension never can. This is what 4.0
-        /// users arrive with — Companion offers to convert it into a disk
-        /// image (`LegacyExternalCacheMigration`).
+        /// A plain folder outside /Users/Shared: a 4.0-style cache on an
+        /// external volume, or a folder in the user's home. Companion reads
+        /// it fine; the sandboxed extension never can. Companion offers to
+        /// convert it into a disk image (`LegacyExternalCacheMigration`).
         case legacyExternalFolder(String)
         /// Sparsebundle on an external drive, attached at the mount point.
         case externalImage(String)
     }
 
-    /// Pure classifier (unit-tested); `locationKind` feeds it the prefs.
-    static func classify(overrideCache: Bool, cachePath: String?, externalCacheImagePath: String?,
-                         mountPoint: String) -> LocationKind {
+    /// Classifier (unit-tested); `locationKind` feeds it the prefs. Not
+    /// quite pure: symlinks in `cachePath` are resolved on disk.
+    static func classify(overrideCache: Bool, cachePath: String?, externalCacheImagePath: String?) -> LocationKind {
         guard overrideCache else { return .internalFolder }
         if let image = externalCacheImagePath, !image.isEmpty { return .externalImage(image) }
         guard let custom = cachePath, !custom.isEmpty else { return .internalFolder }
         let resolved = URL(fileURLWithPath: custom).standardizedFileURL.path
-        if resolved.hasPrefix("/Volumes/"), resolved != mountPoint, !resolved.hasPrefix(mountPoint + "/") {
+        if !isExtensionReadablePath(resolved) {
             return .legacyExternalFolder(custom)
         }
         return .customFolder(custom)
     }
 
-    static var locationKind: LocationKind {
-        classify(overrideCache: PrefsCache.overrideCache, cachePath: PrefsCache.cachePath,
-                 externalCacheImagePath: PrefsCache.externalCacheImagePath, mountPoint: externalCacheMountPoint)
+    /// The wallpaper extension is sandboxed separately from Aerial.app.
+    /// It can read the shared support directory, but not arbitrary folders
+    /// selected by the user (including a folder in the user's home directory).
+    /// Such folders must be exposed through the cache disk image mounted below
+    /// `/Users/Shared/Aerial`.
+    static func isExtensionReadablePath(_ path: String) -> Bool {
+        let resolved = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        return resolved == "/Users/Shared" || resolved.hasPrefix("/Users/Shared/")
     }
 
-    /// The 4.0-style external folder, when that is the configuration.
+    static var locationKind: LocationKind {
+        classify(overrideCache: PrefsCache.overrideCache, cachePath: PrefsCache.cachePath,
+                 externalCacheImagePath: PrefsCache.externalCacheImagePath)
+    }
+
+    /// The plain folder awaiting conversion, when that is the configuration.
     static var legacyExternalFolderPath: String? {
         if case .legacyExternalFolder(let folder) = locationKind { return folder }
         return nil
@@ -211,7 +221,8 @@ struct Cache {
                 return effectivePath
             }
         case .legacyExternalFolder(let folder):
-            // 4.0 layout on an external volume. Same contract as image
+            // Plain folder outside /Users/Shared (4.0 layout on an external
+            // volume, or a folder in the home). Same contract as image
             // mode: the folder IS the cache whether or not the drive is
             // here — never fall back to the internal folder (that is how
             // boot drives silently filled up while a drive was unplugged),
@@ -219,17 +230,17 @@ struct Cache {
             // Companion offers the conversion; the extension can't read
             // it either way.
             let mounted = FileManager.default.fileExists(atPath: folder)
-            warnLog("💽 legacy external cache folder \(folder) (4.0 layout, \(mounted ? "mounted" : "drive not connected")) — the wallpaper extension cannot read it; conversion pending")
+            warnLog("💽 plain cache folder \(folder) outside /Users/Shared (\(mounted ? "present" : "missing or drive not connected")) — the wallpaper extension cannot read it; conversion pending")
             return folder
         case .customFolder(let custom):
             if FileManager.default.fileExists(atPath: custom) {
                 effectivePath = custom
             } else {
                 debugLog("Custom cache path \(custom) not found, falling back to default")
-                effectivePath = supportPath.appending("/Cache")
+                effectivePath = defaultCachePath
             }
         case .internalFolder:
-            effectivePath = supportPath.appending("/Cache")
+            effectivePath = defaultCachePath
         }
 
         if !FileManager.default.fileExists(atPath: effectivePath) {
@@ -242,6 +253,13 @@ struct Cache {
             }
         }
         return effectivePath
+    }
+
+    /// The default cache folder, `/Users/Shared/Aerial/Cache` — where the
+    /// cache lives with no custom location, and the one folder the
+    /// wallpaper extension can always read.
+    static var defaultCachePath: String {
+        supportPath.appending("/Cache")
     }
 
     /// Invalidate cached path values (call after changing cache location settings).

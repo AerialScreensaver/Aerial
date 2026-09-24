@@ -231,8 +231,8 @@ enum DiagnosticsExporter {
 
         // Cache location — the first thing to read in a "wallpaper says
         // 'No videos found' but the library shows them cached" bundle: a
-        // 4.0-style external folder is readable by Companion, never by the
-        // extension.
+        // plain custom folder outside /Users/Shared is readable by
+        // Companion, never by the extension.
         lines.append("== Cache ==")
         let cachePath = Cache.path
         let mode: String
@@ -242,12 +242,12 @@ enum DiagnosticsExporter {
         case .customFolder:
             mode = "custom folder"
         case .legacyExternalFolder:
-            mode = "LEGACY external folder (4.0 layout — the extension cannot read it; conversion pending)"
+            mode = "PLAIN custom folder outside /Users/Shared (the extension cannot read it; conversion pending)"
         case .externalImage(let image):
             mode = "external disk image \(image), state \(ExternalCacheImage.shared.state)"
         }
         lines.append("Mode: \(mode)")
-        // The folder holding the image (or the 4.0 folder): a network
+        // The folder holding the image (or the plain folder): a network
         // share without full-sync support can never hold a working image.
         let hostFolder: String?
         switch Cache.locationKind {
@@ -265,11 +265,27 @@ enum DiagnosticsExporter {
         }
         lines.append("Path: \(cachePath)")
         lines.append("Available: \(Cache.isAvailable), exists: \(FileManager.default.fileExists(atPath: cachePath)),"
-            + " readable by the extension: \(cachePath.hasPrefix("/Users/Shared/"))")
+            + " readable by the extension: \(Cache.isExtensionReadablePath(cachePath))")
         lines.append("Videos at path: \(movCount(at: cachePath))")
         if let legacy = Cache.legacyExternalFolderPath {
             lines.append("Legacy folder: \(legacy) mounted=\(FileManager.default.fileExists(atPath: legacy)) videos=\(movCount(at: legacy))")
         }
+        // The 3.x saver prefs: whether an upgrade had a custom location to
+        // import, and where it points.
+        switch LegacySaverPrefs.load() {
+        case .found(let loaded):
+            let prefs = loaded.prefs
+            var line = "3.x saver prefs: \(loaded.path) overrideCache=\(prefs.overrideCache) root=\(prefs.customRoot ?? "none")"
+            if let cache = prefs.customCacheFolder {
+                line += " cache=\(cache) exists=\(FileManager.default.fileExists(atPath: cache)) videos=\(movCount(at: cache))"
+            }
+            lines.append(line)
+        case .denied(let path):
+            lines.append("3.x saver prefs: \(path) — NOT readable (Full Disk Access needed for the legacy screensaver container)")
+        case .none:
+            lines.append("3.x saver prefs: none")
+        }
+        lines.append("3.x migration pending (skipped for permission): \(Preferences.legacyMigrationPending)")
         lines.append("Expansion packs at cache location: \(PrefsCache.expansionsAtCacheLocation)")
         lines.append("")
 
@@ -291,6 +307,7 @@ enum DiagnosticsExporter {
         }
         lines.append("Auto-restart sentinel: \(Preferences.agentRestartedForIdentity ?? "none")")
         lines.append("Wallpaper mode: \(Preferences.wallpaperMode) (chosen=\(Preferences.wallpaperModeChosen)), desktop wallpaper active: \(WallpaperControl.shared.desktopWallpaperActive)")
+        lines.append("Saver advance at launch: \(PrefsVideos.saverAdvanceAtLaunch)")
         lines.append(contentsOf: WallpaperStoreSummary.describeCurrentStore())
         lines.append("")
 

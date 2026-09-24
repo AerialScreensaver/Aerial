@@ -63,6 +63,11 @@ struct VideoSettings: Codable {
 
     // Features
     var allowSkips: Bool
+    /// Screensaver-only installs ("Don't resume video at launch"): every
+    /// saver start plays the next playlist entry instead of resuming the
+    /// last one at its saved position. Ignored while Aerial is also the
+    /// desktop wallpaper. Absent = false.
+    var saverAdvanceAtLaunch: Bool = false
     var sourcesEnabled: [String: Bool]
 
     // Video management
@@ -103,6 +108,7 @@ struct VideoSettings: Codable {
         intFadeMode: 0,  // FadeMode.disabled
         intRefreshPeriodicity: 0,  // RefreshPeriodicity.weekly
         allowSkips: true,
+        saverAdvanceAtLaunch: false,
         sourcesEnabled: ["macOS": true, "tvOS 26": true, "tvOS 13": false],
         favorites: [],
         hidden: [],
@@ -133,6 +139,7 @@ extension VideoSettings {
         intFadeMode = try container.decode(Int.self, forKey: .intFadeMode)
         intRefreshPeriodicity = try container.decode(Int.self, forKey: .intRefreshPeriodicity)
         allowSkips = try container.decode(Bool.self, forKey: .allowSkips)
+        saverAdvanceAtLaunch = try container.decodeIfPresent(Bool.self, forKey: .saverAdvanceAtLaunch) ?? false
         sourcesEnabled = try container.decode([String: Bool].self, forKey: .sourcesEnabled)
         favorites = try container.decode([String].self, forKey: .favorites)
         hidden = try container.decode([String].self, forKey: .hidden)

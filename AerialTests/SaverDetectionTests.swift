@@ -37,6 +37,22 @@ struct SaverAcquireRuleTests {
         #expect(saverWindow == .init(isSaverRole: true, saverRunning: true))
     }
 
+    @Test("advance at launch: only a running saver on a Mac where Aerial is not the desktop wallpaper")
+    func advancesAtLaunch() {
+        let saverOnly = SaverAcquireRule.classify(presentationMode: "idle", isPreview: false,
+                                                  placement: "Crop", desktopWallpaperActive: false)
+        #expect(SaverAcquireRule.advancesAtLaunch(saverOnly, desktopWallpaperActive: false, optionEnabled: true))
+        #expect(!SaverAcquireRule.advancesAtLaunch(saverOnly, desktopWallpaperActive: false, optionEnabled: false))
+        // Aerial also the wallpaper: the saver window shares the desktop renderer — never.
+        let saverWindow = SaverAcquireRule.classify(presentationMode: "idle", isPreview: false,
+                                                    placement: nil, desktopWallpaperActive: true)
+        #expect(saverWindow.isSaverRole)
+        #expect(!SaverAcquireRule.advancesAtLaunch(saverWindow, desktopWallpaperActive: true, optionEnabled: true))
+        let preview = SaverAcquireRule.classify(presentationMode: "idle", isPreview: true,
+                                                placement: nil, desktopWallpaperActive: false)
+        #expect(!SaverAcquireRule.advancesAtLaunch(preview, desktopWallpaperActive: false, optionEnabled: true))
+    }
+
     @Test("previews and non-idle acquires are never the saver")
     func neverSaver() {
         let off = SaverAcquireRule.Verdict(isSaverRole: false, saverRunning: false)

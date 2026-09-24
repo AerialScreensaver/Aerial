@@ -830,6 +830,7 @@ func attachWallpaper(
     rendererKey: String,
     playlistScreenUUID: String?,
     isScreenSaver: Bool,
+    advanceAtLaunch: Bool = false,
     activitySuspended: Bool,
     context: String
 ) {
@@ -838,9 +839,16 @@ func attachWallpaper(
         return
     }
 
-    if let existing = sharedHandlerState.acquireExistingRenderer(key: rendererKey) {
+    if let hit = sharedHandlerState.acquireExistingRenderer(key: rendererKey) {
         // Fast path: SharedRenderer already exists. Just subscribe
         // our per-acquire layer; no async work.
+        let existing = hit.shared
+        if advanceAtLaunch, hit.wasIdle {
+            // Warm saver restart on an idle renderer: swap to the next
+            // video BEFORE subscribing (see the helper).
+            advanceWarmRendererForSaverLaunch(existing, playlistScreenUUID: playlistScreenUUID,
+                                              context: "path=warm, \(context)")
+        }
         existing.renderer.addSubscriber(perAcquireLayer)
         if isScreenSaver {
             existing.renderer.enterScreensaverMode()
@@ -922,6 +930,12 @@ func attachWallpaper(
         // Slow path: create a new SharedRenderer. Pick what plays,
         // build the right engine async, install (handling races),
         // subscribe our layer.
+        if advanceAtLaunch {
+            // "Don't resume video at launch": this acquire's first pop
+            // advances; the renderer's pre-pop that follows is untouched.
+            ExtensionVideoLoader.shared.requestAdvanceOnNextPop(screenUUID: playlistScreenUUID)
+            debugLog("⏭ saver launch: advancing instead of resuming (scope=\(playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared"), path=slow, key=\(shortKey(rendererKey)), \(context))")
+        }
         guard let selection = selectPlayback(screenUUID: playlistScreenUUID) else {
             // Nothing playable (playlist unresolvable AND no .mov in the
             // cache). Show the rainbow + label instead of parking the
@@ -1066,6 +1080,35 @@ func retryAttachForUnfedWindows(reason: String) {
 /// listener's last-applied Companion state — each source lands as its
 /// OWN reason (no collapsing; the old fold into a single policy enum is
 /// what stranded stuck renderers that dropped every speed change).
+/// "Don't resume video at launch" on a warm saver restart: the renderer
+/// survived inside its teardown grace, so no pop happens on this acquire.
+/// Swap to its pre-buffered next video while it is still unsubscribed — a
+/// direct swap (no ghost of the old clip for a window that never showed
+/// it), timeline reset with the timebase held at rate 0 — so the joining
+/// window's first frame is the next clip, like a cold start. Once per
+/// saver session: only the acquire that took refCount 0 → 1 gets here (a
+/// second display joining the broadcast renderer sees wasIdle == false; a
+/// renderer created by this acquire went through the slow path, whose pop
+/// already advanced). The loader is NOT armed: the pre-buffered reader is
+/// the advance, and the pre-pop after the swap must stay an ordinary one.
+private func advanceWarmRendererForSaverLaunch(_ shared: SharedRenderer, playlistScreenUUID: String?, context: String) {
+    let scope = playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared"
+    guard shared.renderer.nowPlayingOverride == nil else {
+        // A live feed has no position to resume, and its advance is a
+        // reconnect / engine switch — not at the fragile engage moment.
+        debugLog("⏭ saver launch: warm renderer plays a live feed — not advancing (scope=\(scope), key=\(shortKey(shared.rendererKey)))")
+        return
+    }
+    if ExtensionVideoLoader.shared.cycleMode(for: playlistScreenUUID) == .repeatOne {
+        // Repeat-one pins the pre-buffered reader to the current clip;
+        // jumpNow() re-invokes the provider for a real pop.
+        shared.renderer.jumpNow()
+    } else {
+        shared.renderer.advanceNow()
+    }
+    debugLog("⏭ saver launch: advancing instead of resuming (scope=\(scope), \(context), key=\(shortKey(shared.rendererKey)), was \(shared.renderer.currentAssetURL.lastPathComponent))")
+}
+
 private func seedPauseState(_ renderer: any PlaybackRenderer, rendererKey: String, activitySuspended: Bool) {
     let listener = WallpaperControlListener.shared
     renderer.applyActivityPolicy(paused: activitySuspended, animated: false)
@@ -1201,6 +1244,9 @@ func teardownWallpaperWindow(wid uuid: String, gracePeriod: TimeInterval, contex
             // Any pause deferred while the saver ran re-lands inside
             // the renderer's reassert as this saver subscriber detaches.
             shared.renderer.exitScreensaverMode()
+            // An armed reuse-advance dies with the window: the next start
+            // is an acquire, and the fast path's idle guard owns it.
+            saverReenterAdvanceArmed.withLock { _ = $0.remove(shared.rendererKey) }
         }
         if wallpaper.lastPresentationMode == "locked" {
             // A window that dies while `locked` takes its +1 with it —
@@ -1654,6 +1700,12 @@ func reapplyGeometry(to wallpaper: ActiveWallpaper) {
 /// checks themselves: acquire (XPC thread), invalidate, the control
 /// listener (main) and the wake pass (global queue) can all land
 /// together on a hot-plug.
+/// Renderer keys whose saver windows flipped idle → default with "Don't
+/// resume video at launch" in force: the default → idle re-enter (window
+/// reuse, no acquire) advances once per key. Cleared on invalidate — the
+/// next start is then an acquire and the fast path's idle guard owns it.
+private let saverReenterAdvanceArmed = OSAllocatedUnfairLock<Set<String>>(initialState: [])
+
 private let topologyLock = OSAllocatedUnfairLock<String?>(initialState: nil)
 
 /// Re-detect displays and, in spanned mode, re-slice EVERY active
@@ -2095,7 +2147,11 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             placement: ctx.placement, desktopWallpaperActive: desktopActive
         )
         let isScreenSaver = verdict.isSaverRole
-        debugLog("  role: screensaver=\(isScreenSaver) rendererKey=\(shortKey(rendererKey)) playlistUUID=\(playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared")")
+        // "Don't resume video at launch" — see SaverAcquireRule.advancesAtLaunch.
+        let advanceAtLaunch = SaverAcquireRule.advancesAtLaunch(
+            verdict, desktopWallpaperActive: desktopActive, optionEnabled: PrefsVideos.saverAdvanceAtLaunch
+        )
+        debugLog("  role: screensaver=\(isScreenSaver) advanceAtLaunch=\(advanceAtLaunch) rendererKey=\(shortKey(rendererKey)) playlistUUID=\(playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared")")
         if verdict.saverRunning {
             // The acquire itself is the live saver signal: a process
             // spawned FOR the saver has already missed the didstart
@@ -2200,6 +2256,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 rendererKey: rendererKey,
                 playlistScreenUUID: playlistScreenUUID,
                 isScreenSaver: isScreenSaver,
+                advanceAtLaunch: advanceAtLaunch,
                 activitySuspended: activitySuspended(ctx.activityState),
                 context: "acquire mode=\(mode.displayName)"
             )
@@ -2354,6 +2411,13 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             // bookkeeping.
             if wallpaper.isScreenSaver, oldMode == "idle", ctx.presentationMode == "default" {
                 shared?.renderer.beginScreensaverExitRamp()
+                // "Don't resume video at launch": a quick restart inside the
+                // invalidate window reuses these windows (no acquire), so the
+                // advance is armed here and fired on the default → idle flip.
+                if let key = shared?.rendererKey, PrefsVideos.saverAdvanceAtLaunch,
+                   !WallpaperControlListener.shared.currentDesktopWallpaperActive {
+                    saverReenterAdvanceArmed.withLock { _ = $0.insert(key) }
+                }
                 // The saver visually exited (rate ramps down now). `saverActive`
                 // is gated on `!screensaverRateSuspended`, so writing status here
                 // flips it false ~5 s before the INVALIDATE — let the Companion
@@ -2377,6 +2441,15 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             if wallpaper.isScreenSaver, oldMode == "default", ctx.presentationMode == "idle" {
                 debugLog("  saver re-enter (reuse): wid=\(wid.prefix(8)) variant=\(wallpaper.experimentVariant)")
                 shared?.renderer.cancelScreensaverExitRamp()
+                if let shared, saverReenterAdvanceArmed.withLock({ $0.remove(shared.rendererKey) != nil }) {
+                    // Renderer live and subscribed here: the normal skip
+                    // transition runs, which is right for a visible restart.
+                    advanceWarmRendererForSaverLaunch(
+                        shared,
+                        playlistScreenUUID: shared.rendererKey == broadcastRendererKey ? nil : shared.rendererKey,
+                        context: "path=reuse wid=\(wid.prefix(8))"
+                    )
+                }
                 statusWriteQueue.async { writeWallpaperStatus(reason: "saver-reenter") }
             }
 

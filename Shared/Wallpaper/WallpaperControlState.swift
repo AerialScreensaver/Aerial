@@ -261,4 +261,14 @@ enum SaverAcquireRule {
         }
         return Verdict(isSaverRole: placement == nil || !desktopWallpaperActive, saverRunning: true)
     }
+
+    /// "Don't resume video at launch": gated on the desktop wallpaper being
+    /// INACTIVE, not on the role. With Aerial also the wallpaper, the saver
+    /// window subscribes to the desktop's renderer and skipping there would
+    /// cut the desktop's video at every saver engage (the role verdict is
+    /// true for a bare idle acquire in that setup too). `saverRunning`
+    /// already excludes previews and non-idle acquires.
+    static func advancesAtLaunch(_ verdict: Verdict, desktopWallpaperActive: Bool, optionEnabled: Bool) -> Bool {
+        optionEnabled && verdict.saverRunning && !desktopWallpaperActive
+    }
 }
