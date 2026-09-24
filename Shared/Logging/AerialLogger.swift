@@ -161,17 +161,19 @@ final class AerialLogger {
 
     // MARK: - Crash path
 
-    /// Synchronous append that bypasses `writeQueue`, for an
-    /// uncaught-exception handler: the process aborts the moment the
-    /// handler returns, so a queued write would never land. Opens its own
-    /// descriptor with POSIX calls, writes, closes; also mirrors to os_log
-    /// at fault level so Console.app shows it without file access. Uses a
-    /// throwaway formatter — `dateFormatter` belongs to writeQueue.
-    func writeSynchronously(_ message: String) {
+    /// Synchronous append that bypasses `writeQueue`, for the paths where
+    /// the process ends the moment the caller returns — the uncaught-
+    /// exception handler and the extension's idle exit — so a queued write
+    /// would never land. Opens its own descriptor with POSIX calls, writes,
+    /// closes; also mirrors to os_log (`.fault` by default, so Console.app
+    /// shows a crash line without file access; the idle exit passes
+    /// `.info`). Uses a throwaway formatter — `dateFormatter` belongs to
+    /// writeQueue.
+    func writeSynchronously(_ message: String, osLogType: OSLogType = .fault) {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         let line = "\(formatter.string(from: Date())) pid=\(pid) : \(message)\n"
-        os_log("%{public}@", log: osLog, type: .fault, message)
+        os_log("%{public}@", log: osLog, type: osLogType, message)
         let fd = Darwin.open(logFileURL().path, O_WRONLY | O_APPEND | O_CREAT, 0o644)
         guard fd >= 0 else { return }
         defer { Darwin.close(fd) }

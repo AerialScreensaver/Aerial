@@ -420,9 +420,56 @@ final class HandlerState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         return contexts.map { ($0.key, $0.value) }
     }
+
+    // MARK: Idle exit
+
+    /// Decide under the lock and, on `.exit`, end the process WITHOUT
+    /// releasing it: `acquire()` parks its ActiveWallpaper before it
+    /// replies, so an acquire that has replied is visible in `contexts`
+    /// here (→ stay), and one that has not reached `store` yet blocks on
+    /// this lock and dies with the process — the agent never receives a
+    /// contextId from a process about to vanish. `_exit`, not `exit`: no
+    /// atexit handlers or destructors while CoreMedia and dispatch threads
+    /// are live (every disk writer in this process is atomic anyway).
+    /// Nothing in the critical section re-enters this lock. Returns only
+    /// when staying, with the reason. `desktopWallpaperActive` is logged
+    /// for triage only (a hosted desktop wallpaper never idles).
+    func exitProcessIfIdle(desktopWallpaperActive: Bool) -> String {
+        lock.lock()
+        let verdict = IdleExitRule.decide(contexts: contexts.count, renderers: renderers.count)
+        switch verdict {
+        case .exit:
+            LogBridge.shared.writeSynchronously(
+                "🚪 idle exit: agent disconnected, contexts=0 renderers=0 desktopActive=\(desktopWallpaperActive) — leaving before RunningBoard suspends the process; Metal holds archiveUsage.db/lock.mdb and a suspended extension is killed with 0xDEAD10CC",
+                osLogType: .info)
+            Darwin._exit(0)
+        case .stay(let reason):
+            lock.unlock()
+            return reason
+        }
+    }
 }
 /// Module-internal singleton holding all active wallpapers + their
 /// SharedRenderers. Survives XPC handler instance churn; exposed
 /// (not private) so `WallpaperControlListener` can iterate renderers
 /// when reconciling Companion's live-control commands.
 let sharedHandlerState = HandlerState()
+
+// MARK: - Idle exit
+
+/// Runs the "nothing hosted" check when the agent drops the connection —
+/// the one moment a voluntary exit is safe, see `IdleExitRule`.
+final class IdleExit: @unchecked Sendable {
+    /// Synchronous on purpose: RunningBoard suspends ~100 ms after the
+    /// disconnect (this handler runs ~1 ms after it), so there is no time
+    /// to defer. May not return.
+    func onConnectionInvalidated() {
+        // Read the control flag BEFORE the HandlerState lock — never nest
+        // the two. Triage only; it does not enter the decision.
+        let desktopActive = WallpaperControlListener.shared.currentDesktopWallpaperActive
+        let stayReason = sharedHandlerState.exitProcessIfIdle(desktopWallpaperActive: desktopActive)
+        debugLog("🚪 idle exit skipped (xpc-invalidated): \(stayReason)")
+    }
+}
+
+let idleExit = IdleExit()

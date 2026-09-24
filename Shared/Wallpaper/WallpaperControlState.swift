@@ -272,3 +272,41 @@ enum SaverAcquireRule {
         optionEnabled && verdict.saverRunning && !desktopWallpaperActive
     }
 }
+
+/// Whether the extension should end its own process when WallpaperAgent
+/// drops the XPC connection. Saver-only installs: once the last window is
+/// gone, the agent disconnects ~5 min after its last call, RunningBoard
+/// suspends the process ~100 ms later, finds Metal's
+/// `archiveUsage.db/lock.mdb` file lock (held for the process lifetime by
+/// the Metal framework, not ours to release; the lock allow-list for an
+/// extension is empty) and kills with 0xDEAD10CC — 9 of 9 idle kills on
+/// 2026-09-23/24. Leaving inside the agent's disconnect, when nothing is
+/// hosted, is the only clean way out: the agent has already invalidated
+/// its proxy (`[…] disconnect` / `invalidationHandler called` in its log),
+/// so the next acquire launches a fresh process exactly as it does after
+/// the kill, without the crash report.
+///
+/// This is the ONLY trigger. Never exit on our own initiative: a
+/// voluntary exit while the agent still holds a live proxy only
+/// *interrupts* it (`interruptionHandler called`, `onInterruption handler
+/// called`), it keeps the stale proxy, and every acquire then fails with
+/// `NSCocoaErrorDomain (4099)` and falls back to the built-in
+/// `com.apple.wallpaper.extension.aerials` saver — until the agent's
+/// disconnect timer fires, which every failed acquire re-arms for another
+/// 5 min (2026-09-24 17:45 → 17:53 on the owner's Mac). Nothing on the
+/// agent-facing proxy protocol lets the extension ask to be dropped.
+/// Pure so it is unit-tested.
+enum IdleExitRule {
+    enum Verdict: Equatable, Sendable {
+        case exit
+        case stay(reason: String)
+    }
+
+    /// `contexts` = hosted wallpaper windows, `renderers` = live
+    /// SharedRenderers (a grace teardown may still be pending).
+    static func decide(contexts: Int, renderers: Int) -> Verdict {
+        contexts == 0 && renderers == 0
+            ? .exit
+            : .stay(reason: "hosting contexts=\(contexts) renderers=\(renderers)")
+    }
+}

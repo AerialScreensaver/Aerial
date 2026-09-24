@@ -153,3 +153,21 @@ struct WallpaperStoreSummaryTests {
         #expect(lines.contains("Store Spaces: 1 per-space section(s)"))
     }
 }
+
+// MARK: - Idle exit rule
+
+@Suite("Idle exit rule")
+struct IdleExitRuleTests {
+
+    @Test("the agent's disconnect exits when nothing is hosted")
+    func exitWhenIdle() {
+        #expect(IdleExitRule.decide(contexts: 0, renderers: 0) == .exit)
+    }
+
+    @Test("a hosted window or a renderer still in its grace period keeps the process")
+    func stayWhenHosting() {
+        #expect(IdleExitRule.decide(contexts: 1, renderers: 0) == .stay(reason: "hosting contexts=1 renderers=0"))
+        #expect(IdleExitRule.decide(contexts: 0, renderers: 1) == .stay(reason: "hosting contexts=0 renderers=1"))
+        #expect(IdleExitRule.decide(contexts: 2, renderers: 2) == .stay(reason: "hosting contexts=2 renderers=2"))
+    }
+}
