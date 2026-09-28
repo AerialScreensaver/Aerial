@@ -305,7 +305,7 @@ enum IdleExitRule {
     /// `contexts` = hosted wallpaper windows, `renderers` = live
     /// SharedRenderers (a grace teardown may still be pending).
     static func decide(contexts: Int, renderers: Int) -> Verdict {
-        contexts == 0 && renderers == 0
+        contexts == 0
             ? .exit
             : .stay(reason: "hosting contexts=\(contexts) renderers=\(renderers)")
     }
