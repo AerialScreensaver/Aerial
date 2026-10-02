@@ -159,6 +159,26 @@ final class WallpaperControl: @unchecked Sendable {
         controlQueue.sync { state.paused }
     }
 
+    /// Persisted battery/thermal/camera pause flags, as loaded from the
+    /// control file. `PlaybackManager` seeds its in-memory mirrors from
+    /// these at launch so a flag written by a previous app session can't
+    /// outlive the condition that set it (2026-10-02 field incident: a
+    /// `batteryPaused` set on battery stayed true across several plug-ins,
+    /// app restarts and a "Pause on battery → off" toggle, because the
+    /// in-memory mirror started at `false` and every change check was a
+    /// no-op).
+    var currentBatteryPaused: Bool {
+        controlQueue.sync { state.batteryPaused }
+    }
+
+    var currentThermalPaused: Bool {
+        controlQueue.sync { state.thermalPaused }
+    }
+
+    var currentCameraPaused: Bool {
+        controlQueue.sync { state.cameraPaused }
+    }
+
     /// Whether Aerial is the system desktop wallpaper, as last published
     /// to the extension (see `refreshDesktopWallpaperActivation`).
     var desktopWallpaperActive: Bool {
