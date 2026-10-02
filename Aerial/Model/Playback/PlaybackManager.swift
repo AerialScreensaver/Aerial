@@ -34,7 +34,10 @@ class PlaybackManager: ObservableObject {
     /// Distinct from `isPaused` — composes with it so the play/pause
     /// button can show a battery icon while keeping user-pause state
     /// intact. Driven by `BatteryStateMonitor` + `evaluateBatteryState`.
-    @Published private(set) var isBatteryPaused: Bool = false
+    /// Seeded from the persisted control flag (like `isPaused`) so a
+    /// stale value from a previous session is seen — and cleared — by
+    /// the first `evaluateBatteryState()` instead of being invisible.
+    @Published private(set) var isBatteryPaused: Bool = WallpaperControl.shared.currentBatteryPaused
 
     /// True after the user explicitly clicks "resume" while battery-
     /// paused. Honoured until the next plug-in (which clears it) — at
@@ -54,7 +57,12 @@ class PlaybackManager: ObservableObject {
     /// (`.serious`+) or macOS Low Power Mode, per the corresponding
     /// prefs. Same composition rules as `isBatteryPaused`. Driven by
     /// `setupThermalMonitor` + `evaluateThermalState`.
-    @Published private(set) var thermalPauseCause: ThermalPauseCause?
+    /// Seeded from the persisted control flag so a stale thermal pause
+    /// from a previous session is cleared by the first evaluation. The
+    /// exact cause isn't persisted; `.thermalPressure` is a placeholder
+    /// that `evaluateThermalState()` (run during init) replaces.
+    @Published private(set) var thermalPauseCause: ThermalPauseCause? =
+        WallpaperControl.shared.currentThermalPaused ? .thermalPressure : nil
 
     /// Whether the thermal/LPM rule is holding playback right now.
     var isThermalPaused: Bool { thermalPauseCause != nil }
@@ -66,7 +74,9 @@ class PlaybackManager: ObservableObject {
 
     /// Whether playback is paused because a camera is in use, per the
     /// `desktopPauseOnCamera` pref. Driven by `CameraUsageMonitor`.
-    @Published private(set) var isCameraPaused: Bool = false
+    /// Seeded from the persisted control flag — same rationale as
+    /// `isBatteryPaused`.
+    @Published private(set) var isCameraPaused: Bool = WallpaperControl.shared.currentCameraPaused
 
     /// User "resume" override while camera-paused — cleared when the
     /// camera stops.
