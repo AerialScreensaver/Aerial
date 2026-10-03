@@ -232,6 +232,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start location provider if any overlay or time mode needs coordinates
         LocationProvider.shared.startIfNeeded()
 
+        // Seed the slice rule's Dark Mode mirror from the app's effective
+        // appearance and follow flips (only night videos in Dark Mode,
+        // Light/Dark Mode time mode). Nothing else sets it in this process.
+        TimeAdaptationCoordinator.shared.start()
+
         // Start now-playing coordinator for music overlays
         NowPlayingCoordinator.shared.startIfNeeded()
 

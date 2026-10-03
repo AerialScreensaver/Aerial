@@ -165,6 +165,18 @@ final class ActiveWallpaper: @unchecked Sendable {
     /// "retry attaching me" marker for `retryAttachForUnfedWindows`.
     var noVideoFallback: NoVideoFallbackLayer?
 
+    /// Screensaver windows only: the display UUIDs this saver session
+    /// plays on ("Screensaver plays videos on"), nil for desktop and
+    /// preview windows. Feeds the saver's spanned canvas — the wallpaper's
+    /// canvas always covers every display.
+    var saverPlayingDisplays: Set<String>?
+
+    /// This saver window sits on a display the selection excludes: the
+    /// window is solid black, has no `displayLayer`, renderer, presenter
+    /// or overlay, and every feed path (attach, reconfigure, re-slice,
+    /// retry, dest-move) skips it. Decided once at acquire.
+    var saverExcluded = false
+
     init(
         caContext: AnyObject,
         rootLayer: CALayer,
@@ -432,15 +444,19 @@ final class HandlerState: @unchecked Sendable {
     /// atexit handlers or destructors while CoreMedia and dispatch threads
     /// are live (every disk writer in this process is atomic anyway).
     /// Nothing in the critical section re-enters this lock. Returns only
-    /// when staying, with the reason. `desktopWallpaperActive` is logged
-    /// for triage only (a hosted desktop wallpaper never idles).
+    /// when staying, with the reason. Live renderers do not keep the
+    /// process (their grace timer may never have run across a sleep, see
+    /// `IdleExitRule`); a grace timer firing now blocks on this lock and
+    /// dies with us. `desktopWallpaperActive` is logged for triage only
+    /// (a hosted desktop wallpaper never idles).
     func exitProcessIfIdle(desktopWallpaperActive: Bool) -> String {
         lock.lock()
         let verdict = IdleExitRule.decide(contexts: contexts.count, renderers: renderers.count)
         switch verdict {
         case .exit:
+            let graceNote = renderers.isEmpty ? "" : " (grace teardown pending, no subscribers — leaving anyway)"
             LogBridge.shared.writeSynchronously(
-                "🚪 idle exit: agent disconnected, contexts=0 renderers=0 desktopActive=\(desktopWallpaperActive) — leaving before RunningBoard suspends the process; Metal holds archiveUsage.db/lock.mdb and a suspended extension is killed with 0xDEAD10CC",
+                "🚪 idle exit: agent disconnected, contexts=0 renderers=\(renderers.count)\(graceNote) desktopActive=\(desktopWallpaperActive) — leaving before RunningBoard suspends the process; Metal holds archiveUsage.db/lock.mdb and a suspended extension is killed with 0xDEAD10CC",
                 osLogType: .info)
             Darwin._exit(0)
         case .stay(let reason):

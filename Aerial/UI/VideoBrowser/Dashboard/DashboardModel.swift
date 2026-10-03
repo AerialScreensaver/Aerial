@@ -65,6 +65,16 @@ final class DashboardModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Time slice rule changed (time prefs, Dark Mode flip): the recap
+        // strip's slice → next-slice line reads TimeManagement live.
+        NotificationCenter.default.publisher(for: TimeAdaptationCoordinator.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshTrigger += 1
+                self?.refreshProjections()
+            }
+            .store(in: &cancellables)
+
         // Display hotplug / rearrangement. Re-detect before bumping so the
         // geometry the cards read is current.
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
@@ -159,15 +169,18 @@ final class DashboardModel: ObservableObject {
         guard mode != PrefsTime.timeMode else { return }
         PrefsTime.timeMode = mode
         LocationProvider.shared.reevaluate()
-        refreshTrigger += 1
+        // Refreshes the slice-grouped UI (including this model, via the
+        // notification) and tells the extension to re-read the mode.
+        TimeAdaptationCoordinator.shared.settingsDidChange(reason: "dashboard time mode")
     }
 
-    /// Change which displays play, live. Re-detect displays and refresh
-    /// playback so the running wallpaper starts/stops on the affected screens.
+    /// Change which displays the SCREENSAVER plays on. A saver-only knob:
+    /// the extension re-reads it for the next saver start, the desktop
+    /// wallpaper is never touched.
     func setDisplayMode(_ mode: DisplayMode) {
         guard mode != PrefsDisplays.displayMode else { return }
         PrefsDisplays.displayMode = mode
-        WallpaperControl.shared.displaysConfigDidChange()
+        WallpaperControl.shared.saverDisplaysDidChange()
         DisplayDetection.sharedInstance.detectDisplays()
         playbackManager.refreshPlayback()
         refreshTrigger += 1

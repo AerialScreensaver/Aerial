@@ -18,11 +18,15 @@ import QuartzCore
 /// Returns nil when we're not in spanned mode or the screen can't be
 /// resolved — caller keeps the default per-display sizing.
 ///
+/// `playing` is the window's `saverPlayingDisplays`: nil for a desktop
+/// window (the canvas covers every display), the saver's playing set
+/// for a screensaver window ("Screensaver plays videos on").
+///
 /// Coord math is NSScreen-based with a bottom-left origin.
-func spannedLayerFrame(for displayID: UInt32?) -> CGRect? {
+func spannedLayerFrame(for displayID: UInt32?, playing: Set<String>? = nil) -> CGRect? {
     guard PrefsDisplays.viewingMode == .spanned, let did = displayID else { return nil }
     let detection = DisplayDetection.sharedInstance
-    let zRect = detection.getZeroedActiveSpannedRect()
+    let zRect = detection.getZeroedSpannedRect(playing: playing)
     guard let screen = detection.findScreenWith(id: did) else {
         debugLog("  🧭 spanned did=\(did): screen NOT FOUND in DisplayDetection — falling back to per-display sizing")
         return nil
@@ -70,7 +74,7 @@ func dumpTopology(reason: String) {
         let presenters = wallpapers.filter { $0.wallpaper.contentsSwapPresenter != nil }.count
         debugLog("🗺 topology (\(reason)): \(wallpapers.count) wallpapers, \(renderers.count) renderers, \(presenters) presenters")
         for (wid, w) in wallpapers.sorted(by: { $0.wid < $1.wid }) {
-            debugLog("  🗺 wid=\(wid.prefix(8)) did=\(w.displayID.map(String.init) ?? "nil") key=\(shortKey(w.rendererKey)) saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) mode=\(w.lastPresentationMode) overlay=\(w.overlayDriver != nil) presenter=\(w.contentsSwapPresenter != nil)")
+            debugLog("  🗺 wid=\(wid.prefix(8)) did=\(w.displayID.map(String.init) ?? "nil") key=\(shortKey(w.rendererKey)) saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) mode=\(w.lastPresentationMode) overlay=\(w.overlayDriver != nil) presenter=\(w.contentsSwapPresenter != nil)\(w.saverExcluded ? " excluded=true" : "")")
         }
         for shared in renderers.sorted(by: { $0.rendererKey < $1.rendererKey }) {
             debugLog("  🗺 renderer key=\(shortKey(shared.rendererKey)) refCount=\(shared.refCount) video=\(shared.videoURL.lastPathComponent) \(shared.renderer.diagnosticsSnapshot())")
@@ -92,7 +96,8 @@ func dumpTopology(reason: String) {
             }
         }
         for shared in renderers {
-            let windowCount = wallpapers.filter { $0.wallpaper.rendererKey == shared.rendererKey }.count
+            // Excluded saver windows never subscribe (no displayLayer).
+            let windowCount = wallpapers.filter { $0.wallpaper.rendererKey == shared.rendererKey && !$0.wallpaper.saverExcluded }.count
             let subs = shared.renderer.subscriberCount
             if subs != windowCount {
                 debugLog("  ⚠️ subscriber mismatch key=\(shortKey(shared.rendererKey)): \(subs) subscriber layer(s) vs \(windowCount) window(s)")

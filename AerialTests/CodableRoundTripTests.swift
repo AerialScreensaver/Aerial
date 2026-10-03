@@ -483,6 +483,38 @@ struct CodableRoundTripTests {
         #expect(old.screenLayoutGeneration == 0)
     }
 
+    @Test("WallpaperControlState saverSettingsGeneration round-trips and defaults when missing")
+    func wallpaperControlStateSaverSettingsGeneration() throws {
+        var original = WallpaperControlState()
+        original.saverSettingsGeneration = 4
+        let decoded = try roundTrip(original)
+        #expect(decoded.saverSettingsGeneration == 4)
+
+        // Control file from a build without the key — must default, not throw.
+        let legacy = """
+        { "version": 5, "settingsGeneration": 2 }
+        """
+        let old = try JSONDecoder().decode(WallpaperControlState.self, from: legacy.data(using: .utf8)!)
+        #expect(old.settingsGeneration == 2)
+        #expect(old.saverSettingsGeneration == 0)
+    }
+
+    @Test("WallpaperControlState timeSettingsGeneration round-trips and defaults when missing")
+    func wallpaperControlStateTimeSettingsGeneration() throws {
+        var original = WallpaperControlState()
+        original.timeSettingsGeneration = 7
+        let decoded = try roundTrip(original)
+        #expect(decoded.timeSettingsGeneration == 7)
+
+        // Control file from a build without the key — must default, not throw.
+        let legacy = """
+        { "version": 5, "saverSettingsGeneration": 3 }
+        """
+        let old = try JSONDecoder().decode(WallpaperControlState.self, from: legacy.data(using: .utf8)!)
+        #expect(old.saverSettingsGeneration == 3)
+        #expect(old.timeSettingsGeneration == 0)
+    }
+
     @Test("VideoSettings timeOfDayOverride defaults to empty when missing")
     func videoSettingsTimeOfDayOverrideFallback() throws {
         // Build JSON without timeOfDayOverride

@@ -834,6 +834,10 @@ func attachWallpaper(
     activitySuspended: Bool,
     context: String
 ) {
+    if wallpaper.saverExcluded {
+        debugLog("  attachWallpaper: wid=\(wid.prefix(8)) excluded by the saver display selection — stays black (\(context))")
+        return
+    }
     guard let perAcquireLayer = wallpaper.displayLayer else {
         debugLog("  attachWallpaper: no displayLayer for wid=\(wid.prefix(8)) — skipping")
         return
@@ -882,6 +886,7 @@ func attachWallpaper(
             nonisolated(unsafe) let unsafeRoot = wallpaper.rootLayer
             let destSize = wallpaper.lastDestination.size
             let captureKey = rendererKey
+            let playing = wallpaper.saverPlayingDisplays
             Task.detached(priority: .userInitiated) {
                 // Probe OFF main: both probes queue.sync onto the busy
                 // renderer queue, and running four of these as MainActor
@@ -897,7 +902,7 @@ func attachWallpaper(
                         applyPrime(unsafeRoot, contents: surface,
                                    pixelSize: CGSize(width: CVPixelBufferGetWidth(buffer),
                                                      height: CVPixelBufferGetHeight(buffer)),
-                                   displayID: did, destSize: destSize)
+                                   displayID: did, destSize: destSize, playing: playing)
                     }
                     if shouldRewriteSnapshot(did: did) {
                         DispatchQueue.global(qos: .utility).async {
@@ -918,7 +923,7 @@ func attachWallpaper(
                 await MainActor.run {
                     applyPrime(unsafeRoot, contents: frame,
                                pixelSize: CGSize(width: frame.width, height: frame.height),
-                               displayID: did, destSize: destSize)
+                               displayID: did, destSize: destSize, playing: playing)
                 }
                 if shouldRewriteSnapshot(did: did) {
                     writeSnapshot(frame, for: did)
@@ -1048,6 +1053,64 @@ func showNoVideoFallbackForUnfedWindows(key: String, reason: String) {
     }
 }
 
+/// Feed the slice rule's Dark Mode mirror from the agent's appearance —
+/// the only source this process has (nothing here observes NSApp; the
+/// overlay driver gets the same value for its colour scheme). Called on
+/// every acquire and on every update that changed the appearance. A
+/// real flip while the rule depends on Dark Mode ("only night videos in
+/// Dark Mode", or the Light/Dark Mode time mode) re-evaluates every
+/// renderer once: the first window flips the mirror, the rest no-op.
+/// "?" (not scraped) keeps the last known value.
+func noteSystemAppearance(_ appearance: String, reason: String) {
+    guard appearance == "dark" || appearance == "light" else { return }
+    guard DarkMode.update(isDark: appearance == "dark") else { return }
+    if PrefsTime.darkModeNightOverride || PrefsTime.timeMode == .lightDarkMode {
+        applySliceRuleChange(reason: "appearance \(appearance), \(reason)")
+    }
+}
+
+/// Re-evaluate the time-slice rule against what every renderer is
+/// showing, after the rule changed underneath it: Companion's
+/// time-settings bump (mode / Dark Mode override / sun window / …) or a
+/// system appearance flip while the rule depends on Dark Mode. Cut only
+/// on evidence (the current video sits in another slice); otherwise keep
+/// it and re-pick the pre-buffered next, which was popped under the OLD
+/// rule and would play one more off-rule video.
+///
+/// The cut is `jumpNow()`, not the playlist path's `jumpWhenResumed()`:
+/// that deferral protects paused screens from regeneration churn, but
+/// this is an explicit user action (mode switch, Dark Mode toggle) and a
+/// paused desktop is expected to follow it — exactly like a manual skip
+/// on a paused screen, which also lands through `jumpNow()`. A paused
+/// renderer presents the new video's first frame under the stopped
+/// timebase and re-arms its deep pause (see `swapToNextReader`).
+/// Excluded saver windows never own a renderer, so they are naturally
+/// skipped. Slice transitions by the clock don't come here — every pop
+/// re-evaluates the rule itself.
+func applySliceRuleChange(reason: String) {
+    let (restricted, slice) = TimeManagement.sharedInstance.shouldRestrictPlaybackToDayNightVideo()
+    let rule = restricted ? slice : "none"
+    let renderers = sharedHandlerState.allRenderers()
+    debugLog("🌗 slice rule changed (\(reason)): rule wants \(rule), \(renderers.count) renderer(s)")
+    for shared in renderers {
+        let path = shared.renderer.currentAssetURL.path
+        let (verdict, video) = ExtensionVideoLoader.shared.timeRuleVerdict(forLocalPath: path)
+        let name = video?.secondaryName ?? (path as NSString).lastPathComponent
+        let key = shared.rendererKey.prefix(8)
+        switch verdict {
+        case .mismatch:
+            debugLog("🌗   key=\(key) current \(name) is \(video?.timeOfDay ?? "?") — cutting now (paused screens included)")
+            shared.renderer.jumpNow()
+        case .matches:
+            debugLog("🌗   key=\(key) current \(name) fits — keeping current, re-priming next")
+            (shared.renderer as? VideoRenderer)?.reprimeNextVideo()
+        case .unknown:
+            debugLog("🌗   key=\(key) current \(name) not a catalogued video — keeping current, re-priming next")
+            (shared.renderer as? VideoRenderer)?.reprimeNextVideo()
+        }
+    }
+}
+
 /// Re-run `attachWallpaper` for every window currently showing the
 /// fallback. Called when videos may have become available: Companion's
 /// playlist-changed bump (fires after every finished download), the
@@ -1057,7 +1120,7 @@ func showNoVideoFallbackForUnfedWindows(key: String, reason: String) {
 /// call is idempotent). Duplicate creates from overlapping retries are
 /// resolved by installRenderer's race handling.
 func retryAttachForUnfedWindows(reason: String) {
-    let waiting = sharedHandlerState.allWallpapers().filter { $0.wallpaper.noVideoFallback != nil }
+    let waiting = sharedHandlerState.allWallpapers().filter { $0.wallpaper.noVideoFallback != nil && !$0.wallpaper.saverExcluded }
     guard !waiting.isEmpty else { return }
     debugLog("🔁 retrying attach for \(waiting.count) window(s) showing the no-video fallback (\(reason))")
     let mode = PrefsDisplays.viewingMode
@@ -1138,7 +1201,7 @@ private func seedPauseState(_ renderer: any PlaybackRenderer, rendererKey: Strin
 ///     the visible frame;
 ///  4. the on-disk snapshot (cold process — the only case left);
 ///  5. nothing (the aerial-blue background set by the caller).
-private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: CGSize) {
+private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: CGSize, playing: Set<String>? = nil) {
     if let did = displayID {
         for (wid, wallpaper) in sharedHandlerState.allWallpapers()
         where wallpaper.displayID == did && !wallpaper.isPreview {
@@ -1147,7 +1210,7 @@ private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: 
                     CGSize(width: $0.width, height: $0.height)
                 }
                 applyPrime(rootLayer, contents: contents, pixelSize: pixelSize,
-                           displayID: displayID, destSize: destSize)
+                           displayID: displayID, destSize: destSize, playing: playing)
                 debugLog("  Primed from live window wid=\(wid.prefix(8)) for did=\(did)")
                 return
             }
@@ -1163,7 +1226,7 @@ private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: 
            let surface = CVPixelBufferGetIOSurface(buffer)?.takeUnretainedValue() {
             applyPrime(rootLayer, contents: surface,
                        pixelSize: CGSize(width: CVPixelBufferGetWidth(buffer), height: CVPixelBufferGetHeight(buffer)),
-                       displayID: displayID, destSize: destSize)
+                       displayID: displayID, destSize: destSize, playing: playing)
             debugLog("  Primed from live renderer (presenting) key=\(shortKey(key))")
             return
         }
@@ -1171,7 +1234,7 @@ private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: 
            let surface = CVPixelBufferGetIOSurface(buffer)?.takeUnretainedValue() {
             applyPrime(rootLayer, contents: surface,
                        pixelSize: CGSize(width: CVPixelBufferGetWidth(buffer), height: CVPixelBufferGetHeight(buffer)),
-                       displayID: displayID, destSize: destSize)
+                       displayID: displayID, destSize: destSize, playing: playing)
             debugLog("  Primed from live renderer (last decoded) key=\(shortKey(key))")
             return
         }
@@ -1183,7 +1246,7 @@ private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: 
         // whole canvas on every screen at cold boot.
         applyPrime(rootLayer, contents: cached,
                    pixelSize: CGSize(width: cached.width, height: cached.height),
-                   displayID: displayID, destSize: destSize)
+                   displayID: displayID, destSize: destSize, playing: playing)
         debugLog("  Primed rootLayer.contents from cached snapshot for did=\(did)")
     }
 }
@@ -1193,10 +1256,11 @@ private func primeRootLayer(_ rootLayer: CALayer, displayID: UInt32?, destSize: 
 /// this window shows only its slice — replicate the video layer's
 /// aspect-fill + slice via `contentsRect` (the historical full-frame
 /// prime was the visible "reframe jump" at spanned starts).
-private func applyPrime(_ rootLayer: CALayer, contents: Any, pixelSize: CGSize?, displayID: UInt32?, destSize: CGSize) {
+private func applyPrime(_ rootLayer: CALayer, contents: Any, pixelSize: CGSize?, displayID: UInt32?, destSize: CGSize,
+                        playing: Set<String>? = nil) {
     rootLayer.contents = contents
     if let pixelSize, pixelSize.width > 0, pixelSize.height > 0,
-       let frame = spannedLayerFrame(for: displayID),
+       let frame = spannedLayerFrame(for: displayID, playing: playing),
        let slice = SpannedGeometry.visibleSlice(layerFrame: frame, windowSize: destSize) {
         // `visibleSlice` is WINDOW-space (log-verified 2026-07-27: both
         // displays report (0,0,w,h) with different layerFrames) —
@@ -1716,6 +1780,10 @@ func reconfigureAllWallpapers() {
     }
 
     for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
+        if wallpaper.saverExcluded {
+            debugLog("  reconfigure: wid=\(wid.prefix(8)) excluded by the saver display selection — left black")
+            continue
+        }
         let newKey = makeRendererKey(for: wallpaper.displayID, isShared: isShared)
         let newPlaylistUUID: String? = isShared ? nil : screenUUID(for: wallpaper.displayID)
 
@@ -1744,7 +1812,7 @@ func reapplyGeometry(to wallpaper: ActiveWallpaper) {
     CATransaction.begin()
     CATransaction.setDisableActions(true)
     layer.videoGravity = videoGravity(for: PrefsDisplays.aspectMode)
-    if let spanned = spannedLayerFrame(for: wallpaper.displayID) {
+    if let spanned = spannedLayerFrame(for: wallpaper.displayID, playing: wallpaper.saverPlayingDisplays) {
         layer.frame = spanned.sanitized("rebind spanned")
     } else {
         layer.frame = CGRect(origin: .zero, size: wallpaper.lastDestination.size).sanitized("rebind per-display")
@@ -1812,6 +1880,11 @@ func refreshTopologyAndResliceIfChanged(reason: String) -> Bool {
 /// screen). Callers handle any geometry changes themselves.
 func rekeyWallpaper(_ wallpaper: ActiveWallpaper, wid: String, newKey: String, newPlaylistUUID: String?, context: String) {
     guard newKey != wallpaper.rendererKey else { return }
+    if wallpaper.saverExcluded {
+        wallpaper.rendererKey = newKey
+        debugLog("  re-key wid=\(wid.prefix(8)) skipped: excluded by the saver display selection — stays black (\(context))")
+        return
+    }
     let oldKey = wallpaper.rendererKey
 
     // Detach from the old renderer: screensaver count first (so the
@@ -1869,6 +1942,24 @@ func rebuildOverlayDriver(
     let w = wallpaper
     let widShort = String(wid.prefix(8))
     Task { @MainActor in
+        // "Screensaver plays videos on": an excluded saver display shows
+        // nothing, overlays included. The acquire path never creates a
+        // driver for it, but a quick restart REUSES the live saver
+        // windows (update default → idle, no acquire) and the saver-mode
+        // transition rebuilds every window's driver through here —
+        // overlays on a black screen (2026-09-28 owner report).
+        if w.saverExcluded {
+            if let old = w.overlayDriver {
+                old.stop()
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                old.overlayLayer.removeFromSuperlayer()
+                CATransaction.commit()
+                w.overlayDriver = nil
+            }
+            debugLog("  overlay rebuild skipped for wid=\(widShort): excluded by the saver display selection")
+            return
+        }
         var bannerRequest = versionBanner
         if let old = w.overlayDriver {
             if bannerRequest == .none, old.isShowingVersionBanner {
@@ -1994,11 +2085,13 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
 
         // Presentation context — full request data. `presentationMode`
         // and `activityState` drive the initial playback policy.
-        // `systemAppearance` flows through to the overlay driver.
+        // `systemAppearance` flows through to the overlay driver and to
+        // the slice rule's Dark Mode mirror.
         // `cacheDirectory` becomes our snapshot cache root.
         // `placement` / `hasFallbackColor` are surfaced for visibility
         // only (no behaviour change today).
         let ctx = extractRequestContext(request)
+        noteSystemAppearance(ctx.systemAppearance, reason: "acquire")
 
         // Note: `ctx.cacheDirectory` points into WallpaperAgent's
         // sandbox container — our entitlements don't cover it, so the
@@ -2007,6 +2100,39 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
 
         debugLog("  destination: \(destSize) @\(scaleFactor)x, displayID: \(displayID ?? 0), wallpaperID: \(wallpaperIDString ?? "nil"), choice: \(choiceConfiguration ?? "nil"), mode=\(ctx.presentationMode), activity=\(ctx.activityState), appearance=\(ctx.systemAppearance), preview=\(ctx.isPreview), placement=\(ctx.placement ?? "nil"), fallbackColor=\(ctx.hasFallbackColor), cacheDir=\(ctx.cacheDirectory?.lastPathComponent ?? "nil")")
         WindowChurnDetector.shared.noteAcquire(did: displayID, isPreview: ctx.isPreview)
+
+        // Classify the acquire (rule + rationale in `SaverAcquireRule`):
+        // `mode=idle` on a FIRST acquire is the saver session; the role
+        // additionally needs no picker placement while Aerial is also the
+        // desktop wallpaper (a desktop window re-acquired mid-saver
+        // carries one). Previews never count. The role routes overlays,
+        // subscriber accounting and the status echo; playback correctness
+        // rides on the process-wide flag raised right below.
+        let desktopActive = WallpaperControlListener.shared.currentDesktopWallpaperActive
+        let verdict = SaverAcquireRule.classify(
+            presentationMode: ctx.presentationMode, isPreview: ctx.isPreview,
+            placement: ctx.placement, desktopWallpaperActive: desktopActive
+        )
+        let isScreenSaver = verdict.isSaverRole
+        // "Don't resume video at launch" — see SaverAcquireRule.advancesAtLaunch.
+        let advanceAtLaunch = SaverAcquireRule.advancesAtLaunch(
+            verdict, desktopWallpaperActive: desktopActive, optionEnabled: PrefsVideos.saverAdvanceAtLaunch
+        )
+        // "Screensaver plays videos on" (SaverDisplayRule): saver windows
+        // only; previews and desktop windows always play. Decided here,
+        // before the layer tree exists — an excluded window is built
+        // black with no video layer at all, and the saver's spanned
+        // canvas folds over the playing displays only.
+        let saverPlaying: Set<String>? = isScreenSaver
+            ? DisplayDetection.sharedInstance.playingDisplayUUIDs() : nil
+        let saverExcluded = !SaverDisplayRule.plays(
+            uuid: screenUUID(for: displayID), isSaverRole: isScreenSaver,
+            isPreview: ctx.isPreview, playing: saverPlaying ?? []
+        )
+        if let saverPlaying {
+            let playingList = saverPlaying.map { String($0.prefix(8)) }.sorted().joined(separator: ",")
+            debugLog("  🖥️ saver displays: mode=\(PrefsDisplays.displayMode) playing=[\(playingList)] this=\(screenUUID(for: displayID).map { String($0.prefix(8)) } ?? "nil") did=\(displayID ?? 0) → \(saverExcluded ? "EXCLUDED (black)" : "plays")")
+        }
 
         // 1. Create remote CAContext for cross-process rendering.
         //    contentsScale is declared AT CREATION: the post-creation
@@ -2080,8 +2206,14 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         let rootLayer = CALayer()
         rootLayer.frame = CGRect(origin: .zero, size: destSize).sanitized("acquire root")
         rootLayer.contentsScale = scaleFactor
-        rootLayer.backgroundColor = aerialBlue
-        primeRootLayer(rootLayer, displayID: displayID, destSize: destSize)
+        if saverExcluded {
+            // Excluded by "Screensaver plays videos on": solid black, no
+            // prime (a stale frame would be exactly the wrong thing).
+            rootLayer.backgroundColor = NSColor.black.cgColor
+        } else {
+            rootLayer.backgroundColor = aerialBlue
+            primeRootLayer(rootLayer, displayID: displayID, destSize: destSize, playing: saverPlaying)
+        }
         // Private property setter — same unrecognized-selector risk as
         // the constructor above, and the last point where a clean error
         // reply is still possible.
@@ -2146,28 +2278,31 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             experimentVariant = PrefsVideos.videoFormat.isHDR ? "A" : "D"
         }
 
-        let perAcquireLayer = VideoRenderer.makeDisplayLayer(size: destSize, contentsScale: scaleFactor)
+        let perAcquireLayer: AVSampleBufferDisplayLayer? = saverExcluded
+            ? nil : VideoRenderer.makeDisplayLayer(size: destSize, contentsScale: scaleFactor)
         var contentsSwapLayer: CALayer?
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        switch experimentVariant {
-        case "D":
-            // Contents-swap: the AVSBDL stays OFF the tree (an orphan
-            // subscriber that drives the renderer's pump/pacing); video
-            // is shown by a plain CALayer whose `contents` a 30 Hz
-            // presenter swaps to the renderer's presenting IOSurface.
-            // The serialized context then carries NO video-surface node
-            // for the agent's special-casing to detach (the VM miniature
-            // repro proved it detaches the AVSBDL even from inside a
-            // rasterized container).
-            let swap = CALayer()
-            swap.frame = CGRect(origin: .zero, size: destSize).sanitized("acquire swap")
-            swap.contentsScale = scaleFactor
-            swap.masksToBounds = true
-            rootLayer.addSublayer(swap)
-            contentsSwapLayer = swap
-        default:
-            rootLayer.addSublayer(perAcquireLayer)
+        if let perAcquireLayer {
+            switch experimentVariant {
+            case "D":
+                // Contents-swap: the AVSBDL stays OFF the tree (an orphan
+                // subscriber that drives the renderer's pump/pacing); video
+                // is shown by a plain CALayer whose `contents` a 30 Hz
+                // presenter swaps to the renderer's presenting IOSurface.
+                // The serialized context then carries NO video-surface node
+                // for the agent's special-casing to detach (the VM miniature
+                // repro proved it detaches the AVSBDL even from inside a
+                // rasterized container).
+                let swap = CALayer()
+                swap.frame = CGRect(origin: .zero, size: destSize).sanitized("acquire swap")
+                swap.contentsScale = scaleFactor
+                swap.masksToBounds = true
+                rootLayer.addSublayer(swap)
+                contentsSwapLayer = swap
+            default:
+                rootLayer.addSublayer(perAcquireLayer)
+            }
         }
         if PrefsAdvanced.showDiagnosticBadges {
             debugLog("  🧪 variant=\(experimentVariant) (manual) seq=\(seq)")
@@ -2181,36 +2316,21 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         //     naturally clips to the right portion — so identical
         //     sample buffers fed to every subscriber form one
         //     continuous image across screens.
-        perAcquireLayer.videoGravity = videoGravity(for: PrefsDisplays.aspectMode)
-        if let spannedFrame = spannedLayerFrame(for: displayID) {
-            perAcquireLayer.frame = spannedFrame.sanitized("acquire spanned")
-            debugLog("  spanned: layer frame=\(spannedFrame) for did=\(displayID ?? 0), gravity=\(perAcquireLayer.videoGravity.rawValue)")
+        if let perAcquireLayer {
+            perAcquireLayer.videoGravity = videoGravity(for: PrefsDisplays.aspectMode)
+            if let spannedFrame = spannedLayerFrame(for: displayID, playing: saverPlaying) {
+                perAcquireLayer.frame = spannedFrame.sanitized("acquire spanned")
+                debugLog("  spanned: layer frame=\(spannedFrame) for did=\(displayID ?? 0), gravity=\(perAcquireLayer.videoGravity.rawValue)")
+            }
         }
         if let swap = contentsSwapLayer {
             swap.contentsGravity = contentsGravity(for: PrefsDisplays.aspectMode)
-            if let spannedFrame = spannedLayerFrame(for: displayID) {
+            if let spannedFrame = spannedLayerFrame(for: displayID, playing: saverPlaying) {
                 swap.frame = spannedFrame.sanitized("acquire swap spanned")
             }
         }
         CATransaction.commit()
 
-        // Classify the acquire (rule + rationale in `SaverAcquireRule`):
-        // `mode=idle` on a FIRST acquire is the saver session; the role
-        // additionally needs no picker placement while Aerial is also the
-        // desktop wallpaper (a desktop window re-acquired mid-saver
-        // carries one). Previews never count. The role routes overlays,
-        // subscriber accounting and the status echo; playback correctness
-        // rides on the process-wide flag raised right below.
-        let desktopActive = WallpaperControlListener.shared.currentDesktopWallpaperActive
-        let verdict = SaverAcquireRule.classify(
-            presentationMode: ctx.presentationMode, isPreview: ctx.isPreview,
-            placement: ctx.placement, desktopWallpaperActive: desktopActive
-        )
-        let isScreenSaver = verdict.isSaverRole
-        // "Don't resume video at launch" — see SaverAcquireRule.advancesAtLaunch.
-        let advanceAtLaunch = SaverAcquireRule.advancesAtLaunch(
-            verdict, desktopWallpaperActive: desktopActive, optionEnabled: PrefsVideos.saverAdvanceAtLaunch
-        )
         debugLog("  role: screensaver=\(isScreenSaver) advanceAtLaunch=\(advanceAtLaunch) rendererKey=\(shortKey(rendererKey)) playlistUUID=\(playlistScreenUUID.map { String($0.prefix(8)) } ?? "shared")")
         if verdict.saverRunning {
             // The acquire itself is the live saver signal: a process
@@ -2249,6 +2369,8 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             wallpaper.acquireSeq = seq
             wallpaper.experimentVariant = experimentVariant
             wallpaper.contentsSwapLayer = contentsSwapLayer
+            wallpaper.saverPlayingDisplays = saverPlaying
+            wallpaper.saverExcluded = saverExcluded
             sharedHandlerState.store(wallpaperID: wid, wallpaper: wallpaper)
             applyDiagnosticBadge(to: wallpaper, wid: wid)
 
@@ -2265,6 +2387,8 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             let overlaySize = destSize
             let overlayScale = scaleFactor
             Task { @MainActor in
+                // An excluded saver display shows nothing, overlays included.
+                guard !saverExcluded else { return }
                 let driver = OverlayRenderingDriver.create(
                     screenUUID: screenUUID(for: overlayDID),
                     displayID: overlayDID,
@@ -2309,7 +2433,9 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         // regardless of whether the wallpaper is paused via the
         // Companion panel. Include window-coverage auto-pause so a fresh
         // acquire for an already-covered display cold-starts paused.
-        if let wid = wallpaperIDString, let wallpaper = sharedHandlerState.get(wallpaperID: wid) {
+        if saverExcluded {
+            debugLog("  excluded by the saver display selection — no renderer attached (black)")
+        } else if let wid = wallpaperIDString, let wallpaper = sharedHandlerState.get(wallpaperID: wid) {
             attachWallpaper(
                 wallpaper,
                 wid: wid,
@@ -2335,7 +2461,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         //    the spanned-mode perAcquireLayer ended up at the wrong
         //    bounds. If we detect a mismatch, log loudly and re-apply
         //    the intended frame so the next composite is correct.
-        if let expected = spannedLayerFrame(for: displayID) {
+        if let perAcquireLayer, let expected = spannedLayerFrame(for: displayID, playing: saverPlaying) {
             let actual = perAcquireLayer.frame
             let tolerance: CGFloat = 0.5
             let driftedSize = abs(actual.width - expected.width) > tolerance
@@ -2355,7 +2481,11 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         // layer frame=…" logs the INTENT; this captures the post-CATransaction
         // reality. Future debugging of mis-rendered acquires starts here.
         debugLog("  final: rootLayer bounds=\(rootLayer.bounds) contentsScale=\(rootLayer.contentsScale) sublayers=\(rootLayer.sublayers?.count ?? 0)")
-        debugLog("  final: perAcquireLayer bounds=\(perAcquireLayer.bounds) position=\(perAcquireLayer.position) anchor=\(perAcquireLayer.anchorPoint) contentsScale=\(perAcquireLayer.contentsScale) gravity=\(perAcquireLayer.videoGravity.rawValue)")
+        if let perAcquireLayer {
+            debugLog("  final: perAcquireLayer bounds=\(perAcquireLayer.bounds) position=\(perAcquireLayer.position) anchor=\(perAcquireLayer.anchorPoint) contentsScale=\(perAcquireLayer.contentsScale) gravity=\(perAcquireLayer.videoGravity.rawValue)")
+        } else {
+            debugLog("  final: no video layer — excluded by the saver display selection (black)")
+        }
 
         // Flush before reply so WindowServer sees the complete tree
         // (rootLayer + perAcquireLayer + optional overlayLayer) in
@@ -2546,7 +2676,8 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
 
             // Appearance delta → re-render the overlay in the new
             // colour scheme. Driver compares internally and no-ops on
-            // unchanged values.
+            // unchanged values. Also feeds the slice rule's Dark Mode
+            // mirror (a flip re-evaluates the renderers once).
             var appearanceChanged = false
             if ctx.systemAppearance != wallpaper.lastSystemAppearance {
                 appearanceChanged = true
@@ -2555,6 +2686,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                     let value = ctx.systemAppearance
                     Task { @MainActor in driver.setSystemAppearance(value) }
                 }
+                noteSystemAppearance(ctx.systemAppearance, reason: "update")
             }
 
             // Destination delta → re-layout the per-acquire display
@@ -2585,7 +2717,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                     if let layer = wallpaper.displayLayer {
                         CATransaction.begin()
                         CATransaction.setDisableActions(true)
-                        if let spanned = spannedLayerFrame(for: new.displayID) {
+                        if let spanned = spannedLayerFrame(for: new.displayID, playing: wallpaper.saverPlayingDisplays) {
                             layer.frame = spanned.sanitized("update spanned")
                         } else {
                             layer.frame = CGRect(origin: .zero, size: new.size).sanitized("update per-display")
@@ -2696,8 +2828,16 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
 
         let displayID: UInt32? = wallpaperIDString.flatMap { sharedHandlerState.get(wallpaperID: $0)?.displayID }
         let shared: SharedRenderer? = wallpaperIDString.flatMap { sharedHandlerState.renderer(forWallpaperID: $0) }
+        let excluded = wallpaperIDString.flatMap { sharedHandlerState.get(wallpaperID: $0)?.saverExcluded } ?? false
 
         Task {
+            if excluded {
+                // "Screensaver plays videos on": this window is black on
+                // purpose — never serve another session's cached frame.
+                reply(makeSyntheticSnapshot(color: NSColor.black.cgColor), nil)
+                debugLog("  Snapshot replied (synthetic black — excluded saver display)")
+                return
+            }
             // Fast path: blit the decoded frame straight into the
             // reply surface (vImage, ~15 ms) — no CIContext render.
             // presentingImageBuffer = exact visible frame while
@@ -2763,7 +2903,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 return
             }
             // Last resort: synthetic blue.
-            reply(makeSyntheticBlueSnapshot(), nil)
+            reply(makeSyntheticSnapshot(color: aerialBlue), nil)
             debugLog("  Snapshot replied (synthetic blue)")
         }
     }
@@ -2818,9 +2958,10 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         return createSnapshotXPC(surface: surface)
     }
 
-    /// Fallback: 1024×768 solid blue IOSurface. Returned only when we
-    /// have no real frame available.
-    private func makeSyntheticBlueSnapshot() -> AnyObject? {
+    /// Fallback: 1024×768 solid-colour IOSurface — blue when no real
+    /// frame is available, black for a saver display the selection
+    /// excludes.
+    private func makeSyntheticSnapshot(color: CGColor) -> AnyObject? {
         let width = 1024
         let height = 768
         let surfaceProps: [IOSurfacePropertyKey: any Sendable] = [
@@ -2841,7 +2982,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue,
         ) {
-            ctx.setFillColor(aerialBlue)
+            ctx.setFillColor(color)
             ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
         }
         surface.unlock(options: [], seed: nil)

@@ -44,6 +44,8 @@ final class WallpaperControl: @unchecked Sendable {
     /// Pending coalesced `settingsGeneration` bump (margin sliders fire
     /// onChange continuously — one bump per quiet window is enough).
     private var pendingDisplaysBump: DispatchWorkItem?
+    private var pendingSaverDisplaysBump: DispatchWorkItem?
+    private var pendingTimeSettingsBump: DispatchWorkItem?
 
     /// Retained so the overlay-config observation lives as long as the
     /// singleton (i.e. the process).
@@ -515,6 +517,46 @@ final class WallpaperControl: @unchecked Sendable {
                 }
             }
             pendingDisplaysBump = work
+            controlQueue.asyncAfter(deadline: .now() + 0.3, execute: work)
+        }
+    }
+
+    /// "Screensaver plays videos on" changed (mode or a ticked display).
+    /// A saver-only knob: the extension re-reads screensaver.json for the
+    /// next saver start and touches no window — unlike
+    /// `displaysConfigDidChange`, which re-keys every desktop window.
+    /// Coalesced the same way, so clicking through the arrangement
+    /// preview produces one bump.
+    func saverDisplaysDidChange() {
+        controlQueue.async { [self] in
+            pendingSaverDisplaysBump?.cancel()
+            let work = DispatchWorkItem { [weak self] in
+                self?.mutate("saverDisplaysDidChange") { state in
+                    state.saverSettingsGeneration &+= 1
+                    return true
+                }
+            }
+            pendingSaverDisplaysBump = work
+            controlQueue.asyncAfter(deadline: .now() + 0.3, execute: work)
+        }
+    }
+
+    /// Time adaptation prefs changed (mode, dark-mode override, sun
+    /// window, placement, solar mode, manual times). The extension
+    /// re-reads screensaver.json, recomputes its solar state and
+    /// re-evaluates the slice rule per renderer — no reconfigure.
+    /// Coalesced like the display bumps: the window slider and the
+    /// manual time pickers fire onChange in bursts.
+    func timeSettingsDidChange() {
+        controlQueue.async { [self] in
+            pendingTimeSettingsBump?.cancel()
+            let work = DispatchWorkItem { [weak self] in
+                self?.mutate("timeSettingsDidChange") { state in
+                    state.timeSettingsGeneration &+= 1
+                    return true
+                }
+            }
+            pendingTimeSettingsBump = work
             controlQueue.asyncAfter(deadline: .now() + 0.3, execute: work)
         }
     }

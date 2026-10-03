@@ -16,7 +16,8 @@ class Aerial: NSObject {
     // We use this to track whether we run as a screen saver or an app
     var appMode = false
 
-    // We also track darkmode here now
+    // We also track darkmode here now — written only through
+    // `DarkMode.update(isDark:)`, read through `DarkMode.isEnabled()`.
     var darkMode = false
 
     // And we track if we are running under Aerial's Companion 
@@ -39,16 +40,6 @@ class Aerial: NSObject {
                     }
                 }
             }
-        }
-    }
-
-    func computeDarkMode(view: NSView) {
-        if #available(OSX 10.14, *) {
-            //debugLog("Best match appearance : \(view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]))")
-            //debugLog("Effective Appearence : \(view.effectiveAppearance)")
-            darkMode =  view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        } else {
-            darkMode = false
         }
     }
 

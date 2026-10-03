@@ -255,6 +255,32 @@ class ExtensionVideoLoader {
         return resolvedAny ? .removed : .unavailable
     }
 
+    /// Verdict on whether the video at `localPath` fits the CURRENT
+    /// time-slice rule (`TimeManagement.videoMatchesCurrentTime`). The
+    /// wallpaper extension uses it when the rule changes underneath a
+    /// running renderer — a time-settings bump from Companion, or a
+    /// system appearance flip while the rule depends on Dark Mode.
+    ///
+    /// - `matches`: fits (or no restriction is active) — keep it.
+    /// - `mismatch`: a restriction is active and this video is in another
+    ///   slice — a legitimate cut.
+    /// - `unknown`: the path doesn't resolve to a catalogued video (a
+    ///   live feed, a transient fallback). No evidence, so never cut on
+    ///   it — same stance as `PlaylistVerdict.unavailable`.
+    enum TimeRuleVerdict {
+        case matches
+        case mismatch
+        case unknown
+    }
+
+    func timeRuleVerdict(forLocalPath localPath: String) -> (verdict: TimeRuleVerdict, video: AerialVideo?) {
+        guard let videoId = videoId(forLocalPath: localPath),
+              let video = videoList.videos.first(where: { $0.id == videoId }) else {
+            return (.unknown, nil)
+        }
+        return (TimeManagement.videoMatchesCurrentTime(video) ? .matches : .mismatch, video)
+    }
+
     /// Cycle mode of the persisted playlist for a screen (shared playlist
     /// when nil). Drives the renderer's repeat-one flag.
     func cycleMode(for screenUUID: String?) -> PlaylistCycleMode {

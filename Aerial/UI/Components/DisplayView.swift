@@ -119,7 +119,7 @@ class DisplayView: NSView {
 
         // In spanned mode, we start by a faint full view of the span
         if PrefsDisplays.viewingMode == .spanned {
-            let activeRect = displayDetection.getZeroedActiveSpannedRect()
+            let activeRect = displayDetection.getZeroedSpannedRect(playing: displayDetection.playingDisplayUUIDs())
             debugLog("spanned active rect \(activeRect)")
             let activeSRect = NSRect(x: minX + (activeRect.origin.x/scaleFactor),
                                y: minY + (activeRect.origin.y/scaleFactor),
@@ -183,7 +183,7 @@ class DisplayView: NSView {
                 // Spanned mode
                 if displayDetection.isScreenActive(id: screen.id) {
                     // Calculate which portion of the image to display
-                    let activeRect = displayDetection.getZeroedActiveSpannedRect()
+                    let activeRect = displayDetection.getZeroedSpannedRect(playing: displayDetection.playingDisplayUUIDs())
                     let activeSRect = NSRect(x: minX + (activeRect.origin.x/scaleFactor),
                                              y: minY + (activeRect.origin.y/scaleFactor),
                                              width: activeRect.width/scaleFactor,
@@ -308,7 +308,11 @@ class DisplayView: NSView {
             for displayPreview in displayPreviews {
                 debugLog("  checking preview rect=\(displayPreview.previewRect) for screen=\(displayPreview.screen.id)")
                 if displayPreview.previewRect.contains(point) {
-                    if displayDetection.isScreenActive(id: displayPreview.screen.id) {
+                    // Toggle the RAW tick, not the effective state: with
+                    // nothing ticked every display reads as active (the
+                    // rule's fallback) and toggling on that would never
+                    // let the first display be selected.
+                    if displayDetection.isScreenSelected(id: displayPreview.screen.id) {
                         displayDetection.unselectScreen(id: displayPreview.screen.id)
                     } else {
                         displayDetection.selectScreen(id: displayPreview.screen.id)

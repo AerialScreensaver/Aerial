@@ -64,11 +64,14 @@ struct DisplaysSettingsPanel: View {
             VStack(alignment: .leading, spacing: 8) {
                 DisplayPreviewView(refreshID: displayViewRefresh) {
                     displayViewRefresh = UUID()
+                    // The tick is stored by UUID; tell the extension to
+                    // re-read it for the next screensaver start.
+                    WallpaperControl.shared.saverDisplaysDidChange()
                 }
                 .frame(height: 260)
 
                 if displayMode == .selection {
-                    Text("Click on a display to enable or disable it")
+                    Text("Click on a display to enable or disable it. With none selected, the screensaver plays on every display.")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -86,24 +89,31 @@ struct DisplaysSettingsPanel: View {
     private var displaySettingsSection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("Play videos on")
-                        .font(.system(size: 14))
-                    Spacer()
-                    Picker("", selection: $displayMode) {
-                        Text("All displays").tag(DisplayMode.allDisplays)
-                        Text("Main display only").tag(DisplayMode.mainOnly)
-                        Text("Secondary displays only").tag(DisplayMode.secondaryOnly)
-                        Text("Selected displays").tag(DisplayMode.selection)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Screensaver plays videos on")
+                            .font(.system(size: 14))
+                        Spacer()
+                        Picker("", selection: $displayMode) {
+                            Text("All displays").tag(DisplayMode.allDisplays)
+                            Text("Main display only").tag(DisplayMode.mainOnly)
+                            Text("Secondary displays only").tag(DisplayMode.secondaryOnly)
+                            Text("Selected displays").tag(DisplayMode.selection)
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 220, alignment: .trailing)
+                        .onChange(of: displayMode) { newValue in
+                            PrefsDisplays.displayMode = newValue
+                            DisplayDetection.sharedInstance.detectDisplays()
+                            displayViewRefresh = UUID()
+                            // Saver-only knob: a light reload on the
+                            // extension side, never a wallpaper reconfigure.
+                            WallpaperControl.shared.saverDisplaysDidChange()
+                        }
                     }
-                    .pickerStyle(.menu)
-                    .frame(width: 220, alignment: .trailing)
-                    .onChange(of: displayMode) { newValue in
-                        PrefsDisplays.displayMode = newValue
-                        DisplayDetection.sharedInstance.detectDisplays()
-                        displayViewRefresh = UUID()
-                        WallpaperControl.shared.displaysConfigDidChange()
-                    }
+                    Text("The desktop wallpaper always uses every display.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
 
                 Divider()

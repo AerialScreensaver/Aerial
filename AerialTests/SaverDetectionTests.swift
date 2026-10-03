@@ -159,15 +159,17 @@ struct WallpaperStoreSummaryTests {
 @Suite("Idle exit rule")
 struct IdleExitRuleTests {
 
-    @Test("the agent's disconnect exits when nothing is hosted")
-    func exitWhenIdle() {
+    @Test("the agent's disconnect exits when no window is hosted, even with a renderer still in its grace period")
+    func exitWhenNoWindow() {
         #expect(IdleExitRule.decide(contexts: 0, renderers: 0) == .exit)
+        // Sleep case: the uptime-clock grace never ran, the wall-clock disconnect did.
+        #expect(IdleExitRule.decide(contexts: 0, renderers: 1) == .exit)
+        #expect(IdleExitRule.decide(contexts: 0, renderers: 2) == .exit)
     }
 
-    @Test("a hosted window or a renderer still in its grace period keeps the process")
+    @Test("a hosted window keeps the process")
     func stayWhenHosting() {
         #expect(IdleExitRule.decide(contexts: 1, renderers: 0) == .stay(reason: "hosting contexts=1 renderers=0"))
-        #expect(IdleExitRule.decide(contexts: 0, renderers: 1) == .stay(reason: "hosting contexts=0 renderers=1"))
         #expect(IdleExitRule.decide(contexts: 2, renderers: 2) == .stay(reason: "hosting contexts=2 renderers=2"))
     }
 }

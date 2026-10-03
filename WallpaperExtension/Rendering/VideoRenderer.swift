@@ -1372,6 +1372,24 @@ final class VideoRenderer: @unchecked Sendable {
         }
     }
 
+    /// Re-pick the pre-buffered next video from the provider without
+    /// touching what's on screen. For rule changes that leave the
+    /// current video valid (time slice / Dark Mode flipped, current
+    /// video still fits): the pop is pipelined one video ahead, so the
+    /// already-buffered next was chosen under the OLD rule and would
+    /// play one more off-rule video. Same re-prime as a repeat-one flip.
+    /// Repeat-one keeps its pin (the provider isn't consulted there), and
+    /// a deep-paused renderer has nothing to re-prime: its resume
+    /// recreates the pipeline and pops the next video under the rule in
+    /// force then.
+    func reprimeNextVideo() {
+        queue.async { [weak self] in
+            guard let self, isRunning, !loopCurrentVideo, currentReader != nil else { return }
+            debugLog("  [Renderer] reprimeNextVideo() — re-picking the buffered next")
+            prepareNextReaderOnQueue()
+        }
+    }
+
     /// Force an immediate swap to the next video, behind a manual-skip
     /// transition (ghost of the presenting frame fades over the cut;
     /// falls through to the old instant flush when transitions are off).

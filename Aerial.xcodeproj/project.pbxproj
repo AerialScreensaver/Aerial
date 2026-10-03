@@ -54,6 +54,7 @@
 		F0C061182E4F70580066F2C4 /* Aerial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060B22E4F70580066F2C4 /* Aerial.swift */; };
 		F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060992E4F70580066F2C4 /* DisplayDetection.swift */; };
 		F0SPG0022F30000000000001 /* SpannedGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SPG0012F30000000000001 /* SpannedGeometry.swift */; };
+		F0SDR0022F30000000000001 /* SaverDisplayRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SDR0012F30000000000001 /* SaverDisplayRule.swift */; };
 		F0C0611B2E4F70580066F2C4 /* DisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060DC2E4F70580066F2C4 /* DisplayView.swift */; };
 		F0C0611D2E4F70580066F2C4 /* PrefsVideos.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A52E4F70580066F2C4 /* PrefsVideos.swift */; };
 		F0C061252E4F70580066F2C4 /* AVAsset+VideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060892E4F70580066F2C4 /* AVAsset+VideoOrientation.swift */; };
@@ -218,6 +219,7 @@
 		F0PSC0022F30000000000001 /* PlaybackSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PSR0022F30000000000001 /* PlaybackSelectorView.swift */; };
 		F0RES00022F30000000000001 /* VideoDownloadResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0RES00012F30000000000001 /* VideoDownloadResume.swift */; };
 		F0SLP0022F30000000000001 /* SystemSleepState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SLP0012F30000000000001 /* SystemSleepState.swift */; };
+		F0TAC0022F30000000000001 /* TimeAdaptationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0TAC0012F30000000000001 /* TimeAdaptationCoordinator.swift */; };
 		F0SPK0022F40000000000001 /* SparkleGentleDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SPK0012F40000000000001 /* SparkleGentleDelegate.swift */; };
 		F0PRS0022F30000000000001 /* AppPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PRS0012F30000000000001 /* AppPresentationController.swift */; };
 		F0EXH0022F30000000000001 /* WallpaperExtensionHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXH0012F30000000000001 /* WallpaperExtensionHealth.swift */; };
@@ -237,6 +239,7 @@
 		F0GST0022F30000000000001 /* GeometrySanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */; };
 		F0VOT0022F30000000000001 /* VideoOrientationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0VOT0012F30000000000001 /* VideoOrientationTests.swift */; };
 		F0SDT0022F30000000000001 /* SaverDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SDT0012F30000000000001 /* SaverDetectionTests.swift */; };
+		F0SDR1022F30000000000001 /* SaverDisplayRuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SDR1012F30000000000001 /* SaverDisplayRuleTests.swift */; };
 		F0CTP0022F30000000000001 /* CacheTrimPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */; };
 		F0AFD0122F30000000000001 /* AppleFeedDecodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */; };
 		F0AFD0142F30000000000001 /* PoiStringTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AFD0132F30000000000001 /* PoiStringTableTests.swift */; };
@@ -369,6 +372,7 @@
 		F0WPX0B72F30000000000001 /* PrefsAdvanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */; };
 		F0WPX0B82F30000000000001 /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060992E4F70580066F2C4 /* DisplayDetection.swift */; };
 		F0SPG0032F30000000000001 /* SpannedGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SPG0012F30000000000001 /* SpannedGeometry.swift */; };
+		F0SDR0032F30000000000001 /* SaverDisplayRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0SDR0012F30000000000001 /* SaverDisplayRule.swift */; };
 		F0WPX0B92F30000000000001 /* DarkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060982E4F70580066F2C4 /* DarkMode.swift */; };
 		F0WPX0BA2F30000000000001 /* ExtensionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EXT0412F30000000000001 /* ExtensionHelpers.swift */; };
 		F0WPX0BB2F30000000000001 /* Battery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060962E4F70580066F2C4 /* Battery.swift */; };
@@ -493,6 +497,7 @@
 		F0C060982E4F70580066F2C4 /* DarkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkMode.swift; sourceTree = "<group>"; };
 		F0C060992E4F70580066F2C4 /* DisplayDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetection.swift; sourceTree = "<group>"; };
 		F0SPG0012F30000000000001 /* SpannedGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpannedGeometry.swift; sourceTree = "<group>"; };
+		F0SDR0012F30000000000001 /* SaverDisplayRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverDisplayRule.swift; sourceTree = "<group>"; };
 		F0C0609B2E4F70580066F2C4 /* NightShift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShift.swift; sourceTree = "<group>"; };
 		F0C0609D2E4F70580066F2C4 /* Music.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Music.swift; sourceTree = "<group>"; };
 		F0C0609F2E4F70580066F2C4 /* PrefsAdvanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsAdvanced.swift; sourceTree = "<group>"; };
@@ -642,6 +647,7 @@
 		F0PSR0022F30000000000001 /* PlaybackSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackSelectorView.swift; sourceTree = "<group>"; };
 		F0RES00012F30000000000001 /* VideoDownloadResume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDownloadResume.swift; sourceTree = "<group>"; };
 		F0SLP0012F30000000000001 /* SystemSleepState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSleepState.swift; sourceTree = "<group>"; };
+		F0TAC0012F30000000000001 /* TimeAdaptationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeAdaptationCoordinator.swift; sourceTree = "<group>"; };
 		F0SPK0012F40000000000001 /* SparkleGentleDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleGentleDelegate.swift; sourceTree = "<group>"; };
 		F0PRS0012F30000000000001 /* AppPresentationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPresentationController.swift; sourceTree = "<group>"; };
 		F0EXH0012F30000000000001 /* WallpaperExtensionHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperExtensionHealth.swift; sourceTree = "<group>"; };
@@ -662,6 +668,7 @@
 		F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometrySanitizerTests.swift; sourceTree = "<group>"; };
 		F0VOT0012F30000000000001 /* VideoOrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoOrientationTests.swift; sourceTree = "<group>"; };
 		F0SDT0012F30000000000001 /* SaverDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverDetectionTests.swift; sourceTree = "<group>"; };
+		F0SDR1012F30000000000001 /* SaverDisplayRuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaverDisplayRuleTests.swift; sourceTree = "<group>"; };
 		F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheTrimPlannerTests.swift; sourceTree = "<group>"; };
 		F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFeedDecodeTests.swift; sourceTree = "<group>"; };
 		F0AFD0132F30000000000001 /* PoiStringTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoiStringTableTests.swift; sourceTree = "<group>"; };
@@ -969,6 +976,7 @@
 				F0MVW0012F30000000000001 /* MyVideosWatcher.swift */,
 				F072218D2AD43D91001F5452 /* NightShift.swift */,
 				F0SLP0012F30000000000001 /* SystemSleepState.swift */,
+				F0TAC0012F30000000000001 /* TimeAdaptationCoordinator.swift */,
 			);
 			path = System;
 			sourceTree = "<group>";
@@ -1356,6 +1364,7 @@
 				F0C060992E4F70580066F2C4 /* DisplayDetection.swift */,
 				F0DOK0002F30000000000001 /* DockInfo.swift */,
 				F0SPG0012F30000000000001 /* SpannedGeometry.swift */,
+				F0SDR0012F30000000000001 /* SaverDisplayRule.swift */,
 			);
 			path = Hardware;
 			sourceTree = "<group>";
@@ -1496,6 +1505,7 @@
 				F0GST0012F30000000000001 /* GeometrySanitizerTests.swift */,
 				F0VOT0012F30000000000001 /* VideoOrientationTests.swift */,
 				F0SDT0012F30000000000001 /* SaverDetectionTests.swift */,
+				F0SDR1012F30000000000001 /* SaverDisplayRuleTests.swift */,
 				F0CTP0012F30000000000001 /* CacheTrimPlannerTests.swift */,
 				F0AFD0112F30000000000001 /* AppleFeedDecodeTests.swift */,
 				F0AFD0132F30000000000001 /* PoiStringTableTests.swift */,
@@ -1753,6 +1763,7 @@
 				F0PBM0022F30000000000001 /* PlaybackMath.swift in Sources */,
 				F0C0611A2E4F70580066F2C4 /* DisplayDetection.swift in Sources */,
 				F0SPG0022F30000000000001 /* SpannedGeometry.swift in Sources */,
+				F0SDR0022F30000000000001 /* SaverDisplayRule.swift in Sources */,
 				F0PRG0032F30000000000001 /* PresentingRing.swift in Sources */,
 				F0BSY0032F30000000000001 /* BoundedSync.swift in Sources */,
 				F0PWP0032F30000000000001 /* PumpWatchdogPolicy.swift in Sources */,
@@ -1861,6 +1872,7 @@
 				F0MVW0022F30000000000001 /* MyVideosWatcher.swift in Sources */,
 				F0RNW0022F30000000000001 /* ReleaseNotesWindow.swift in Sources */,
 				F0SLP0022F30000000000001 /* SystemSleepState.swift in Sources */,
+				F0TAC0022F30000000000001 /* TimeAdaptationCoordinator.swift in Sources */,
 				F0MWV0022F30000000000001 /* MacOSWallpaperVideoCache.swift in Sources */,
 				F0MUS0022F30000000000001 /* NowPlayingSource.swift in Sources */,
 				F0MUS0042F30000000000001 /* AppleMusicProvider.swift in Sources */,
@@ -1966,6 +1978,7 @@
 				F0GST0022F30000000000001 /* GeometrySanitizerTests.swift in Sources */,
 				F0VOT0022F30000000000001 /* VideoOrientationTests.swift in Sources */,
 				F0SDT0022F30000000000001 /* SaverDetectionTests.swift in Sources */,
+				F0SDR1022F30000000000001 /* SaverDisplayRuleTests.swift in Sources */,
 				F0CTP0022F30000000000001 /* CacheTrimPlannerTests.swift in Sources */,
 				F0AFD0122F30000000000001 /* AppleFeedDecodeTests.swift in Sources */,
 				F0AFD0142F30000000000001 /* PoiStringTableTests.swift in Sources */,
@@ -2047,6 +2060,7 @@
 				F0WPX0B72F30000000000001 /* PrefsAdvanced.swift in Sources */,
 				F0WPX0B82F30000000000001 /* DisplayDetection.swift in Sources */,
 				F0SPG0032F30000000000001 /* SpannedGeometry.swift in Sources */,
+				F0SDR0032F30000000000001 /* SaverDisplayRule.swift in Sources */,
 				F0WPX0B92F30000000000001 /* DarkMode.swift in Sources */,
 				F0WPX0BA2F30000000000001 /* ExtensionHelpers.swift in Sources */,
 				F0WPX0BB2F30000000000001 /* Battery.swift in Sources */,
@@ -2247,7 +2261,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.4;
+				MARKETING_VERSION = 4.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2278,7 +2292,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.4;
+				MARKETING_VERSION = 4.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2345,7 +2359,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.4;
+				MARKETING_VERSION = 4.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2379,7 +2393,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.4;
+				MARKETING_VERSION = 4.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

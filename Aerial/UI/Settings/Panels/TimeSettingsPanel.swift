@@ -142,6 +142,7 @@ struct TimeSettingsPanel: View {
                             .disabled(currentTimeMode == .lightDarkMode)
                             .onChange(of: darkModeOverride) { newValue in
                                 PrefsTime.darkModeNightOverride = newValue
+                                TimeAdaptationCoordinator.shared.settingsDidChange(reason: "dark mode override")
                             }
 
                         HStack {
@@ -158,6 +159,7 @@ struct TimeSettingsPanel: View {
                             .onChange(of: sunEventWindow) { newValue in
                                 PrefsTime.sunEventWindow = newValue
                                 refreshTimeBar()
+                                TimeAdaptationCoordinator.shared.settingsDidChange(reason: "sun window")
                             }
                         }
 
@@ -175,6 +177,7 @@ struct TimeSettingsPanel: View {
                                 .onChange(of: sunWindowPlacement) { newValue in
                                     PrefsTime.sunWindowPlacement = SunWindowPlacement(rawValue: newValue) ?? .daylight
                                     refreshTimeBar()
+                                    TimeAdaptationCoordinator.shared.settingsDidChange(reason: "window placement")
                                 }
                             }
                             .help("During daylight keeps the sunrise period right after sunrise and the sunset period right before sunset. Centered splits each period half before, half after the event.")
@@ -195,6 +198,7 @@ struct TimeSettingsPanel: View {
                                 .onChange(of: solarMode) { newValue in
                                     PrefsTime.solarMode = SolarMode(rawValue: newValue) ?? .astronomical
                                     refreshTimeBar()
+                                    TimeAdaptationCoordinator.shared.settingsDidChange(reason: "solar mode")
                                 }
                             }
                             .help("Strict (0°) and Official (0.83°) switch at true sunrise/sunset. Civil (6°), Nautical (12°) and Astronomical (18°) switch at dawn/dusk, based on how far the Sun sits below the horizon.")
@@ -230,6 +234,9 @@ struct TimeSettingsPanel: View {
             PrefsTime.timeMode = TimeMode(rawValue: newValue) ?? .disabled
             LocationProvider.shared.reevaluate()
             refreshTimeBar()
+            // Refresh the slice-grouped UI and tell the extension to
+            // re-read the mode — the pref write alone reached neither.
+            TimeAdaptationCoordinator.shared.settingsDidChange(reason: "time mode")
         }
         .alert("Location Found", isPresented: $showLocationSuccess) {
             Button("OK") {}
@@ -325,6 +332,7 @@ struct TimeSettingsPanel: View {
                 .onChange(of: manualSunriseDate) { newValue in
                     PrefsTime.manualSunrise = timeFormatter.string(from: newValue)
                     refreshTimeBar()
+                    TimeAdaptationCoordinator.shared.settingsDidChange(reason: "manual sunrise")
                 }
 
             Text("Sunset:")
@@ -335,6 +343,7 @@ struct TimeSettingsPanel: View {
                 .onChange(of: manualSunsetDate) { newValue in
                     PrefsTime.manualSunset = timeFormatter.string(from: newValue)
                     refreshTimeBar()
+                    TimeAdaptationCoordinator.shared.settingsDidChange(reason: "manual sunset")
                 }
         }
         .padding(.leading, 36)

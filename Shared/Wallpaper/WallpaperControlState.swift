@@ -150,6 +150,23 @@ struct WallpaperControlState: Codable, Equatable {
     /// rearrangement can leave every inset identical.
     var screenLayoutGeneration: Int = 0
 
+    /// Bumped by Companion when the SCREENSAVER display selection
+    /// ("Screensaver plays videos on": mode or ticked displays) changes.
+    /// The extension only re-reads screensaver.json: the selection is
+    /// evaluated at the next saver acquire, the wallpaper never depends
+    /// on it, and no window is re-fed (the `settingsGeneration`
+    /// reconfigure would re-key every desktop window for a saver knob).
+    var saverSettingsGeneration: Int = 0
+
+    /// Bumped by Companion when the time adaptation prefs change (time
+    /// mode, "only night videos in Dark Mode", sun event window, window
+    /// placement, solar mode, manual sunrise/sunset). The extension
+    /// re-reads screensaver.json, recomputes its solar state and
+    /// re-evaluates the slice rule against what each renderer is showing
+    /// (cut only when the current video no longer fits, otherwise just
+    /// re-pick the pre-buffered next). No reconfigure, no re-key.
+    var timeSettingsGeneration: Int = 0
+
     /// Play the video's own audio track. Audio only actually sounds
     /// while the effective playback rate is 1.0 (screensaver, or
     /// wallpaper at 100% speed) and never on the lock screen; exactly
@@ -213,6 +230,8 @@ extension WallpaperControlState {
         transitionDuration = try c.decodeIfPresent(Double.self, forKey: .transitionDuration) ?? 2.0
         dockInsets = try c.decodeIfPresent([String: [Double]].self, forKey: .dockInsets) ?? [:]
         screenLayoutGeneration = try c.decodeIfPresent(Int.self, forKey: .screenLayoutGeneration) ?? 0
+        saverSettingsGeneration = try c.decodeIfPresent(Int.self, forKey: .saverSettingsGeneration) ?? 0
+        timeSettingsGeneration = try c.decodeIfPresent(Int.self, forKey: .timeSettingsGeneration) ?? 0
         audioEnabled = try c.decodeIfPresent(Bool.self, forKey: .audioEnabled) ?? false
         audioVolume = try c.decodeIfPresent(Double.self, forKey: .audioVolume) ?? 0.5
         desktopWallpaperActive = try c.decodeIfPresent(Bool.self, forKey: .desktopWallpaperActive) ?? true
@@ -302,8 +321,18 @@ enum IdleExitRule {
         case stay(reason: String)
     }
 
-    /// `contexts` = hosted wallpaper windows, `renderers` = live
-    /// SharedRenderers (a grace teardown may still be pending).
+    /// `contexts` = hosted wallpaper windows; `renderers` = live
+    /// SharedRenderers, which may outlive the last window: the 120 s grace
+    /// teardown runs on the uptime clock (paused while the Mac sleeps), the
+    /// agent's 5-min disconnect on the wall clock. Display sleep → idle
+    /// sleep invalidates the saver at sleep entry, and the first dark wake
+    /// past 5 min brings the disconnect with the renderers still alive
+    /// (13 kills 24–27 Sept 2026, all `renderers=1|2`; a real user wake
+    /// re-arms the agent via hostDidWake, dark wakes do not). Those
+    /// renderers have no subscribers (timebase held at rate 0) and the
+    /// sidecar and snapshots were flushed at invalidate, so leaving with
+    /// them alive loses nothing on disk — only hosted windows keep the
+    /// process.
     static func decide(contexts: Int, renderers: Int) -> Verdict {
         contexts == 0
             ? .exit

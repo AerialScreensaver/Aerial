@@ -41,6 +41,15 @@ struct PlaylistSummaryView: View {
     }
 
     var body: some View {
+        // The slice sections, their "Starts at" headers and the countdown
+        // are computed from TimeManagement at render time. Reading the
+        // tick here makes body depend on it, so a minute crossing a slice
+        // boundary re-renders — a @State write that body never read did
+        // nothing. (Not `.id(timerTick)`: that would rebuild the scroll
+        // view and lose the scroll position every minute; `_ = timerTick`
+        // isn't a statement a @ViewBuilder accepts.)
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = timerTick
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 content

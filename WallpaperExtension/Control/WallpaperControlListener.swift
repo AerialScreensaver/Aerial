@@ -12,6 +12,7 @@
 //    - per-screen advanceCounter→ advanceNow on that SharedRenderer
 //    - per-screen regressCounter→ regressNow on that SharedRenderer
 //    - playlistGeneration      → ExtensionVideoLoader.reload + advanceNow
+//    - timeSettingsGeneration  → settings reload + slice rule re-evaluation
 //
 //  Reconciliation is idempotent (last-applied version check), so
 //  process respawns and duplicate notifications are no-op.
@@ -570,6 +571,34 @@ final class WallpaperControlListener: @unchecked Sendable {
             VideoList.instance.reloadSources()
             DisplayDetection.sharedInstance.detectDisplays()
             reconfigureAllWallpapers()
+        }
+
+        // 3a. Screensaver display selection changed ("Screensaver plays
+        //     videos on"). Re-read the file so the NEXT saver acquire
+        //     evaluates the new selection. Deliberately no reconfigure:
+        //     the wallpaper never depends on it, a running saver keeps
+        //     its windows (the change applies at the next start), and
+        //     re-keying every desktop window for a saver knob showed as
+        //     a visible re-attach on the wallpaper.
+        if next.saverSettingsGeneration != prev.saverSettingsGeneration {
+            debugLog("[WallpaperControl] saver-displays-changed (gen \(prev.saverSettingsGeneration) → \(next.saverSettingsGeneration)) — reload only, applies at the next saver start")
+            ScreensaverSettingsManager.shared.reloadFromDisk()
+            DisplayDetection.sharedInstance.detectDisplays()
+        }
+
+        // 3c. Time adaptation prefs changed (time mode, Dark Mode
+        //     override, sun window, placement, solar mode, manual
+        //     times). Re-read the file (the settings cache is load-once,
+        //     so the pops kept filtering with the OLD mode until a
+        //     respawn), recompute the solar state for the new mode, then
+        //     re-evaluate what each renderer shows: cut only a video
+        //     that no longer fits, otherwise re-pick the pre-buffered
+        //     next. Deliberately no reconfigure.
+        if next.timeSettingsGeneration != prev.timeSettingsGeneration {
+            debugLog("[WallpaperControl] time-settings-changed (gen \(prev.timeSettingsGeneration) → \(next.timeSettingsGeneration)) — reload + re-evaluate slice rule")
+            ScreensaverSettingsManager.shared.reloadFromDisk()
+            TimeManagement.sharedInstance.refreshAfterSettingsChange()
+            applySliceRuleChange(reason: "time-settings")
         }
 
         // 3b. Display layout changed: Companion's didChangeScreenParameters

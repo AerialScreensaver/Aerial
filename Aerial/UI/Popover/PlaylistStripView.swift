@@ -75,6 +75,10 @@ struct PlaylistSectionView: View {
         .onReceive(NotificationCenter.default.publisher(for: PlaylistManager.playlistDidChangeNotification)) { _ in
             reload()
         }
+        .onReceive(NotificationCenter.default.publisher(for: TimeAdaptationCoordinator.didChangeNotification)) { _ in
+            // The strip filters entries by the current slice.
+            reload()
+        }
         .onReceive(downloadTracker.$downloadingVideoIds) { _ in
             reload()
         }

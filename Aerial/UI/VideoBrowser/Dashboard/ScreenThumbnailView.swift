@@ -4,8 +4,9 @@
 //
 //  A miniature of a single display at its true aspect ratio, showing that
 //  screen's currently-selected video. Used by independent-mode Dashboard
-//  cards. Inactive displays (excluded by the current Display Mode) render
-//  as a dimmed "not playing" tile.
+//  cards. A display whose wallpaper is not running (`isActive` comes from
+//  the status monitor, not from the screensaver display selection)
+//  renders as a dimmed "not playing" tile.
 //
 
 import SwiftUI

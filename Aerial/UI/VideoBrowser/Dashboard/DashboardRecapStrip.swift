@@ -268,13 +268,15 @@ struct DisplaysRecapCard: View {
         }
     }
 
+    /// "Screensaver plays videos on" — a screensaver-only setting; the
+    /// desktop wallpaper always uses every display.
     private var stateText: String {
         let total = NSScreen.screens.count
         switch PrefsDisplays.displayMode {
-        case .allDisplays:   return total <= 1 ? "All screens" : "All \(total) screens"
-        case .mainOnly:      return "Main only"
-        case .secondaryOnly: return "Secondaries"
-        case .selection:     return "Custom (\(selectedDisplayCount) of \(total))"
+        case .allDisplays:   return total <= 1 ? "Saver: all screens" : "Saver: all \(total) screens"
+        case .mainOnly:      return "Saver: main only"
+        case .secondaryOnly: return "Saver: secondaries"
+        case .selection:     return "Saver: custom (\(selectedDisplayCount) of \(total))"
         }
     }
 

@@ -129,6 +129,14 @@ class VideoBrowserState: ObservableObject {
             .sink { [weak self] _ in self?.refreshTrigger += 1 }
             .store(in: &cancellables)
 
+        // Time slice rule changed (time prefs, Dark Mode flip): the "Now
+        // Playing" summary groups by slice and the cards dim off-slice
+        // videos — both read TimeManagement live, they just need a redraw.
+        NotificationCenter.default.publisher(for: TimeAdaptationCoordinator.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshTrigger += 1 }
+            .store(in: &cancellables)
+
         NotificationCenter.default.publisher(for: DownloadCoordinator.downloadDidCompleteNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshTrigger += 1 }

@@ -18,9 +18,15 @@ class Screen: NSObject {
     var zeroedOrigin: CGPoint
     var isMain: Bool
     var backingScaleFactor: CGFloat
+    /// Stable identity (`CGDisplayCreateUUIDFromDisplayID` string): the
+    /// key the renderer keys, playlists and the saver display selection
+    /// use. The numeric `id` is re-assigned by macOS across sleep, wake
+    /// and replug. Empty when the display vanished mid-enumeration.
+    let uuid: String
 
-    init(id: CGDirectDisplayID, width: Int, height: Int, bottomLeftFrame: CGRect, isMain: Bool, backingScaleFactor: CGFloat) {
+    init(id: CGDirectDisplayID, width: Int, height: Int, bottomLeftFrame: CGRect, isMain: Bool, backingScaleFactor: CGFloat, uuid: String = "") {
         self.id = id
+        self.uuid = uuid
         self.width = width
         self.height = height
         self.bottomLeftFrame = bottomLeftFrame
@@ -33,7 +39,7 @@ class Screen: NSObject {
     }
 
     override var description: String {
-        return "[id=\(self.id), width=\(self.width), height=\(self.height), bottomLeftFrame=\(self.bottomLeftFrame), topRightCorner=\(self.topRightCorner), isMain=\(self.isMain), backingScaleFactor=\(self.backingScaleFactor)]"
+        return "[id=\(self.id), uuid=\(self.uuid.prefix(8)), width=\(self.width), height=\(self.height), bottomLeftFrame=\(self.bottomLeftFrame), topRightCorner=\(self.topRightCorner), isMain=\(self.isMain), backingScaleFactor=\(self.backingScaleFactor)]"
     }
 }
 
@@ -135,7 +141,8 @@ final class DisplayDetection: NSObject {
                                       height: Int(screen.frame.height),
                                       bottomLeftFrame: screen.frame,
                                       isMain: thisIsMain,
-                                      backingScaleFactor: screen.backingScaleFactor))
+                                      backingScaleFactor: screen.backingScaleFactor,
+                                      uuid: DisplayDetection.displayUUID(for: screenID)))
             }
         }
 
@@ -153,7 +160,14 @@ final class DisplayDetection: NSObject {
 
         // We store the list to pluck it later
         unusedScreens = screens
-        
+
+        // Companion only (the appex enumerates via CoreGraphics and never
+        // writes settings): a "Selected displays" dictionary still keyed
+        // by numeric display id (3.x / 4.0) moves onto UUID keys, once.
+        if !DisplayDetection.useCoreGraphicsEnumeration {
+            migrateSelectionKeysIfNeeded()
+        }
+
         debugLog("\(getGlobalScreenRect())")
     }
 
@@ -190,7 +204,8 @@ final class DisplayDetection: NSObject {
                                  height: Int(cocoa.height),
                                  bottomLeftFrame: cocoa,
                                  isMain: did == main,
-                                 backingScaleFactor: scale))
+                                 backingScaleFactor: scale,
+                                 uuid: DisplayDetection.displayUUID(for: did)))
         }
         debugLog("📺 enumerated via CoreGraphics: \(result.count) active display(s)")
         return result
@@ -201,6 +216,15 @@ final class DisplayDetection: NSObject {
     /// x is shared, y flips about the main display's height.
     static func cocoaFrame(fromCGBounds cg: CGRect, mainHeight: CGFloat) -> CGRect {
         CGRect(x: cg.minX, y: mainHeight - cg.maxY, width: cg.width, height: cg.height)
+    }
+
+    /// `CGDisplayCreateUUIDFromDisplayID` as the string every other
+    /// per-screen key uses (`NSScreen.screenUuid`, the extension's
+    /// renderer keys). Empty when the display is already gone.
+    static func displayUUID(for id: CGDirectDisplayID) -> String {
+        guard let uuid = CGDisplayCreateUUIDFromDisplayID(id)?.takeRetainedValue(),
+              let string = CFUUIDCreateString(nil, uuid) else { return "" }
+        return string as String
     }
 
     /// Order-independent fingerprint of a display set (id + Cocoa frame
@@ -396,13 +420,21 @@ final class DisplayDetection: NSObject {
         return CGRect(x: minX, y: minY, width: maxX-minX, height: maxY-minY)
     }
 
-    func getZeroedActiveSpannedRect() -> CGRect {
+    /// The zeroed spanned canvas. `playing == nil` folds over every
+    /// display (the desktop wallpaper); a set folds over those displays
+    /// only (a screensaver session under "Screensaver plays videos on").
+    /// Before 2026-09-28 this always folded over the saver selection,
+    /// which shrank the WALLPAPER's canvas too.
+    func getZeroedSpannedRect(playing: Set<String>?) -> CGRect {
         if PrefsDisplays.displayMarginsAdvanced && !advancedMargins.displays.isEmpty, let advz = advancedZeroedScreenRect {
             // Now this is awkward... we precalculated this at detectdisplays->advancedZeroedOrigins
             return advz
         } else {
+            let frames = screens
+                .filter { screen in playing?.contains(screen.uuid) ?? true }
+                .map(\.bottomLeftFrame)
             return SpannedGeometry.spannedCanvas(
-                activeFrames: screens.filter { isScreenActive(id: $0.id) }.map(\.bottomLeftFrame),
+                activeFrames: frames,
                 globalOrigin: getGlobalScreenRect().origin,
                 widthMargin: maxLeftScreens * leftMargin(),
                 heightMargin: maxBelowScreens * belowMargin()
@@ -410,54 +442,62 @@ final class DisplayDetection: NSObject {
         }
     }
 
-    // MARK: - Public utility fuctions
+    // MARK: - Screensaver display selection
 
-    func isScreenActive(id: CGDirectDisplayID) -> Bool {
-        let screen = findScreenWith(id: id)
-        debugLog("ISA : \(String(describing: screen))")
-        
-        switch PrefsDisplays.displayMode {
-        case .allDisplays:
-            // This one is easy
-            return true
-        case .mainOnly:
-            if let scr = screen {
-                if scr.isMain {
-                    return true
-                }
-            }
-            return false
-        case .secondaryOnly:
-            if getScreenCount() > 1 {
-                if let scr = screen {
-                    if scr.isMain {
-                        return false
-                    }
-                }
-            }
-            return true
-        case .selection:
-            if isScreenSelected(id: id) {
-                return true
-            }
-            return false
-        }
+    /// The connected displays in the shape `SaverDisplayRule` wants.
+    func saverDisplays() -> [SaverDisplayRule.Display] {
+        screens.map { SaverDisplayRule.Display(uuid: $0.uuid, isMain: $0.isMain, countsAsScreen: $0.height > 200) }
     }
 
+    /// UUIDs of the displays the SCREENSAVER plays on right now
+    /// ("Screensaver plays videos on"). Never empty while a display is
+    /// connected — see `SaverDisplayRule.playingDisplays`.
+    func playingDisplayUUIDs() -> Set<String> {
+        SaverDisplayRule.playingDisplays(mode: PrefsDisplays.displayMode,
+                                         selection: PrefsAdvanced.newDisplayDict,
+                                         displays: saverDisplays())
+    }
+
+    /// Whether the saver plays on this display under the current mode and
+    /// selection. Companion UI (arrangement preview, dashboard); the
+    /// extension evaluates `SaverDisplayRule` itself at acquire.
+    func isScreenActive(id: CGDirectDisplayID) -> Bool {
+        guard let screen = findScreenWith(id: id) else { return PrefsDisplays.displayMode == .allDisplays }
+        return playingDisplayUUIDs().contains(screen.uuid)
+    }
+
+    /// The raw "Selected displays" tick for this display (no fallback),
+    /// keyed by UUID.
     func isScreenSelected(id: CGDirectDisplayID) -> Bool {
-        // If we have it in the dictionnary, then return that
-        if PrefsAdvanced.newDisplayDict.keys.contains(String(id)) {
-            return PrefsAdvanced.newDisplayDict[String(id)]!
-        }
-        return false    // Unknown screens will not be considered selected
+        guard let screen = findScreenWith(id: id), !screen.uuid.isEmpty else { return false }
+        return PrefsAdvanced.newDisplayDict[screen.uuid] == true
     }
 
     func selectScreen(id: CGDirectDisplayID) {
-        PrefsAdvanced.newDisplayDict[String(id)] = true
+        setScreenSelected(id: id, true)
     }
 
     func unselectScreen(id: CGDirectDisplayID) {
-        PrefsAdvanced.newDisplayDict[String(id)] = false
+        setScreenSelected(id: id, false)
+    }
+
+    private func setScreenSelected(id: CGDirectDisplayID, _ selected: Bool) {
+        guard let screen = findScreenWith(id: id), !screen.uuid.isEmpty else {
+            errorLog("📺 display \(id) has no UUID — selection not stored")
+            return
+        }
+        PrefsAdvanced.newDisplayDict[screen.uuid] = selected
+    }
+
+    /// Move numeric-keyed selection entries onto UUID keys (see
+    /// `SelectionKeyMigration`). Writes only when something changed.
+    func migrateSelectionKeysIfNeeded() {
+        let dict = PrefsAdvanced.newDisplayDict
+        guard dict.keys.contains(where: { UInt32($0) != nil }), !screens.isEmpty else { return }
+        let migrated = SelectionKeyMigration.migrate(dict: dict, connected: screens.map { ($0.id, $0.uuid) })
+        guard migrated != dict else { return }
+        PrefsAdvanced.newDisplayDict = migrated
+        debugLog("📺 display selection migrated to UUID keys: \(dict.count) → \(migrated.count) entr\(migrated.count == 1 ? "y" : "ies")")
     }
 
     func findDisplayAdvancedMargins(posx: CGFloat, posy: CGFloat) -> DisplayAdvancedMargin? {

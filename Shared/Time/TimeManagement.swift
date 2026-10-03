@@ -23,21 +23,47 @@ final class TimeManagement: NSObject {
     override init() {
         super.init()
         debugLog("Time Management initialized")
-        if PrefsTime.timeMode == .locationService {
-            // This is racy... I think we're ok because time/location gets inited first, but still...
-            let location = Locations.sharedInstance
+        refreshAfterSettingsChange()
+    }
 
-            location.getCoordinates(failure: { (_) in
-                errorLog("Location services denied access to your location. Please make sure you allowed Aerial to access your location in System Settings > Security and Privacy > Privacy")
-            }, success: { (coordinates) in
-                self.lsLatitude = coordinates.latitude
-                self.lsLongitude = coordinates.longitude
-                debugLog("Location found \(self.lsLatitude ?? 0) \(self.lsLongitude ?? 0)")
-                _ = self.calculateFrom(latitude: coordinates.latitude, longitude: coordinates.longitude)
-            })
+    /// (Re)compute the solar state for the CURRENT prefs. Runs at init
+    /// and whenever the time prefs change underneath a live process
+    /// (Companion: `TimeAdaptationCoordinator`; extension: the
+    /// `timeSettingsGeneration` control bump after `reloadFromDisk()`).
+    /// Without it a mode switch kept the solar object of the previous
+    /// mode, and Location Services selected after launch never got its
+    /// coordinates.
+    func refreshAfterSettingsChange() {
+        solar = nil
+        if PrefsTime.timeMode == .locationService {
+            if refreshLocationServiceCoordinates(), let lat = lsLatitude, let lon = lsLongitude {
+                _ = calculateFrom(latitude: lat, longitude: lon)
+            }
         } else {
             _ = calculateFromCoordinates()
         }
+    }
+
+    /// Pull the Location Services coordinates from the cache Companion's
+    /// `LocationProvider` keeps in `PrefsTime.cachedLatitude/Longitude`
+    /// (what both targets' `Locations` read too). A cheap in-memory pref
+    /// read, so it runs at the top of every `.locationService` branch —
+    /// that is what lets the mode work when selected AFTER launch (init
+    /// used to be the only writer) and follow the hourly cache refresh.
+    /// Logs only when the coordinates actually change: the UI countdown
+    /// labels poll `nextTransitionDate()`. Returns `false` on an empty
+    /// cache (permission pending/denied, or the provider never ran).
+    @discardableResult
+    private func refreshLocationServiceCoordinates() -> Bool {
+        let lat = PrefsTime.cachedLatitude
+        let lon = PrefsTime.cachedLongitude
+        guard lat != 0 || lon != 0 else { return false }
+        if lsLatitude != lat || lsLongitude != lon {
+            lsLatitude = lat
+            lsLongitude = lon
+            debugLog("Location found \(lat) \(lon)")
+        }
+        return true
     }
 
     // MARK: - Static Time Filter for Playlists
@@ -99,6 +125,7 @@ final class TimeManagement: NSObject {
             return computeNextTransition(sunrise: sr, sunset: ss)
 
         case .locationService:
+            refreshLocationServiceCoordinates()
             if let lat = lsLatitude, let lon = lsLongitude {
                 _ = calculateFrom(latitude: lat, longitude: lon)
             }
@@ -134,14 +161,19 @@ final class TimeManagement: NSObject {
     // swiftlint:disable:next cyclomatic_complexity
     func shouldRestrictPlaybackToDayNightVideo() -> (Bool, String) {
         //debugLog("PrefsTime : \(PrefsTime.timeMode)")
-        // We override everything on dark mode if we need to
+        // We override everything on dark mode if we need to. (No log
+        // here: the browser calls this per card; the 🌗 lines record
+        // the appearance flips instead.)
         if PrefsTime.darkModeNightOverride && DarkMode.isEnabled() {
-            debugLog("Dark Mode override")
             return (true, "night")
         }
 
         // If not we check the modes
         if PrefsTime.timeMode == .locationService {
+            // Re-read the cached coordinates every time: the mode may
+            // have been selected after this process started, and the
+            // cache moves with Companion's hourly location refresh.
+            refreshLocationServiceCoordinates()
             if let lat = lsLatitude, let lon = lsLongitude {
                 _ = calculateFrom(latitude: lat, longitude: lon)
 
@@ -227,6 +259,7 @@ final class TimeManagement: NSObject {
             if let (sr, ss) = solarSunriseSunset() { return (sr, ss) }
             return (nil, nil)
         case .locationService:
+            refreshLocationServiceCoordinates()
             if let lat = lsLatitude, let lon = lsLongitude {
                 _ = calculateFrom(latitude: lat, longitude: lon)
 
