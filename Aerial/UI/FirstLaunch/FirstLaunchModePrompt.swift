@@ -65,10 +65,12 @@ enum UpgradePromptPage: CaseIterable {
     /// once the user converts the folder or switches to the internal
     /// cache. "Decide later" brings it back at the next launch.
     case externalCache
-    /// Aerial 3 data the wizard found but could not read (Full Disk
-    /// Access), skipped by the user — gated on `legacyMigrationPending`
-    /// and on the data being readable now. Cleared by a completed
-    /// migration. Runs the same operations as the wizard's step.
+    /// Aerial 3 data the wizard found but could not read, skipped by the
+    /// user — gated on `legacyMigrationPending` and on the data still
+    /// being there. Readable now (Full Disk Access granted since) → the
+    /// migration choices; still unreadable → the access assistant
+    /// (`LegacyAccessAssistView`). Cleared by a completed migration. Runs
+    /// the same operations as the wizard's step.
     case legacyMigration
 
     /// Pages still owed by this install. Empty for new installs (the
@@ -79,7 +81,7 @@ enum UpgradePromptPage: CaseIterable {
         if !Preferences.appPresentationChosen { pages.append(.presentation) }
         if Preferences.legacyMigrationPending {
             PathMigration.probeLegacyData()
-            if PathMigration.legacyDataFound, PathMigration.legacyDataReadable {
+            if PathMigration.legacyDataFound {
                 pages.append(.legacyMigration)
             }
         }
@@ -373,11 +375,18 @@ struct UpgradePromptView: View {
     /// Pages whose action already ran (their button then reads Next).
     @State private var actionDone: Set<UpgradePromptPage> = []
 
-    // Legacy-migration page state.
+    // Legacy-migration page state. `pending()` already probed; while the
+    // data is unreadable the page shows the access assistant, which brings
+    // its own buttons.
     @State private var migrationChoice: LegacyMigrationChoice = .migrate
     @State private var migrationProgress: String?
+    @State private var legacyReadable = PathMigration.legacyDataReadable
 
     private var isLastPage: Bool { pageIndex >= pages.count - 1 }
+
+    private var assistOwnsButtons: Bool {
+        pages[pageIndex] == .legacyMigration && !legacyReadable
+    }
 
     /// The action pages (external cache, legacy migration) run their
     /// operation on their own button press before they can be left; every
@@ -385,7 +394,7 @@ struct UpgradePromptView: View {
     private var currentAction: String? {
         switch pages[pageIndex] {
         case .externalCache: return cacheChoice.actionButtonTitle
-        case .legacyMigration: return migrationChoice.actionButtonTitle
+        case .legacyMigration: return legacyReadable ? migrationChoice.actionButtonTitle : nil
         case .wallpaperMode, .presentation: return nil
         }
     }
@@ -417,16 +426,34 @@ struct UpgradePromptView: View {
                 )
                 AppPresentationChooser(selection: $presentation)
             case .legacyMigration:
-                header(
-                    "Aerial 3 data can now be migrated",
-                    "Aerial can now read the data from your previous Aerial install. Choose what to do with it — the same choices the setup assistant offered."
-                )
-                LegacyMigrationChooser(
-                    customCacheFolder: PathMigration.getCustomCachePath(),
-                    selection: $migrationChoice,
-                    progress: migrationProgress,
-                    error: conversionError
-                )
+                if legacyReadable {
+                    header(
+                        "Aerial 3 data can now be migrated",
+                        "Aerial can now read the data from your previous Aerial install. Choose what to do with it — the same choices the setup assistant offered."
+                    )
+                    LegacyMigrationChooser(
+                        customCacheFolder: PathMigration.getCustomCachePath(),
+                        selection: $migrationChoice,
+                        progress: migrationProgress,
+                        error: conversionError
+                    )
+                } else {
+                    LegacyAccessAssistView(
+                        onReadable: {
+                            // Readable now → the choices above take over
+                            // (the footer button returns with them). Gone
+                            // → nothing left to offer.
+                            legacyReadable = PathMigration.legacyDataReadable
+                            if !PathMigration.legacyDataFound {
+                                Preferences.legacyMigrationPending = false
+                                actionDone.insert(.legacyMigration)
+                                advance()
+                            }
+                        },
+                        onFinished: { legacyMigrationSucceeded() },
+                        onSkip: { advance() }  // sentinel stays: re-offered next launch
+                    )
+                }
             case .externalCache:
                 if LegacyExternalCacheMigration.isOnExternalVolume(legacyFolder) {
                     header(
@@ -457,11 +484,13 @@ struct UpgradePromptView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                Button(buttonTitle) {
-                    advance()
+                if !assistOwnsButtons {
+                    Button(buttonTitle) {
+                        advance()
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isConverting)
                 }
-                .keyboardShortcut(.defaultAction)
-                .disabled(isConverting)
             }
         }
         .padding(24)
@@ -521,20 +550,28 @@ struct UpgradePromptView: View {
                     isConverting = false
                     switch result {
                     case .success, .skipped:
-                        actionDone.insert(.legacyMigration)
-                        if let folder = LegacyExternalCacheMigration.pendingFolder, !pages.contains(.externalCache) {
-                            pages.append(.externalCache)
-                            legacyFolder = folder
-                            legacyInventory = LegacyExternalCacheMigration.inventory(folder: folder)
-                            cacheChoice = LegacyCacheChoice.recommended(for: folder)
-                        }
-                        advance()
+                        legacyMigrationSucceeded()
                     case .failure(let error, _):
                         conversionError = error
                     }
                 }
             }
         )
+    }
+
+    /// A legacy migration finished (the chooser's operation or the access
+    /// assistant's manual route): settle the page and queue the
+    /// external-cache page when the import left a folder the extension
+    /// cannot read.
+    private func legacyMigrationSucceeded() {
+        actionDone.insert(.legacyMigration)
+        if let folder = LegacyExternalCacheMigration.pendingFolder, !pages.contains(.externalCache) {
+            pages.append(.externalCache)
+            legacyFolder = folder
+            legacyInventory = LegacyExternalCacheMigration.inventory(folder: folder)
+            cacheChoice = LegacyCacheChoice.recommended(for: folder)
+        }
+        advance()
     }
 
     private func startCacheAction() {

@@ -11,6 +11,7 @@ struct OverlaysSettingsPanel: View {
     @State private var perScreen: Bool = OverlayConfigManager.shared.config.perScreen
     @State private var separateDesktop: Bool = OverlayConfigManager.shared.config.separateDesktopConfig
     @State private var hideOverlaysDuringLogin: Bool = OverlayConfigManager.shared.config.hideOverlaysDuringLogin
+    @State private var showOverlaysOnLockScreen: Bool = OverlayConfigManager.shared.config.showOverlaysOnLockScreen
     @State private var dockOffsetEnabled: Bool = OverlayConfigManager.shared.config.dockOffsetEnabled
     @State private var showVersionAtStartup: Bool = OverlayConfigManager.shared.config.showVersionAtStartup
     #if DEBUG
@@ -80,7 +81,20 @@ struct OverlaysSettingsPanel: View {
                             OverlayConfigManager.shared.setConfig(config)
                         }
 
-                    Text("Hides overlay information when macOS shows the password prompt over the screensaver.")
+                    Text("Hides overlays whenever macOS shows the password prompt — over the screensaver or on the lock screen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    Toggle("Show overlays on the lock screen", isOn: $showOverlaysOnLockScreen)
+                        .onChange(of: showOverlaysOnLockScreen) { _, newValue in
+                            var config = OverlayConfigManager.shared.config
+                            config.showOverlaysOnLockScreen = newValue
+                            OverlayConfigManager.shared.setConfig(config)
+                        }
+
+                    Text("Shows the screensaver overlays while the screen is locked (Aerial as wallpaper). The password prompt still follows the option above.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 

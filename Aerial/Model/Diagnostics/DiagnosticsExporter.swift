@@ -281,11 +281,14 @@ enum DiagnosticsExporter {
             }
             lines.append(line)
         case .denied(let path):
-            lines.append("3.x saver prefs: \(path) — NOT readable (Full Disk Access needed for the legacy screensaver container)")
+            lines.append("3.x saver prefs: \(path) — NOT readable (the legacy screensaver container needs a user grant or Full Disk Access)")
         case .none:
             lines.append("3.x saver prefs: none")
         }
         lines.append("3.x migration pending (skipped for permission): \(Preferences.legacyMigrationPending)")
+        // The container itself: there, readable by this process, and whether
+        // an Open-panel grant (com.apple.macl) or a Plan B staging folder is around.
+        lines.append("3.x container: exists=\(PathMigration.containerDataExists()) readable=\(LegacyContainerAccess.canReadContainer()) user-intent grant on Data/Library=\(LegacyContainerAccess.hasUserIntentGrant()) staging folder=\(FileManager.default.fileExists(atPath: LegacyContainerAccess.stagingPath))")
         lines.append("Expansion packs at cache location: \(PrefsCache.expansionsAtCacheLocation)")
         lines.append("")
 

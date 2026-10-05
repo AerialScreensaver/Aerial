@@ -429,6 +429,12 @@ struct OverlayConfig: Codable, Equatable {
     var perScreen: Bool
     var separateDesktopConfig: Bool
     var hideOverlaysDuringLogin: Bool
+    /// Show overlays while the screen is locked (Aerial as wallpaper). The
+    /// lock screen is the desktop wallpaper windows flipped to `locked`;
+    /// with this on they render the SCREENSAVER layout and the locked state
+    /// alone no longer blanks them. The password prompt still follows
+    /// `hideOverlaysDuringLogin`. Off = today's behaviour (lock = login).
+    var showOverlaysOnLockScreen: Bool
     var showVersionAtStartup: Bool
     /// Debug-only: keep the version banner pinned at the bottom-right in
     /// BOTH wallpaper and screensaver modes (never auto-hides). The toggle
@@ -451,6 +457,7 @@ struct OverlayConfig: Codable, Equatable {
         perScreen: false,
         separateDesktopConfig: false,
         hideOverlaysDuringLogin: true,
+        showOverlaysOnLockScreen: false,
         showVersionAtStartup: true,
         alwaysShowVersion: false,
         dockOffsetEnabled: true,
@@ -463,6 +470,7 @@ struct OverlayConfig: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case version, perScreen, separateDesktopConfig, hideOverlaysDuringLogin, showVersionAtStartup
+        case showOverlaysOnLockScreen
         case alwaysShowVersion
         case dockOffsetEnabled
         case rotationMode
@@ -471,6 +479,7 @@ struct OverlayConfig: Codable, Equatable {
 
     init(version: Int, perScreen: Bool, separateDesktopConfig: Bool,
          hideOverlaysDuringLogin: Bool = true,
+         showOverlaysOnLockScreen: Bool = false,
          showVersionAtStartup: Bool = true,
          alwaysShowVersion: Bool = false,
          dockOffsetEnabled: Bool = true,
@@ -481,6 +490,7 @@ struct OverlayConfig: Codable, Equatable {
         self.perScreen = perScreen
         self.separateDesktopConfig = separateDesktopConfig
         self.hideOverlaysDuringLogin = hideOverlaysDuringLogin
+        self.showOverlaysOnLockScreen = showOverlaysOnLockScreen
         self.showVersionAtStartup = showVersionAtStartup
         self.alwaysShowVersion = alwaysShowVersion
         self.dockOffsetEnabled = dockOffsetEnabled
@@ -497,6 +507,7 @@ struct OverlayConfig: Codable, Equatable {
         perScreen = try container.decode(Bool.self, forKey: .perScreen)
         separateDesktopConfig = try container.decode(Bool.self, forKey: .separateDesktopConfig)
         hideOverlaysDuringLogin = try container.decodeIfPresent(Bool.self, forKey: .hideOverlaysDuringLogin) ?? true
+        showOverlaysOnLockScreen = try container.decodeIfPresent(Bool.self, forKey: .showOverlaysOnLockScreen) ?? false
         showVersionAtStartup = try container.decodeIfPresent(Bool.self, forKey: .showVersionAtStartup) ?? true
         alwaysShowVersion = try container.decodeIfPresent(Bool.self, forKey: .alwaysShowVersion) ?? false
         dockOffsetEnabled = try container.decodeIfPresent(Bool.self, forKey: .dockOffsetEnabled) ?? true
@@ -528,5 +539,39 @@ struct OverlayConfig: Codable, Equatable {
     static var fileURL: URL {
         URL(fileURLWithPath: AerialPaths.baseDirectory, isDirectory: true)
             .appendingPathComponent("overlay-config.json")
+    }
+}
+
+// MARK: - Lock-screen rule
+
+/// How overlays behave while the session is locked. Two signals reach the
+/// extension: the agent's per-window `locked` presentationMode (the lock
+/// screen itself — the desktop wallpaper windows flipped to `locked`) and
+/// the login-shield distributed notification (the password UI, which also
+/// appears over a RUNNING saver whose window never flips to `locked`).
+/// Historically both were folded into one "login is up" verdict, so the
+/// plain lock screen blanked overlays exactly like the password prompt and
+/// kept the wallpaper layout (nil driver without `separateDesktopConfig`).
+/// `showOverlaysOnLockScreen` separates the two. Pure — no singleton access.
+enum OverlayLockScreenRule {
+    /// Whether every overlay driver should blank right now.
+    /// `hideDuringLogin` is the master switch (off → never blank). The
+    /// password UI always blanks; the locked state alone blanks only when
+    /// the user has not opted into lock-screen overlays.
+    static func hidden(anyLocked: Bool, shieldVisible: Bool,
+                       hideDuringLogin: Bool, showOnLockScreen: Bool) -> Bool {
+        guard hideDuringLogin else { return false }
+        return shieldVisible || (anyLocked && !showOnLockScreen)
+    }
+
+    /// Which overlay layout a window renders. Saver windows and the saver
+    /// fallback (desktop windows flipped to `idle`) use the screensaver
+    /// layout; a locked window does too when opted in — the lock screen
+    /// has no Dock or desktop to clear. Everything else is the wallpaper.
+    static func usesDesktopLayout(isScreenSaver: Bool, saverFallbackActive: Bool,
+                                  presentationMode: String, showOnLockScreen: Bool) -> Bool {
+        if isScreenSaver || saverFallbackActive { return false }
+        if presentationMode == "locked" && showOnLockScreen { return false }
+        return true
     }
 }

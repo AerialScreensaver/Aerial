@@ -188,12 +188,17 @@ struct FirstLaunchWizardView: View {
         case .welcome:
             FirstLaunchWelcomeStep(state: state)
         case .migration:
-            // Data Aerial may not read gets the permission screen first.
+            // Data Aerial may not read gets the access assistant first
+            // (user-intent grant, Full Disk Access, or the manual route).
             // Custom-cache scenario keeps the legacy `PathMigrationView`
             // (its own UI). The "found a previous version" container
             // case uses the polished `FirstLaunchMigrationStep`.
             if !state.legacyDataReadable {
-                LegacyDataPermissionStep(state: state)
+                LegacyAccessAssistView(
+                    onReadable: { state.reprobeLegacyData() },
+                    onFinished: { state.advanceFromMigration() },
+                    onSkip: { state.skipMigration() }
+                )
             } else if PathMigration.isCustomCacheUser() {
                 customCacheMigrationStep
             } else {

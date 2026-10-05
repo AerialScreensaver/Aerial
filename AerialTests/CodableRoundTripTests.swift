@@ -251,6 +251,7 @@ struct CodableRoundTripTests {
             perScreen: true,
             separateDesktopConfig: true,
             hideOverlaysDuringLogin: false,
+            showOverlaysOnLockScreen: true,
             showVersionAtStartup: false,
             sharedLayout: layout,
             screenLayouts: ["screen1": .empty],
@@ -263,6 +264,7 @@ struct CodableRoundTripTests {
         #expect(decoded.perScreen == true)
         #expect(decoded.separateDesktopConfig == true)
         #expect(decoded.hideOverlaysDuringLogin == false)
+        #expect(decoded.showOverlaysOnLockScreen == true)
         #expect(decoded.showVersionAtStartup == false)
         #expect(decoded.sharedLayout.allInstances.count == 1)
         let decodedInstance = decoded.sharedLayout.allInstances.first!
@@ -300,6 +302,7 @@ struct CodableRoundTripTests {
         """
         let decoded = try JSONDecoder().decode(OverlayConfig.self, from: json.data(using: .utf8)!)
         #expect(decoded.hideOverlaysDuringLogin == true)
+        #expect(decoded.showOverlaysOnLockScreen == false)
         #expect(decoded.showVersionAtStartup == true)
         #expect(decoded.desktopSharedLayout == nil)
         #expect(decoded.desktopScreenLayouts == nil)

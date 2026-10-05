@@ -41,8 +41,8 @@ struct LegacySaverPrefs: Equatable {
     enum LoadResult: Equatable {
         case found(Loaded)
         /// The plist exists but this process may not read it: the legacy
-        /// screensaver container needs Full Disk Access (see
-        /// `PathMigration.legacyDataReadable`).
+        /// screensaver container needs a user-intent grant or Full Disk
+        /// Access (see `PathMigration.legacyDataReadable`).
         case denied(path: String)
         case none
     }
@@ -62,7 +62,7 @@ struct LegacySaverPrefs: Equatable {
                 debugLog("🚚 Migration: read 3.x saver prefs at \(path) through cfprefsd (direct read denied)")
                 return .found(Loaded(prefs: parse(plist), path: path))
             }
-            errorLog("🚚 Migration: cannot read 3.x saver prefs at \(path) — Full Disk Access needed for the legacy screensaver container")
+            errorLog("🚚 Migration: cannot read 3.x saver prefs at \(path) — the legacy screensaver container needs a user grant or Full Disk Access")
             return .denied(path: path)
         }
         return .none

@@ -547,30 +547,46 @@ func startProgressFlusher() {
 }
 
 
-/// Hide or restore every active overlay driver based on whether the
-/// login/lock screen is up, gated on the user's "hide overlays during
-/// login" option. Called on every lock transition. Driven globally
-/// (not per-wid): lock is a system-wide state, and a running saver's
-/// wid may not itself report `locked` while a sibling does. `setHidden`
-/// is idempotent, so redundant/overlapping transitions are safe.
-/// Honours the `hideOverlaysDuringLogin` setting.
-func applyOverlayLoginHide() {
-    // Two signals OR together: the agent's per-wid `locked`
-    // presentationMode (reliable for wake-to-login) and the
-    // process-wide login-shield distributed notification (the only
-    // signal that fires when the password prompt appears over a
-    // RUNNING screensaver — the saver wid never flips to `locked`).
+/// The current overlay blank verdict, from the two lock signals and the
+/// user's options. Two signals feed it: the agent's per-wid `locked`
+/// presentationMode (reliable for wake-to-login) and the process-wide
+/// login-shield distributed notification (the only signal that fires
+/// when the password prompt appears over a RUNNING screensaver — the
+/// saver wid never flips to `locked`). `OverlayLockScreenRule` decides
+/// how they combine. Also applied to every freshly created driver (a
+/// driver starts unhidden, so a rebuild or acquire while locked must not
+/// bring overlays back until the next transition).
+func overlaysShouldBeHidden() -> Bool {
     let anyLocked = sharedHandlerState.allWallpapers()
         .contains { $0.wallpaper.lastPresentationMode == "locked" }
-    let loginUp = anyLocked || sharedHandlerState.isLoginShieldVisible
-    let shouldHide = loginUp && OverlayConfigManager.shared.config.hideOverlaysDuringLogin
+    let config = OverlayConfigManager.shared.config
+    return OverlayLockScreenRule.hidden(
+        anyLocked: anyLocked,
+        shieldVisible: sharedHandlerState.isLoginShieldVisible,
+        hideDuringLogin: config.hideOverlaysDuringLogin,
+        showOnLockScreen: config.showOverlaysOnLockScreen
+    )
+}
+
+/// Hide or restore every active overlay driver based on whether the
+/// login/lock screen is up, gated on the user's "hide overlays during
+/// login" and "show overlays on the lock screen" options. Called on
+/// every lock transition. Driven globally (not per-wid): lock is a
+/// system-wide state, and a running saver's wid may not itself report
+/// `locked` while a sibling does. `setHidden` is idempotent, so
+/// redundant/overlapping transitions are safe.
+func applyOverlayLoginHide() {
+    let anyLocked = sharedHandlerState.allWallpapers()
+        .contains { $0.wallpaper.lastPresentationMode == "locked" }
+    let shouldHide = overlaysShouldBeHidden()
     let wallpapers = sharedHandlerState.allWallpapers()
     Task { @MainActor in
         for (_, w) in wallpapers {
             w.overlayDriver?.setHidden(shouldHide)
         }
     }
-    debugLog("🛡️ login overlay-hide: anyLocked=\(anyLocked) shield=\(sharedHandlerState.isLoginShieldVisible) hideSetting=\(OverlayConfigManager.shared.config.hideOverlaysDuringLogin) → hidden=\(shouldHide)")
+    let config = OverlayConfigManager.shared.config
+    debugLog("🛡️ login overlay-hide: anyLocked=\(anyLocked) shield=\(sharedHandlerState.isLoginShieldVisible) hideSetting=\(config.hideOverlaysDuringLogin) lockScreen=\(config.showOverlaysOnLockScreen) → hidden=\(shouldHide)")
 }
 
 /// Tokens for the login-shield distributed-notification observers,
@@ -1989,7 +2005,10 @@ func rebuildOverlayDriver(
         }
         w.overlayDriver = driver
         debugLog("  rebuilt overlay for wid=\(widShort): \(driver != nil ? "active" : "none")")
-        if driver != nil {
+        if let driver {
+            // A fresh driver starts unhidden — a config rebuild while the
+            // lock/login UI is up must not bring overlays back.
+            driver.setHidden(overlaysShouldBeHidden())
             // Fresh driver knows nothing about the playing video —
             // feed the Location overlay.
             pushCurrentVideoToOverlays(rendererKey: w.rendererKey, reason: "driver-rebuild")
@@ -1997,15 +2016,24 @@ func rebuildOverlayDriver(
     }
 }
 
+/// Which layout `wallpaper` renders right now: the screensaver layout for
+/// saver windows, while the saver fallback holds every window at 1.0×, and
+/// for a locked window when "show overlays on the lock screen" is on.
+func overlayUsesDesktopLayout(_ wallpaper: ActiveWallpaper) -> Bool {
+    OverlayLockScreenRule.usesDesktopLayout(
+        isScreenSaver: wallpaper.isScreenSaver,
+        saverFallbackActive: sharedHandlerState.isNotificationScreensaverActive,
+        presentationMode: wallpaper.lastPresentationMode,
+        showOnLockScreen: OverlayConfigManager.shared.config.showOverlaysOnLockScreen
+    )
+}
+
 func rebuildAllOverlayDrivers() {
-    // Honour the screensaver-mode fallback: while it's active a wallpaper wid shows
-    // the SCREENSAVER overlay layout (isDesktop=false), matching the 1.0× rate.
-    let fallbackActive = sharedHandlerState.isNotificationScreensaverActive
     for (wid, wallpaper) in sharedHandlerState.allWallpapers() {
         rebuildOverlayDriver(
             wid: wid,
             wallpaper: wallpaper,
-            isDesktop: !(wallpaper.isScreenSaver || fallbackActive)
+            isDesktop: overlayUsesDesktopLayout(wallpaper)
         )
     }
 }
@@ -2382,7 +2410,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             //     an invalidate (or a config-driven rebuild) racing the
             //     creation.
             let appearance = ctx.systemAppearance
-            let useDesktopLayout = !(isScreenSaver || sharedHandlerState.isNotificationScreensaverActive)
+            let useDesktopLayout = overlayUsesDesktopLayout(wallpaper)
             let overlayDID = displayID
             let overlaySize = destSize
             let overlayScale = scaleFactor
@@ -2414,6 +2442,9 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
                 parked.rootLayer.addSublayer(driver.overlayLayer)
                 CATransaction.commit()
                 parked.overlayDriver = driver
+                // An acquire while the lock/login UI is up (display plugged
+                // in at the lock screen) starts blanked like its siblings.
+                driver.setHidden(overlaysShouldBeHidden())
                 // Feed the Location overlay with whatever this window's
                 // renderer is already playing (a REUSED renderer never
                 // fires onVideoChanged for the current video; a fresh
@@ -2657,6 +2688,7 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             // a fallback owned by a real running saver. (Update requests
             // carry no preview field — the stored acquire-time flag is
             // the source of truth.)
+            let fallbackBefore = sharedHandlerState.isNotificationScreensaverActive
             if oldMode != ctx.presentationMode {
                 if ctx.presentationMode == "idle", !wallpaper.isScreenSaver, !wallpaper.isPreview {
                     setNotificationScreensaver(true, reason: "update→idle wid=\(wid.prefix(8))")
@@ -2671,6 +2703,20 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
             // may not itself flip to `locked`, yet its overlays must
             // still vanish behind the login UI.
             if isLockTransition {
+                // "Show overlays on the lock screen": a locked window renders
+                // the SCREENSAVER layout, so a direct lock (default ↔ locked,
+                // no idle in between) swaps this window's layout here. Per
+                // wid, not fleet-wide — every window gets its own update on a
+                // lock. Skipped while the saver fallback holds the fleet on
+                // that layout already, and when it just flipped in this very
+                // update (setNotificationScreensaver rebuilt everything).
+                if OverlayConfigManager.shared.config.showOverlaysOnLockScreen,
+                   !sharedHandlerState.isNotificationScreensaverActive,
+                   fallbackBefore == sharedHandlerState.isNotificationScreensaverActive {
+                    let desktop = overlayUsesDesktopLayout(wallpaper)
+                    debugLog("🛡️ lock-screen overlays: wid=\(wid.prefix(8)) \(oldMode)→\(ctx.presentationMode) → \(desktop ? "wallpaper" : "screensaver") layout")
+                    rebuildOverlayDriver(wid: wid, wallpaper: wallpaper, isDesktop: desktop)
+                }
                 applyOverlayLoginHide()
             }
 

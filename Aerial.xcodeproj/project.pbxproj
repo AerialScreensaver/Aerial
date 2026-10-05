@@ -64,6 +64,8 @@
 		F0XCI0022F30000000000001 /* ExternalCacheImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0XCI0012F30000000000001 /* ExternalCacheImage.swift */; };
 		F0LEX0022F30000000000001 /* LegacyExternalCacheMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0012F30000000000001 /* LegacyExternalCacheMigration.swift */; };
 		F0LEX0222F30000000000001 /* LegacySaverPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0212F30000000000001 /* LegacySaverPrefs.swift */; };
+		F0LEX0422F30000000000001 /* LegacyContainerAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0412F30000000000001 /* LegacyContainerAccess.swift */; };
+		F0LEX0522F30000000000001 /* LegacyAccessAssistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0512F30000000000001 /* LegacyAccessAssistView.swift */; };
 		F0C061322E4F70580066F2C4 /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C0607C2E4F70580066F2C4 /* Cache.swift */; };
 		F0C061372E4F70580066F2C4 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060852E4F70580066F2C4 /* AsynchronousOperation.swift */; };
 		F0C0613A2E4F70580066F2C4 /* PrefsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C060A02E4F70580066F2C4 /* PrefsCache.swift */; };
@@ -247,6 +249,7 @@
 		F0AFD0182F30000000000001 /* FeedUpgradeTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0AFD0172F30000000000001 /* FeedUpgradeTriggerTests.swift */; };
 		F0LEX0122F30000000000001 /* CacheLocationKindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0112F30000000000001 /* CacheLocationKindTests.swift */; };
 		F0LEX0322F30000000000001 /* LegacySaverPrefsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0312F30000000000001 /* LegacySaverPrefsTests.swift */; };
+		F0LEX0622F30000000000001 /* LegacyContainerAccessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LEX0612F30000000000001 /* LegacyContainerAccessTests.swift */; };
 		F0OBT0022F30000000000001 /* ObjCExceptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0OBT0012F30000000000001 /* ObjCExceptionTests.swift */; };
 		F0PRT0112F30000000000001 /* PropertyTesting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PRT0012F30000000000001 /* PropertyTesting.swift */; };
 		F0PRT0122F30000000000001 /* SpannedGeometryPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PRT0022F30000000000001 /* SpannedGeometryPropertyTests.swift */; };
@@ -485,6 +488,8 @@
 		F0XCI0012F30000000000001 /* ExternalCacheImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalCacheImage.swift; sourceTree = "<group>"; };
 		F0LEX0012F30000000000001 /* LegacyExternalCacheMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyExternalCacheMigration.swift; sourceTree = "<group>"; };
 		F0LEX0212F30000000000001 /* LegacySaverPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacySaverPrefs.swift; sourceTree = "<group>"; };
+		F0LEX0412F30000000000001 /* LegacyContainerAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyContainerAccess.swift; sourceTree = "<group>"; };
+		F0LEX0512F30000000000001 /* LegacyAccessAssistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAccessAssistView.swift; sourceTree = "<group>"; };
 		F0C060802E4F70580066F2C4 /* VideoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCache.swift; sourceTree = "<group>"; };
 		F0C060812E4F70580066F2C4 /* VideoDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDownload.swift; sourceTree = "<group>"; };
 		F0C060832E4F70580066F2C4 /* VideoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoManager.swift; sourceTree = "<group>"; };
@@ -676,6 +681,7 @@
 		F0AFD0172F30000000000001 /* FeedUpgradeTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedUpgradeTriggerTests.swift; sourceTree = "<group>"; };
 		F0LEX0112F30000000000001 /* CacheLocationKindTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheLocationKindTests.swift; sourceTree = "<group>"; };
 		F0LEX0312F30000000000001 /* LegacySaverPrefsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacySaverPrefsTests.swift; sourceTree = "<group>"; };
+		F0LEX0612F30000000000001 /* LegacyContainerAccessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyContainerAccessTests.swift; sourceTree = "<group>"; };
 		F0OBT0012F30000000000001 /* ObjCExceptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjCExceptionTests.swift; sourceTree = "<group>"; };
 		F0PRT0012F30000000000001 /* PropertyTesting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyTesting.swift; sourceTree = "<group>"; };
 		F0PRT0022F30000000000001 /* SpannedGeometryPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpannedGeometryPropertyTests.swift; sourceTree = "<group>"; };
@@ -897,6 +903,7 @@
 			children = (
 				F0C0608B2E4F70580066F2C4 /* AVPlayerViewExtension.swift */,
 				03592AB724CC80FD00C1AE52 /* Helpers.swift */,
+				F0LEX0412F30000000000001 /* LegacyContainerAccess.swift */,
 				F0LEX0212F30000000000001 /* LegacySaverPrefs.swift */,
 				73309F312685AFEA00B8FAB0 /* NSScreen+Id.swift */,
 				F0D637582EA023AD00366EAB /* PathMigration.swift */,
@@ -1069,6 +1076,7 @@
 				F0FLW00022F30000000000001 /* FirstLaunchWelcomeStep.swift */,
 				F0FL00062F30000000000001 /* FirstLaunchWizardView.swift */,
 				F0FL00072F30000000000001 /* FirstLaunchWizardWindowController.swift */,
+				F0LEX0512F30000000000001 /* LegacyAccessAssistView.swift */,
 				F0D637562EA0239900366EAB /* PathMigrationView.swift */,
 			);
 			path = FirstLaunch;
@@ -1512,6 +1520,7 @@
 				F0AFD0152F30000000000001 /* AppleSourceMigrationTests.swift */,
 				F0AFD0172F30000000000001 /* FeedUpgradeTriggerTests.swift */,
 				F0LEX0112F30000000000001 /* CacheLocationKindTests.swift */,
+				F0LEX0612F30000000000001 /* LegacyContainerAccessTests.swift */,
 				F0LEX0312F30000000000001 /* LegacySaverPrefsTests.swift */,
 				F0OBT0012F30000000000001 /* ObjCExceptionTests.swift */,
 				F0TST00B2F30000000000001 /* OverlayConfigResolutionTests.swift */,
@@ -1814,6 +1823,7 @@
 				F0C061462E4F70580066F2C4 /* DownloadManager.swift in Sources */,
 				F0D637592EA023AD00366EAB /* PathMigration.swift in Sources */,
 				F0LEX0222F30000000000001 /* LegacySaverPrefs.swift in Sources */,
+				F0LEX0422F30000000000001 /* LegacyContainerAccess.swift in Sources */,
 				F0C0614D2E4F70580066F2C4 /* PrefsDisplays.swift in Sources */,
 				F0C061512E4F70580066F2C4 /* Thumbnails.swift in Sources */,
 				F0C061542E4F70580066F2C4 /* Forecast.swift in Sources */,
@@ -1941,6 +1951,7 @@
 				F0FLW00012F30000000000001 /* FirstLaunchWelcomeStep.swift in Sources */,
 				F0FLM00012F30000000000001 /* FirstLaunchMigrationStep.swift in Sources */,
 				F0FLP00012F30000000000001 /* FirstLaunchModePrompt.swift in Sources */,
+				F0LEX0522F30000000000001 /* LegacyAccessAssistView.swift in Sources */,
 				F0PRS0062F30000000000001 /* FirstLaunchPresentationStep.swift in Sources */,
 				F0CH00012F30000000000001 /* ContentHeader.swift in Sources */,
 				F0GS00012F30000000000001 /* GlobalSearchSourceCard.swift in Sources */,
@@ -1986,6 +1997,7 @@
 				F0AFD0182F30000000000001 /* FeedUpgradeTriggerTests.swift in Sources */,
 				F0LEX0122F30000000000001 /* CacheLocationKindTests.swift in Sources */,
 				F0LEX0322F30000000000001 /* LegacySaverPrefsTests.swift in Sources */,
+				F0LEX0622F30000000000001 /* LegacyContainerAccessTests.swift in Sources */,
 				F0OBT0022F30000000000001 /* ObjCExceptionTests.swift in Sources */,
 				F0PRT0112F30000000000001 /* PropertyTesting.swift in Sources */,
 				F0PRT0122F30000000000001 /* SpannedGeometryPropertyTests.swift in Sources */,

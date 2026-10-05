@@ -156,3 +156,69 @@ struct OverlayConfigResolutionTests {
         #expect(layout.allInstances.isEmpty)
     }
 }
+
+// MARK: - Lock-screen rule
+
+/// `OverlayLockScreenRule` — the lock screen (`locked` presentationMode)
+/// and the password prompt (login shield) used to be one "login is up"
+/// verdict; "show overlays on the lock screen" splits them. The default-off
+/// rows must reproduce the historical `hideDuringLogin && (locked || shield)`.
+@Suite("Overlay lock-screen rule")
+struct OverlayLockScreenRuleTests {
+    private func hidden(locked: Bool, shield: Bool, hide: Bool = true, lockScreen: Bool = false) -> Bool {
+        OverlayLockScreenRule.hidden(anyLocked: locked, shieldVisible: shield,
+                                     hideDuringLogin: hide, showOnLockScreen: lockScreen)
+    }
+
+    @Test("default options: lock and prompt both blank (historical behaviour)")
+    func defaults() {
+        #expect(hidden(locked: true, shield: false) == true)
+        #expect(hidden(locked: false, shield: true) == true)
+        #expect(hidden(locked: true, shield: true) == true)
+        #expect(hidden(locked: false, shield: false) == false)
+    }
+
+    @Test("lock-screen overlays on: the locked state alone no longer blanks")
+    func lockScreenOptIn() {
+        #expect(hidden(locked: true, shield: false, lockScreen: true) == false)
+        #expect(hidden(locked: false, shield: false, lockScreen: true) == false)
+    }
+
+    @Test("lock-screen overlays on: the password prompt still blanks")
+    func promptStillHides() {
+        #expect(hidden(locked: false, shield: true, lockScreen: true) == true)
+        #expect(hidden(locked: true, shield: true, lockScreen: true) == true)
+    }
+
+    @Test("hide-during-login off is the master switch: nothing ever blanks")
+    func masterSwitchOff() {
+        #expect(hidden(locked: true, shield: true, hide: false) == false)
+        #expect(hidden(locked: true, shield: true, hide: false, lockScreen: true) == false)
+        #expect(hidden(locked: true, shield: false, hide: false) == false)
+    }
+
+    private func desktop(saver: Bool = false, fallback: Bool = false, mode: String, lockScreen: Bool = false) -> Bool {
+        OverlayLockScreenRule.usesDesktopLayout(isScreenSaver: saver, saverFallbackActive: fallback,
+                                                presentationMode: mode, showOnLockScreen: lockScreen)
+    }
+
+    @Test("layout: saver windows and the saver fallback use the screensaver layout")
+    func saverLayout() {
+        #expect(desktop(saver: true, mode: "idle") == false)
+        #expect(desktop(saver: true, mode: "locked") == false)
+        #expect(desktop(fallback: true, mode: "idle") == false)
+        #expect(desktop(fallback: true, mode: "locked") == false)
+    }
+
+    @Test("layout: a locked wallpaper window takes the screensaver layout only when opted in")
+    func lockedLayout() {
+        #expect(desktop(mode: "locked", lockScreen: true) == false)
+        #expect(desktop(mode: "locked", lockScreen: false) == true)
+    }
+
+    @Test("layout: the desktop stays on the wallpaper layout")
+    func desktopLayout() {
+        #expect(desktop(mode: "default") == true)
+        #expect(desktop(mode: "default", lockScreen: true) == true)
+    }
+}

@@ -22,6 +22,11 @@ enum MigrationType {
     case startFresh            // Don't migrate, start with empty unified path
     case startFreshAndReclaim  // Don't migrate, AND delete the legacy container to reclaim disk space
     case keepCustom            // Keep using custom cache location
+    /// Plan B when macOS refuses the container: the user dragged the 3.x
+    /// folder's contents into a folder Aerial can read (see
+    /// `LegacyContainerAccess.stagingPath`); same layout logic as
+    /// `.moveData`, alternate source.
+    case moveStaged(source: String)
 }
 
 struct PathMigration {
@@ -53,9 +58,11 @@ struct PathMigration {
     /// False when 3.x data exists but this process may not read it. On
     /// macOS 26 and later the legacy screen saver engine is an appex with
     /// no app record, so tccd cannot show the "access data from other
-    /// apps" prompt for its container: only Full Disk Access opens it, and
-    /// without it every read is refused silently. Existence checks
-    /// (metadata) still work, which is how the data is found at all.
+    /// apps" prompt for its container: a user-intent grant through the Open
+    /// panel (`LegacyContainerAccess.requestAccess`) or Full Disk Access
+    /// opens it, and without either every read is refused silently.
+    /// Existence checks (metadata) still work, which is how the data is
+    /// found at all.
     nonisolated(unsafe) private(set) static var legacyDataReadable = true
     /// The 3.x saver prefs, when they could be read.
     nonisolated(unsafe) private(set) static var legacyPrefs: LegacySaverPrefs.Loaded?
@@ -77,7 +84,7 @@ struct PathMigration {
                 _ = try fm.contentsOfDirectory(atPath: containerPath)
             } catch {
                 readable = false
-                errorLog("🚚 Migration: cannot read the legacy container \(containerPath): \(error.localizedDescription) — Full Disk Access needed")
+                errorLog("🚚 Migration: cannot read the legacy container \(containerPath): \(error.localizedDescription) — needs a user grant or Full Disk Access")
             }
         }
         probeLegacyPrefs()
@@ -159,9 +166,12 @@ struct PathMigration {
         completion: @escaping (MigrationResult) -> Void
     ) {
         // A finished migration of any kind settles the question: no
-        // re-offer from the upgrade prompt.
+        // re-offer from the upgrade prompt. Only when the flag is set: a
+        // setter makes the settings manager write its cached settings over
+        // companion.json, and in the wizard that cache holds defaults while
+        // the file just received the migrated settings.
         let settle: (MigrationResult) -> Void = { result in
-            if case .success = result {
+            if case .success = result, Preferences.legacyMigrationPending {
                 Preferences.legacyMigrationPending = false
             }
             completion(result)
@@ -180,6 +190,8 @@ struct PathMigration {
                 markAsFreshAndReclaim(progressCallback: progressCallback, completion: settle)
             case .keepCustom:
                 markAsCustom(completion: settle)
+            case .moveStaged(let source):
+                migrateStagedData(from: source, progressCallback: progressCallback, completion: settle)
             }
         }
     }
@@ -194,9 +206,13 @@ struct PathMigration {
     }
 
     /// Move the container's Cache/, Thumbnails/ and source folders into the
-    /// unified layout. Replaces whatever the target already holds.
-    private static func moveContainerContents(from containerPath: String, to targetPath: String,
-                                              log: inout [String], progress: (String) -> Void) throws {
+    /// unified layout. Replaces whatever the target already holds. Folders
+    /// in `skipping` are left where they are (a `Preferences` folder dragged
+    /// into the staging folder is not a source). Internal so the tests can
+    /// drive it on temporary folders.
+    static func moveContainerContents(from containerPath: String, to targetPath: String,
+                                      skipping: Set<String> = [],
+                                      log: inout [String], progress: (String) -> Void) throws {
         let fileManager = FileManager.default
 
         // MOVE Cache/ directory
@@ -242,7 +258,8 @@ struct PathMigration {
 
             if fileManager.fileExists(atPath: itemPath, isDirectory: &isDirectory),
                isDirectory.boolValue,
-               !["Cache", "Thumbnails"].contains(item) {
+               !["Cache", "Thumbnails"].contains(item),
+               !skipping.contains(item) {
 
                 debugLog("🚚 Migration: Moving source \(item)")
                 progress("Moving source: \(item)...")
@@ -395,6 +412,96 @@ struct PathMigration {
             Some files may have been moved. Please check the log for details.
             """
 
+            completion(.failure(error: errorMessage, log: logContent))
+        }
+    }
+
+    /// Plan B: the 3.x folder's contents as the user dragged them into the
+    /// staging folder (see `LegacyContainerAccess`). Same layout as the
+    /// container move. A dropped prefs plist imports the custom cache
+    /// location it points at and is parked under Logs/ — a user's file is
+    /// never deleted. The staging folder goes away once nothing meaningful
+    /// is left in it. Completion on the background queue, like
+    /// `migrateContainerData`.
+    private static func migrateStagedData(
+        from stagingPath: String,
+        progressCallback: @escaping (String) -> Void,
+        completion: @escaping (MigrationResult) -> Void
+    ) {
+        let fileManager = FileManager.default
+        let targetPath = "/Users/Shared/Aerial"
+        let source = LegacyContainerAccess.stagedSourceRoot(in: stagingPath)
+        var migrationLog: [String] = []
+
+        debugLog("🚚 Migration: staged move from \(source)")
+        migrationLog.append("Migration started: \(Date())")
+        migrationLog.append("source: \(source)")
+
+        do {
+            progressCallback("Creating directory structure...")
+            try ensureUnifiedLayout(targetPath: targetPath, log: &migrationLog)
+
+            if case .found(let loaded) = LegacySaverPrefs.load(candidates: LegacyContainerAccess.stagedPrefsCandidates(for: stagingPath)) {
+                progressCallback("Importing Aerial 3 settings...")
+                if let folder = loaded.prefs.importableCacheFolder() {
+                    importLegacyCustomCache(folder: folder)
+                    migrationLog.append("✓ Imported 3.x custom cache location \(folder)")
+                }
+                let parked = targetPath + "/Logs/legacy-com.glouel.Aerial.plist"
+                if fileManager.fileExists(atPath: parked) {
+                    try fileManager.removeItem(atPath: parked)
+                }
+                try fileManager.moveItem(atPath: loaded.path, toPath: parked)
+                migrationLog.append("✓ Imported 3.x saver prefs (kept at Logs/legacy-com.glouel.Aerial.plist)")
+                debugLog("🚚 Migration: Imported 3.x saver prefs from \(loaded.path)")
+                // The Preferences folder it came in, once it holds nothing else.
+                let prefsFolder = stagingPath + "/Preferences"
+                if (loaded.path as NSString).deletingLastPathComponent == prefsFolder {
+                    let rest = (try? fileManager.contentsOfDirectory(atPath: prefsFolder)) ?? []
+                    if LegacyContainerAccess.stagingLeftovers(entries: rest).isEmpty {
+                        try? fileManager.removeItem(atPath: prefsFolder)
+                    }
+                }
+            }
+
+            try moveContainerContents(from: source, to: targetPath, skipping: ["Preferences"],
+                                      log: &migrationLog, progress: progressCallback)
+
+            progressCallback("Migrating Aerial settings...")
+            migrateCompanionSettings(targetPath: targetPath, migrationLog: &migrationLog, shouldMigrate: true)
+
+            // The nested Aerial/ folder first, then the staging folder.
+            if source != stagingPath {
+                LegacyContainerAccess.removeStagingIfEmpty(path: source)
+            }
+            let stagingRemoved = LegacyContainerAccess.removeStagingIfEmpty(path: stagingPath)
+            migrationLog.append(stagingRemoved ? "✓ Removed the staging folder" : "- Staging folder left in place (not empty)")
+
+            let logContent = migrationLog.joined(separator: "\n")
+            try logContent.write(toFile: targetPath + "/Logs/migration.log", atomically: true, encoding: .utf8)
+            debugLog("🚚 Migration: staged move complete, staging removed=\(stagingRemoved)")
+
+            let moved = migrationLog.filter { $0.hasPrefix("✓ Moved") }.count
+            var summary = "Moved \(moved) item\(moved == 1 ? "" : "s") from Aerial-migrate to /Users/Shared/Aerial."
+            summary += stagingRemoved
+                ? " The staging folder was removed."
+                : " Some files are still in \(stagingPath) — check them, then delete the folder."
+            completion(.success(summary: summary))
+        } catch {
+            errorLog("🚚 Migration: Failed - \(error.localizedDescription)")
+            migrationLog.append("✗ Migration failed: \(error.localizedDescription)")
+            let logPath = targetPath + "/Logs/migration-error.log"
+            let logContent = migrationLog.joined(separator: "\n")
+            try? logContent.write(toFile: logPath, atomically: true, encoding: .utf8)
+            let errorMessage = """
+            Migration failed with error:
+            \(error.localizedDescription)
+
+            Error log saved to:
+            \(logPath)
+
+            Some files may have been moved. Please check the log for details.
+            """
             completion(.failure(error: errorMessage, log: logContent))
         }
     }
