@@ -149,8 +149,18 @@ final class ExternalCacheImage {
         timer.resume()
     }
 
+    /// Set while Settings switches images (detach old → create → attach new → adopt).
+    /// A reconcile tick in that window would re-attach the OLD image and `adopt` would
+    /// then record the new path against the wrong mount. Read and written on `queue`.
+    private var switchingImages = false
+
+    /// Settings panel: bracket an image switch so the self-heal timer stands down.
+    func beginImageSwitch() { queue.sync { switchingImages = true } }
+    func endImageSwitch() { queue.sync { switchingImages = false } }
+
     /// On `queue`. Attach if we should be attached and are not.
     private func reconcile(reason: String) {
+        guard !switchingImages else { return }
         guard Cache.isExternalImageMode, let image = imagePath else { return }
         guard !SystemSleepState.shared.isAsleep else { return }
         guard Self.backingVolumeMounted(image: image), !Self.isAttached() else { return }
@@ -165,9 +175,10 @@ final class ExternalCacheImage {
     }
 
     /// Settings panel, step 1 (background): attach `image` without touching
-    /// prefs. Returns the device entry for `adopt`.
+    /// prefs. Returns the device entry for `adopt`. Runs on `queue` so it can
+    /// never interleave with a reconcile attach of the previous image.
     func attachCandidate(image: String) throws -> String {
-        try attach(image: image)
+        try queue.sync { try attach(image: image) }
     }
 
     /// Settings panel, step 2 (main thread): make the already-attached
@@ -689,14 +700,26 @@ final class ExternalCacheImage {
         DispatchQueue.global(qos: .utility).async(group: readers) {
             errData = err.fileHandleForReading.readDataToEndOfFile()
         }
+        var timedOut = false
         if done.wait(timeout: .now() + timeout) == .timedOut {
+            timedOut = true
             errorLog("💽 hdiutil \(args.first ?? "") timed out after \(Int(timeout)) s — terminating")
             proc.terminate()
-            _ = done.wait(timeout: .now() + 5)
+            if done.wait(timeout: .now() + 5) == .timedOut, proc.isRunning {
+                // hdiutil stuck in uninterruptible I/O (dead share, yanked drive) ignores
+                // SIGTERM; never let it wedge our queue or the main thread forever.
+                errorLog("💽 hdiutil ignored SIGTERM — killing")
+                kill(proc.processIdentifier, SIGKILL)
+                _ = done.wait(timeout: .now() + 5)
+            }
         }
-        readers.wait()
+        // The pipes only reach EOF once hdiutil is gone; bound that wait as well.
+        if readers.wait(timeout: .now() + 5) == .timedOut {
+            errorLog("💽 hdiutil output pipes did not close; continuing with partial output")
+        }
         let stderr = Self.cleanStderr(String(data: errData, encoding: .utf8) ?? "")
-        return Result(status: proc.terminationStatus, stdout: outData, stderr: stderr)
+        let status: Int32 = proc.isRunning ? -1 : proc.terminationStatus
+        return Result(status: timedOut && status == 0 ? -1 : status, stdout: outData, stderr: stderr)
     }
 
     private static func cleanStderr(_ text: String) -> String {

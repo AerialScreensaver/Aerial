@@ -186,6 +186,20 @@ struct WallpaperControlState: Codable, Equatable {
     /// the historical behaviour until the new one writes the field.
     var desktopWallpaperActive: Bool = true
 
+    /// "Menu bar background" style, as a raw string (see
+    /// `MenuBarBackgroundStyle`); unknown values read as `.off`.
+    /// Wallpaper only, applied live without a reconfigure.
+    var menuBarBackground: String = MenuBarBackgroundStyle.off.rawValue
+
+    /// Per-screen menu bar geometry (height incl. notch) relayed by
+    /// Companion alongside `dockInsets`, keyed by screen UUID. A screen
+    /// without a permanent menu bar has height 0.
+    var menuBarGeometry: [String: MenuBarGeometry] = [:]
+
+    var menuBarBackgroundValue: MenuBarBackgroundStyle {
+        MenuBarBackgroundStyle(rawValue: menuBarBackground) ?? .off
+    }
+
     static let fileURL: URL = URL(
         fileURLWithPath: "/Users/Shared/Aerial/wallpaper-control.json"
     )
@@ -235,6 +249,9 @@ extension WallpaperControlState {
         audioEnabled = try c.decodeIfPresent(Bool.self, forKey: .audioEnabled) ?? false
         audioVolume = try c.decodeIfPresent(Double.self, forKey: .audioVolume) ?? 0.5
         desktopWallpaperActive = try c.decodeIfPresent(Bool.self, forKey: .desktopWallpaperActive) ?? true
+        menuBarBackground = try c.decodeIfPresent(String.self, forKey: .menuBarBackground)
+            ?? MenuBarBackgroundStyle.off.rawValue
+        menuBarGeometry = try c.decodeIfPresent([String: MenuBarGeometry].self, forKey: .menuBarGeometry) ?? [:]
     }
 }
 

@@ -16,6 +16,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Dock menu and window presentation all live there.
     private var presentation: AppPresentationController { AppPresentationController.shared }
 
+    /// The first-launch wizard ran this session. Its store writes are still
+    /// in flight when `continueStartup()` runs, so launch-time store repairs
+    /// wait for the next launch.
+    private var ranFirstLaunchWizard = false
+
     // Sparkle
     let sparkleGentleDelegate = SparkleGentleDelegate()
     var sparkleController : SPUStandardUpdaterController
@@ -76,6 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // The wizard itself probes only after the user clicks "Go ahead".
         if FirstLaunch.shouldShowWizard {
             debugLog("First launch / migration wizard needed")
+            ranFirstLaunchWizard = true
             runFirstLaunchWizard { [weak self] in
                 guard let self else { return }
                 self.continueStartup()
@@ -192,6 +198,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // persisted playlists. Before VideoList and PlaylistManager
         // exist — they'd otherwise read the stale names first.
         AppleSourceMigration.applyIfNeeded()
+        repairLegacyWallpaperStoreIfNeeded()
 
         // One-time cleanup of obsolete `{id}-large.jpg` thumbnails
         // (pre-single-file refactor). Idempotent — once the directory
@@ -244,9 +251,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // extension can't produce these — Companion runs them and
         // relays the text via message-content.json.
         MessageContentProvider.shared.startIfNeeded()
-
-        // Prune macOS's own wallpaper-agent image-frame cache (macOS 26+).
-        WallpaperCacheCleaner.shared.bootstrap()
 
         // Instantiate the wallpaper-extension control channel now so its
         // overlay-config observer is registered from launch (overlay
@@ -554,6 +558,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.set(true, forKey: key)
     }
 
+    /// One-time repair of the wallpaper store's mis-nested background colour
+    /// written by Aerial 4.0.x (PaperSaverKit ≤0.3.1); see
+    /// `WallpaperControl.repairLegacyStoreOptionValues()`. Marked done on the
+    /// first attempt whatever its result, so a failing repair never restarts
+    /// WallpaperAgent at every launch. Deferred to the next launch when the
+    /// first-launch wizard ran: its fire-and-forget store write and agent
+    /// restart may still be in flight.
+    private func repairLegacyWallpaperStoreIfNeeded() {
+        let key = "paperSaverLegacyColorRepairApplied"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        guard !ranFirstLaunchWizard else {
+            debugLog("🖼 legacy store repair deferred to next launch (first-launch wizard ran)")
+            return
+        }
+        UserDefaults.standard.set(true, forKey: key)
+        WallpaperControl.repairLegacyStoreOptionValues()
+    }
+
     func applicationWillTerminate(_ aNotification: Notification) {
         presentation.persistWindowState()
 
@@ -565,6 +587,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // don't leak subprocesses. Swift's Process doesn't propagate
         // termination automatically.
         LiveFeedTransmuxerManager.shared.stopAll()
+        // Same for the Automatic now-playing source's perl child.
+        NowPlayingCoordinator.shared.stopAll()
     }
     
 }

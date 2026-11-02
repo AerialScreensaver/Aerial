@@ -272,6 +272,12 @@ struct DisplaysRecapCard: View {
     /// desktop wallpaper always uses every display.
     private var stateText: String {
         let total = NSScreen.screens.count
+        // "Override if only one display remains" → Don't play: the lone
+        // display stays black at the next saver start.
+        if total <= 1, PrefsDisplays.displayMode != .allDisplays,
+           PrefsDisplays.effectiveSingleDisplayOverride == .dontPlay {
+            return "Saver: off (single display)"
+        }
         switch PrefsDisplays.displayMode {
         case .allDisplays:   return total <= 1 ? "Saver: all screens" : "Saver: all \(total) screens"
         case .mainOnly:      return "Saver: main only"

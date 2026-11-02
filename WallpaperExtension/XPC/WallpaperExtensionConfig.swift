@@ -104,8 +104,7 @@ struct WallpaperExtensionConfig: AppExtensionConfiguration {
         connection.exportedObject = handler
 
         connection.interruptionHandler = { debugLog("XPC interrupted") }
-        connection.invalidationHandler = { [weak handler] in
-            handler?.agentProxy = nil
+        connection.invalidationHandler = {
             debugLog("XPC invalidated")
             // The agent dropped us (its 5-min idle disconnect); RunningBoard
             // suspends ~100 ms later and kills a process holding Metal's
@@ -120,8 +119,6 @@ struct WallpaperExtensionConfig: AppExtensionConfiguration {
         }
 
         connection.resume()
-
-        handler.agentProxy = connection.remoteObjectProxy as? (any WallpaperExtensionProxyXPCProtocol)
 
         debugLog("XPC accepted")
         return true

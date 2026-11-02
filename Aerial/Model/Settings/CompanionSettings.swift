@@ -63,20 +63,6 @@ struct CompanionSettings: Codable {
     /// to the CGWindowList owner name for processes without one.
     var desktopAutoPauseIgnoredApps: [String]
 
-    /// Sub-option of wallpaper continuity. When on (default), Aerial
-    /// prunes macOS's wallpaper-agent cache to keep it under 2 GB —
-    /// macOS 26 doesn't clean this cache automatically and it can
-    /// balloon to many GB when continuity is on. Requires user
-    /// approval (security-scoped folder access) before the cleaner
-    /// can actually delete anything.
-    var cleanWallpaperCache: Bool
-
-    /// Security-scoped bookmark to the wallpaper-agent container
-    /// folder, granting the cleaner read/delete access. Base64-encoded
-    /// in JSON. `nil` until the user approves the NSOpenPanel; cleared
-    /// if the bookmark goes stale at resolve time.
-    var wallpaperCacheBookmark: Data?
-
     /// Optional, opt-in: when on, delete macOS's own downloaded wallpaper
     /// aerial videos (~/Library/Application Support/com.apple.wallpaper/
     /// aerials/videos) at launch to reclaim disk space. Default off.
@@ -163,6 +149,12 @@ struct CompanionSettings: Codable {
     /// coordinator restarts itself when this changes.
     var enabledNowPlayingSources: [String]
 
+    /// Music overlay source: "automatic" (the system now-playing session
+    /// through the vendored mediaremote-adapter, any player) or "players"
+    /// (the per-player providers filtered by `enabledNowPlayingSources`).
+    /// nil = not chosen yet; `Preferences.nowPlayingMode` resolves it.
+    var nowPlayingMode: String?
+
     // MARK: - Battery-aware pause
 
     /// Auto-pause desktop wallpaper and fullscreen-window playback when
@@ -217,8 +209,6 @@ struct CompanionSettings: Codable {
         desktopAutoPause: true,
         desktopAutoPauseThreshold: 0.6,
         desktopAutoPauseIgnoredApps: [],
-        cleanWallpaperCache: true,
-        wallpaperCacheBookmark: nil,
         reclaimMacOSWallpaperVideosAtStartup: false,
         popoverSolidBackground: false,
         invertColors: false,
@@ -226,6 +216,7 @@ struct CompanionSettings: Codable {
         dismissedNewBadges: [],
         firstLaunchCompleted: nil,
         enabledNowPlayingSources: [],
+        nowPlayingMode: nil,
         desktopPauseOnBattery: false,
         desktopPauseOnBatteryMode: "anyBattery",
         intWallpaperMode: nil,
@@ -272,8 +263,6 @@ struct CompanionSettings: Codable {
          desktopAutoPause: Bool = true,
          desktopAutoPauseThreshold: Double = 0.6,
          desktopAutoPauseIgnoredApps: [String] = [],
-         cleanWallpaperCache: Bool = true,
-         wallpaperCacheBookmark: Data? = nil,
          reclaimMacOSWallpaperVideosAtStartup: Bool = false,
          popoverSolidBackground: Bool = false,
          invertColors: Bool = false,
@@ -281,6 +270,7 @@ struct CompanionSettings: Codable {
          dismissedNewBadges: [String] = [],
          firstLaunchCompleted: Bool? = nil,
          enabledNowPlayingSources: [String] = [],
+         nowPlayingMode: String? = nil,
          desktopPauseOnBattery: Bool = false,
          desktopPauseOnBatteryMode: String = "anyBattery",
          desktopPauseOnThermal: Bool = true,
@@ -308,8 +298,6 @@ struct CompanionSettings: Codable {
         self.desktopAutoPause = desktopAutoPause
         self.desktopAutoPauseThreshold = desktopAutoPauseThreshold
         self.desktopAutoPauseIgnoredApps = desktopAutoPauseIgnoredApps
-        self.cleanWallpaperCache = cleanWallpaperCache
-        self.wallpaperCacheBookmark = wallpaperCacheBookmark
         self.reclaimMacOSWallpaperVideosAtStartup = reclaimMacOSWallpaperVideosAtStartup
         self.popoverSolidBackground = popoverSolidBackground
         self.invertColors = invertColors
@@ -317,6 +305,7 @@ struct CompanionSettings: Codable {
         self.dismissedNewBadges = dismissedNewBadges
         self.firstLaunchCompleted = firstLaunchCompleted
         self.enabledNowPlayingSources = enabledNowPlayingSources
+        self.nowPlayingMode = nowPlayingMode
         self.desktopPauseOnBattery = desktopPauseOnBattery
         self.desktopPauseOnBatteryMode = desktopPauseOnBatteryMode
         self.desktopPauseOnThermal = desktopPauseOnThermal
@@ -352,8 +341,6 @@ struct CompanionSettings: Codable {
         desktopAutoPause = try container.decodeIfPresent(Bool.self, forKey: .desktopAutoPause) ?? true
         desktopAutoPauseThreshold = try container.decodeIfPresent(Double.self, forKey: .desktopAutoPauseThreshold) ?? 0.6
         desktopAutoPauseIgnoredApps = try container.decodeIfPresent([String].self, forKey: .desktopAutoPauseIgnoredApps) ?? []
-        cleanWallpaperCache = try container.decodeIfPresent(Bool.self, forKey: .cleanWallpaperCache) ?? true
-        wallpaperCacheBookmark = try container.decodeIfPresent(Data.self, forKey: .wallpaperCacheBookmark)
         reclaimMacOSWallpaperVideosAtStartup = try container.decodeIfPresent(Bool.self, forKey: .reclaimMacOSWallpaperVideosAtStartup) ?? false
         popoverSolidBackground = try container.decodeIfPresent(Bool.self, forKey: .popoverSolidBackground) ?? false
         invertColors = try container.decodeIfPresent(Bool.self, forKey: .invertColors) ?? false
@@ -361,6 +348,7 @@ struct CompanionSettings: Codable {
         dismissedNewBadges = try container.decodeIfPresent([String].self, forKey: .dismissedNewBadges) ?? []
         firstLaunchCompleted = try container.decodeIfPresent(Bool.self, forKey: .firstLaunchCompleted)
         enabledNowPlayingSources = try container.decodeIfPresent([String].self, forKey: .enabledNowPlayingSources) ?? []
+        nowPlayingMode = try container.decodeIfPresent(String.self, forKey: .nowPlayingMode)
         desktopPauseOnBattery = try container.decodeIfPresent(Bool.self, forKey: .desktopPauseOnBattery) ?? false
         desktopPauseOnBatteryMode = try container.decodeIfPresent(String.self, forKey: .desktopPauseOnBatteryMode) ?? "anyBattery"
         desktopPauseOnThermal = try container.decodeIfPresent(Bool.self, forKey: .desktopPauseOnThermal) ?? true

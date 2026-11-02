@@ -116,6 +116,7 @@ final class WallpaperControl: @unchecked Sendable {
     /// own launch-time measurement only when nothing was ever published.
     private func publishDockInsets() {
         var insets: [String: [Double]] = [:]
+        var menuBars: [String: MenuBarGeometry] = [:]
         var layout: [String] = []
         for screen in NSScreen.screens {
             guard let did = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID,
@@ -123,6 +124,7 @@ final class WallpaperControl: @unchecked Sendable {
             let uuid = CFUUIDCreateString(nil, cfUUID) as String
             let e = DockInfo.detect(for: screen).swiftUIInsets
             insets[uuid] = [Double(e.top), Double(e.leading), Double(e.bottom), Double(e.trailing)]
+            menuBars[uuid] = MenuBarGeometry.detect(for: screen)
             let f = screen.frame
             layout.append("\(did):\(Int(f.minX)),\(Int(f.minY)),\(Int(f.width)),\(Int(f.height))@\(screen.backingScaleFactor)")
         }
@@ -137,6 +139,10 @@ final class WallpaperControl: @unchecked Sendable {
             var changed = false
             if state.dockInsets != insets {
                 state.dockInsets = insets
+                changed = true
+            }
+            if state.menuBarGeometry != menuBars {
+                state.menuBarGeometry = menuBars
                 changed = true
             }
             if layoutChanged {
@@ -196,6 +202,12 @@ final class WallpaperControl: @unchecked Sendable {
     /// Current natural-boundary transition duration in seconds.
     var currentTransitionDuration: Double {
         controlQueue.sync { state.transitionDuration }
+    }
+
+    /// Current "Menu bar background" style. Settings UI reads this to
+    /// seed its picker on appear.
+    var currentMenuBarBackground: MenuBarBackgroundStyle {
+        controlQueue.sync { state.menuBarBackgroundValue }
     }
 
     /// Current "play audio from videos" flag. Settings UI reads this
@@ -259,6 +271,16 @@ final class WallpaperControl: @unchecked Sendable {
                 || duration != state.transitionDuration else { return false }
             state.transitionStyle = style.rawValue
             state.transitionDuration = duration
+            return true
+        }
+    }
+
+    /// Set the "Menu bar background" style. Applied live by the
+    /// extension to desktop windows only.
+    func setMenuBarBackground(_ style: MenuBarBackgroundStyle) {
+        mutate("setMenuBarBackground(\(style.rawValue))") { state in
+            guard style.rawValue != state.menuBarBackground else { return false }
+            state.menuBarBackground = style.rawValue
             return true
         }
     }
@@ -397,8 +419,15 @@ final class WallpaperControl: @unchecked Sendable {
                 screen.advanceCounter &+= 1
                 state.screens[uuid] = screen
             } else {
-                for key in state.screens.keys {
-                    state.screens[key]?.advanceCounter &+= 1
+                // Union in connected screens like jumpToVideo/playlistDidChange: a
+                // display connected after the last content change has no entry
+                // yet, and an empty map would make a broadcast advance do nothing.
+                var keys = Set(state.screens.keys)
+                keys.formUnion(Self.connectedScreenUUIDs())
+                for key in keys {
+                    var screen = state.screens[key, default: WallpaperScreenControl()]
+                    screen.advanceCounter &+= 1
+                    state.screens[key] = screen
                 }
             }
             return true
@@ -414,8 +443,12 @@ final class WallpaperControl: @unchecked Sendable {
                 screen.regressCounter &+= 1
                 state.screens[uuid] = screen
             } else {
-                for key in state.screens.keys {
-                    state.screens[key]?.regressCounter &+= 1
+                var keys = Set(state.screens.keys)
+                keys.formUnion(Self.connectedScreenUUIDs())
+                for key in keys {
+                    var screen = state.screens[key, default: WallpaperScreenControl()]
+                    screen.regressCounter &+= 1
+                    state.screens[key] = screen
                 }
             }
             return true
@@ -597,6 +630,15 @@ final class WallpaperControl: @unchecked Sendable {
     // (`PaperSaver.setWallpaperExtension`). This is distinct from
     // `WallpaperStatusMonitor`, which only reports whether the extension *process*
     // is running — not whether Aerial4 is the *selected* wallpaper.
+    //
+    // Setting one slot never touches the other: Aerial can be the wallpaper, the
+    // screensaver, or both, and a non-Aerial wallpaper or screensaver is never reset
+    // (`OtherSlotPolicy.keep`, PaperSaverKit 0.4.1). PaperSaverKit verifies the write
+    // after the agent restart and rolls back when the agent rejected it.
+    //
+    // Watch item: in June 2026 Aerial in both slots conflated the two modes on macOS
+    // 26/27 (no saver preview, overlays bleeding into the wallpaper). If those symptoms
+    // return on a both-slots setup, that is the first suspect.
 
     /// Bundle identifier of the Aerial4 wallpaper extension — the choice "provider"
     /// the wallpaper store records when Aerial4 is the active wallpaper/screensaver.
@@ -613,54 +655,116 @@ final class WallpaperControl: @unchecked Sendable {
         return PaperSaverKit.PaperSaver().getCurrentScreensaverExtension() == aerial4BundleID
     }
 
-    /// Set Aerial4 as BOTH the desktop wallpaper and the screensaver (the `.animated`
-    /// and `.paused` first-launch modes). Fire-and-forget (wizard semantics).
+    /// Set Aerial4 as the desktop wallpaper AND the screensaver (the `.animated` and
+    /// `.paused` first-launch modes), in one store write and one agent restart.
+    /// Fire-and-forget (wizard semantics).
     static func enableAerialWallpaperAndScreensaver() {
-        Task { _ = await setAerial(slot: .both) }
+        Task { _ = await setAerial(slots: [.desktop, .screensaver]) }
     }
 
-    /// Set Aerial4 as the screensaver only (the `.off` "screensaver only" mode), leaving
-    /// the user's current desktop wallpaper in place. Fire-and-forget (wizard semantics).
-    ///
-    /// - Note: switching here from a state where Aerial4 was already the wallpaper
-    ///   (e.g. `.animated` → `.off`) leaves Aerial4 as the wallpaper — reverting to the
-    ///   user's prior wallpaper needs a capture/restore step (a follow-up; PaperSaver's
-    ///   image-wallpaper path is currently broken). On a fresh install `.off` correctly
-    ///   sets the screensaver only and keeps the existing wallpaper.
+    /// Set Aerial4 as the screensaver (the `.off` "screensaver only" mode), leaving
+    /// the user's desktop wallpaper as it is. Fire-and-forget (wizard semantics).
     static func enableAerialScreensaverOnly() {
-        Task { _ = await setAerial(slot: .screensaver) }
+        Task { _ = await setAerial(slots: [.screensaver]) }
     }
 
-    /// Set Aerial4 as the desktop wallpaper (preserving the current screensaver).
-    /// Awaitable — returns whether it applied, so callers can refresh `isAerialSystemWallpaper()`.
+    /// Set Aerial4 as the desktop wallpaper, leaving the screensaver as it is.
+    /// Awaitable — returns whether it applied, so callers can refresh
+    /// `isAerialSystemWallpaper()`.
     @discardableResult
     static func setAerialAsWallpaper() async -> Bool {
-        return await setAerial(slot: .desktop)
+        return await setAerial(slots: [.desktop])
     }
 
-    /// Set Aerial4 as the screensaver (preserving the current desktop wallpaper).
-    /// Awaitable — returns whether it applied, so callers can refresh `isAerialSystemScreensaver()`.
+    /// Set Aerial4 as the screensaver, leaving the wallpaper as it is. Awaitable —
+    /// returns whether it applied, so callers can refresh `isAerialSystemScreensaver()`.
     @discardableResult
     static func setAerialAsScreensaver() async -> Bool {
-        return await setAerial(slot: .screensaver)
+        return await setAerial(slots: [.screensaver])
     }
 
-    /// Core setter: writes the choice, restarts WallpaperAgent, and verifies it applied
-    /// (across all spaces/displays). Returns `false` on failure.
+    /// Core setter: writes Aerial into `slots` without touching any other slot,
+    /// restarts WallpaperAgent and verifies (PaperSaverKit rolls back on a failed
+    /// verification). Returns `false` on failure. Library diagnostics land in
+    /// app.txt with the 🖼 signature.
     @discardableResult
-    private static func setAerial(slot: WallpaperExtensionSlot) async -> Bool {
+    private static func setAerial(slots: Set<WallpaperSlot>) async -> Bool {
+        let label = WallpaperSlot.allCases.filter(slots.contains).map(\.rawValue).joined(separator: "+")
         do {
-            try await PaperSaverKit.PaperSaver().setWallpaperExtension(
-                bundleID: aerial4BundleID,
-                configuration: Data("aerial".utf8),
-                slot: slot
-            )
-            shared.refreshDesktopWallpaperActivation(reason: "setAerial(\(slot))")
+            let saver = makePaperSaver()
+            let token = Data("aerial".utf8)
+            let outcome: WriteOutcome
+            if slots.count == 1, let slot = slots.first {
+                outcome = try await saver.setWallpaperExtension(
+                    bundleID: aerial4BundleID, configuration: token, slot: slot, otherSlot: .keep)
+            } else {
+                outcome = try await saver.setWallpaperExtension(
+                    bundleID: aerial4BundleID, configuration: token, slots: slots)
+            }
+            debugLog("🖼 Aerial4 set as \(label): \(outcome)")
+            shared.refreshDesktopWallpaperActivation(reason: "setAerial(\(label))")
             return true
         } catch {
-            NSLog("Aerial: failed to set Aerial4 (slot: \(slot)): \(error)")
+            errorLog("🖼 failed to set Aerial4 as \(label): \(error.localizedDescription)")
             return false
         }
+    }
+
+    /// One-time repair of stores written by PaperSaverKit 0.3.1 and earlier (Aerial
+    /// 4.0.x), which nested the desktop background colour one level too deep.
+    /// WallpaperAgent can't decode those option values ("Failed to decode option
+    /// values for wallpaper", Cocoa error 4865), so Aerial's desktop slot reads as
+    /// having no placement, which is the signal SaverAcquireRule uses for the saver.
+    /// No write and no agent restart when the store is already correct; otherwise
+    /// one restart, verified like any other write. Fire-and-forget.
+    static func repairLegacyStoreOptionValues() {
+        Task {
+            do {
+                guard let outcome = try await makePaperSaver().repairLegacyOptionValues() else {
+                    debugLog("🖼 store option values already correct")
+                    return
+                }
+                debugLog("🖼 repaired legacy store option values: \(outcome)")
+                shared.refreshDesktopWallpaperActivation(reason: "repairLegacyStoreOptionValues")
+            } catch {
+                errorLog("🖼 failed to repair legacy store option values: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Screensaver activation
+
+    /// Seconds of inactivity before the system starts the screensaver; 0 = never.
+    static var screensaverIdleSeconds: Int {
+        makePaperSaver().getIdleTime()
+    }
+
+    static func setScreensaverIdleSeconds(_ seconds: Int) {
+        do {
+            try makePaperSaver().setIdleTime(seconds: seconds)
+            debugLog("🖼 screensaver idle time set to \(seconds) s")
+        } catch {
+            errorLog("🖼 failed to set screensaver idle time to \(seconds) s: \(error.localizedDescription)")
+        }
+    }
+
+    /// Minutes before the display turns off on the current power source;
+    /// 0 = never, nil = unknown. Read-only (changing it needs root).
+    static func displaySleepMinutes() async -> Int? {
+        await makePaperSaver().getDisplaySleep()
+    }
+
+    /// A PaperSaver whose diagnostics land in app.txt with the 🖼 signature.
+    private static func makePaperSaver() -> PaperSaverKit.PaperSaver {
+        var configuration = PaperSaverConfiguration()
+        configuration.log = PaperSaverLog { level, message in
+            if level >= .warning {
+                errorLog("🖼 [PaperSaver] \(message)")
+            } else {
+                debugLog("🖼 [PaperSaver] \(message)")
+            }
+        }
+        return PaperSaverKit.PaperSaver(configuration: configuration)
     }
 
     // MARK: - Internal

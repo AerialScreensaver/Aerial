@@ -74,7 +74,8 @@ struct AutoUpdatesPanel: View {
                                 }
                             }
                             .pickerStyle(.segmented)
-                            .frame(width: 280)
+                            .labelsHidden()
+                            .fixedSize()
                         }
                         .onChange(of: checkFrequency) { newValue in
                             guard let updater = sparkleController?.updater else { return }
@@ -94,7 +95,8 @@ struct AutoUpdatesPanel: View {
                                 }
                             }
                             .pickerStyle(.segmented)
-                            .frame(width: 220)
+                            .labelsHidden()
+                            .fixedSize()
                         }
                         .disabled(checkFrequency == .never)
                         .onChange(of: autoInstallMode) { newValue in
@@ -128,6 +130,7 @@ struct AutoUpdatesPanel: View {
                             .disabled(!canCheckForUpdates)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     HStack(spacing: 4) {
@@ -190,6 +193,7 @@ struct AutoUpdatesPanel: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Feed", systemImage: "dot.radiowaves.up.forward")

@@ -4,8 +4,8 @@
 //
 //  Getting at Aerial 3's data when macOS refuses to let Aerial read it.
 //
-//  3.x lived in the legacy screen saver engine's sandbox container. Since
-//  macOS 26 that container is "App Data" protected, and tccd can never show
+//  3.x lived in the legacy screen saver engine's sandbox container. On
+//  macOS 27 that container is "App Data" protected, and tccd can never show
 //  its "access data from other apps" prompt for it: legacyScreenSaver is an
 //  appex inside ScreenSaver.framework with no app record (tccd logs `access
 //  requires indirect object have an associated app bundle`), so every read
@@ -16,8 +16,7 @@
 //  NSOpenPanel, tccd writes a `com.apple.macl` xattr on that folder which
 //  lets this app — sandboxed or not — read and write the folder and
 //  everything below it: no prompt, no Full Disk Access (verified on macOS
-//  27.2 on 2026-10-05; `WallpaperCacheCleaner` relies on the same
-//  mechanism for the wallpaper agent's container). One grant on the
+//  27.2 on 2026-10-05). One grant on the
 //  container's Data/Library covers both Application Support/Aerial and
 //  Preferences/com.glouel.Aerial.plist, so `PathMigration` then runs the
 //  ordinary migration unchanged.
@@ -99,8 +98,41 @@ enum LegacyContainerAccess {
 
     // MARK: - Plan B: Finder + staging folder
 
+    enum StagingError: LocalizedError {
+        /// Something is already at the staging path that isn't a plain
+        /// directory (a symlink, a file).
+        case notAPlainDirectory(String)
+        /// A directory is there but belongs to another user.
+        case notOwnedByUser(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .notAPlainDirectory(let path):
+                return "\(path) already exists and is not a plain folder. Remove it, then try again."
+            case .notOwnedByUser(let path):
+                return "\(path) belongs to another user. Remove it, then try again."
+            }
+        }
+    }
+
+    /// Creates the staging folder. /Users/Shared is world-writable, so
+    /// refuse anything already at that path that isn't a plain directory
+    /// owned by this user: a symlink planted there could point the layout
+    /// move at the live cache, and `PathMigration` deletes its target
+    /// before moving — the user's videos would be gone.
     static func prepareStaging() throws {
-        try FileManager.default.createDirectory(atPath: stagingPath, withIntermediateDirectories: true, attributes: nil)
+        try prepareStaging(at: stagingPath)
+    }
+
+    static func prepareStaging(at path: String) throws {
+        var info = stat()
+        if lstat(path, &info) != 0 {
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+            guard lstat(path, &info) == 0 else { throw StagingError.notAPlainDirectory(path) }
+        }
+        // lstat, not stat: a symlink must show up as a symlink.
+        guard (info.st_mode & S_IFMT) == S_IFDIR else { throw StagingError.notAPlainDirectory(path) }
+        guard info.st_uid == getuid() else { throw StagingError.notOwnedByUser(path) }
     }
 
     static func revealStaging() {

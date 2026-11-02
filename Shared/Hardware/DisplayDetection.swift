@@ -60,7 +60,20 @@ final class DisplayDetection: NSObject {
     /// NSScreen (it has the run loop; both agree there).
     nonisolated(unsafe) static var useCoreGraphicsEnumeration = false   // set once at appex init, before first use
 
-    var screens = [Screen]()
+    /// The detected display list. Rebuilt by `detectDisplays()` (the
+    /// Companion from main; the wallpaper extension only from its handler
+    /// queue) and read from other threads — the extension's main-thread
+    /// geometry audit and diagnostics, the snapshot path. A Swift array is
+    /// not safe to read while another thread reassigns it, so every access
+    /// goes through `screensLock`; readers get a copy-on-write snapshot
+    /// and never see the half-built list `detectDisplays()` used to expose
+    /// while it appended. (Same shape as `VideoList.videos`.)
+    var screens: [Screen] {
+        get { screensLock.lock(); defer { screensLock.unlock() }; return publishedScreens }
+        set { screensLock.lock(); defer { screensLock.unlock() }; publishedScreens = newValue }
+    }
+    private var publishedScreens = [Screen]()
+    private let screensLock = NSLock()
     var unusedScreens = [Screen]()
 
     var cmInPoints: CGFloat = 40
@@ -84,8 +97,10 @@ final class DisplayDetection: NSObject {
         //   may or may not be powered on !) and get most information needed
         // - Through NSScreen to get the backingScaleFactor (retinaness of a screen)
 
-        // Cleanup a bit in case of redetection
-        screens = [Screen]()
+        // Build the new list locally and publish it ONCE below — readers
+        // on other threads keep the previous list until then instead of
+        // seeing an empty or half-filled one.
+        var detected = [Screen]()
         maxLeftScreens = 0
         maxBelowScreens = 0
 
@@ -126,7 +141,7 @@ final class DisplayDetection: NSObject {
         // (appex — see `useCoreGraphicsEnumeration`) derives the same
         // `Screen` shape from live CG calls.
         if DisplayDetection.useCoreGraphicsEnumeration {
-            screens = DisplayDetection.enumerateViaCoreGraphics(mainID: mainID)
+            detected = DisplayDetection.enumerateViaCoreGraphics(mainID: mainID)
         } else {
             for screen in NSScreen.screens {
                 let screenID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! CGDirectDisplayID
@@ -136,15 +151,18 @@ final class DisplayDetection: NSObject {
                     thisIsMain = true
                 }
 
-                screens.append(Screen(id: screenID,
-                                      width: Int(screen.frame.width),
-                                      height: Int(screen.frame.height),
-                                      bottomLeftFrame: screen.frame,
-                                      isMain: thisIsMain,
-                                      backingScaleFactor: screen.backingScaleFactor,
-                                      uuid: DisplayDetection.displayUUID(for: screenID)))
+                detected.append(Screen(id: screenID,
+                                       width: Int(screen.frame.width),
+                                       height: Int(screen.frame.height),
+                                       bottomLeftFrame: screen.frame,
+                                       isMain: thisIsMain,
+                                       backingScaleFactor: screen.backingScaleFactor,
+                                       uuid: DisplayDetection.displayUUID(for: screenID)))
             }
         }
+        // Publish once; the zeroed-origin passes below mutate the Screen
+        // objects in place and read the list through the accessor.
+        screens = detected
 
         // Before we finish, we calculate the origin of each screen from a 0,0 perspective
         // This calculation is pretty different in advanced mode so it got split up
@@ -450,12 +468,15 @@ final class DisplayDetection: NSObject {
     }
 
     /// UUIDs of the displays the SCREENSAVER plays on right now
-    /// ("Screensaver plays videos on"). Never empty while a display is
-    /// connected — see `SaverDisplayRule.playingDisplays`.
+    /// ("Screensaver plays videos on" + "Override if only one display
+    /// remains"). Never empty while a display is connected, except on a
+    /// lone display under the override's Don't play — see
+    /// `SaverDisplayRule.playingDisplays`.
     func playingDisplayUUIDs() -> Set<String> {
         SaverDisplayRule.playingDisplays(mode: PrefsDisplays.displayMode,
                                          selection: PrefsAdvanced.newDisplayDict,
-                                         displays: saverDisplays())
+                                         displays: saverDisplays(),
+                                         singleDisplayOverride: PrefsDisplays.effectiveSingleDisplayOverride)
     }
 
     /// Whether the saver plays on this display under the current mode and

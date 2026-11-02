@@ -56,7 +56,7 @@ struct PathMigration {
     /// users who skipped because Aerial could not read the data.
     nonisolated(unsafe) private(set) static var legacyDataFound = false
     /// False when 3.x data exists but this process may not read it. On
-    /// macOS 26 and later the legacy screen saver engine is an appex with
+    /// macOS 27 the legacy screen saver engine is an appex with
     /// no app record, so tccd cannot show the "access data from other
     /// apps" prompt for its container: a user-intent grant through the Open
     /// panel (`LegacyContainerAccess.requestAccess`) or Full Disk Access

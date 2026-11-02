@@ -35,7 +35,7 @@ struct PrefsTime {
 
     static var timeMode: TimeMode {
         get {
-            return TimeMode(rawValue: intTimeMode)!
+            return TimeMode(rawValue: intTimeMode) ?? .disabled
         }
         set(value) {
             intTimeMode = value.rawValue

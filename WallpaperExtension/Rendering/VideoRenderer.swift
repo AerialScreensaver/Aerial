@@ -144,7 +144,11 @@ final class VideoRenderer: @unchecked Sendable {
     /// Optional audio sidecar: its own audio-only AVAssetReader feeding
     /// an AVSampleBufferAudioRenderer, mirrored off this renderer's
     /// timebase at the choke points. Never touches the video readers.
-    private let audio: AudioPipeline
+    /// Created the first time audio is turned on (`setAudio`): building
+    /// the renderer/synchronizer pair connects to coreaudiod, which
+    /// logs a microphone + screen-capture TCC check for the appex on
+    /// every launch even with audio off. Queue-confined.
+    private var audio: AudioPipeline?
     /// Companion's "play audio" intent for THIS renderer — the handler
     /// folds the audio-owner policy in before calling `setAudio`, so
     /// true means "this renderer is the one that sounds". Queue-confined.
@@ -733,10 +737,6 @@ final class VideoRenderer: @unchecked Sendable {
         // be "late" and dropped.
         CMTimebaseSetRate(timebase, rate: 0.0)
         self.transition = VideoTransitionCoordinator(timebase: timebase, queue: queue)
-        self.audio = AudioPipeline(queue: queue)
-        audio.requestReconcile = { [weak self] context in
-            self?.reconcileAudio(context: context)
-        }
     }
 
     // MARK: - Audio (optional sidecar)
@@ -758,7 +758,7 @@ final class VideoRenderer: @unchecked Sendable {
     /// Converge the audio sidecar to the gate. Must run on `queue`.
     private func reconcileAudio(context: String) {
         guard isRunning else { return }
-        audio.reconcile(
+        audio?.reconcile(
             shouldPlay: audioShouldPlay,
             asset: asset,
             videoTime: CMTimebaseGetTime(timebase),
@@ -776,7 +776,14 @@ final class VideoRenderer: @unchecked Sendable {
             guard audioEnabled != enabled || audioDesiredVolume != vol else { return }
             audioEnabled = enabled
             audioDesiredVolume = vol
-            audio.setDesiredVolume(vol)
+            if enabled, audio == nil {
+                let pipeline = AudioPipeline(queue: queue)
+                pipeline.requestReconcile = { [weak self] context in
+                    self?.reconcileAudio(context: context)
+                }
+                audio = pipeline
+            }
+            audio?.setDesiredVolume(vol)
             debugLog("  [Renderer] audio → \(enabled ? "on" : "off") vol=\(String(format: "%.2f", vol))")
             reconcileAudio(context: enabled ? "audio-on" : "audio-off")
         }
@@ -954,23 +961,21 @@ final class VideoRenderer: @unchecked Sendable {
         }
     }
 
-    /// Stop playback. Cancels the readers FIRST, from this thread — the
-    /// one AVFoundation call that unblocks a pump stuck inside
-    /// `copyNextSampleBuffer` — then hops onto the queue with a bound so
-    /// a teardown can never hang behind a wedged pump (the teardown
-    /// timer thread used to block forever). The queued body still runs
-    /// once the queue frees up, which is the intended teardown.
+    /// Stop playback. Tears down on the queue, serialized with the pump,
+    /// with a bound so a teardown can never hang behind a wedged pump (the
+    /// teardown timer thread used to block forever). Only if the bound
+    /// lapses are the readers cancelled from this thread — the one
+    /// AVFoundation call that unblocks a pump stuck inside
+    /// `copyNextSampleBuffer`. The queued body still runs once the queue
+    /// frees up, which is the intended teardown.
     func stop() {
         cancelDeepPauseTimer()
         cancelRamp()
         cancelWatchdogRecreateTimer()
-        let (current, next) = published.withLockUnchecked { ($0.currentReader, $0.nextReader) }
-        current?.cancelReading()
-        next?.cancelReading()
         let finished: Void? = BoundedSync.run(on: queue, timeout: .seconds(5)) { [self] in
             isRunning = false
             deepPauseResumePosition = .zero
-            audio.teardown()
+            audio?.teardown()
             transition.teardown()
             stopFeedingAll()
             currentReader?.cancelReading()
@@ -978,7 +983,15 @@ final class VideoRenderer: @unchecked Sendable {
             publish()
         }
         if finished == nil {
-            debugLog("⚠️ [Renderer] stop(): queue unresponsive after 5s — readers cancelled, teardown left queued")
+            // Wedged queue (blocked copyNext/startReading): cancelling from
+            // here is the only way to unblock it. Never step one — an
+            // off-queue cancel races a LIVE pump and tears the reader down
+            // under copyNextSampleBuffer/startReading (2026-10-22 engine
+            // switch to a live feed crashes).
+            let (current, next) = published.withLockUnchecked { ($0.currentReader, $0.nextReader) }
+            current?.cancelReading()
+            next?.cancelReading()
+            debugLog("⚠️ [Renderer] stop(): queue unresponsive after 5s — readers cancelled off-queue, teardown left queued")
         }
     }
 
@@ -1927,7 +1940,7 @@ final class VideoRenderer: @unchecked Sendable {
         transition.cancelScheduled(reason: "deepPause")
         transition.clearRing()
         resetCatchUpWatermarks()
-        audio.reset(context: "deep-pause")
+        audio?.reset(context: "deep-pause")
         stopFeedingAll()
         currentReader?.cancelReading()
         nextReader?.cancelReading()
@@ -1963,7 +1976,7 @@ final class VideoRenderer: @unchecked Sendable {
         // Timeline resets below — stale audio PTS are garbage on it. The
         // reassert that always follows a recreate restarts audio anchored
         // at the resumed position.
-        audio.reset(context: "recreate")
+        audio?.reset(context: "recreate")
         feedSuspended = false
         stopFeedingAll()
         for layer in subscribers {
@@ -2262,7 +2275,7 @@ final class VideoRenderer: @unchecked Sendable {
         // A bounded-loop cut ends the outgoing clip mid-stream: its audio
         // was read past the cut, so restart anchored (as a flush would)
         // instead of queueing the next segment behind that tail.
-        audio.videoDidSwap(
+        audio?.videoDidSwap(
             asset: asset,
             shouldPlay: audioShouldPlay,
             videoTime: CMTimebaseGetTime(timebase),
@@ -2886,7 +2899,7 @@ final class VideoRenderer: @unchecked Sendable {
         let budget = currentPlayDuration.map { String(format: " playFor=%.0fs pass=%d", $0, boundedLoopPasses + 1) } ?? ""
         let cancels = published.withLockUnchecked { $0.wdCancels }
         let wd = (cancels > 0 || wdRecreates > 0) ? " wd=cancels:\(cancels)/recreates:\(wdRecreates)/attempt:\(wdAttempt)" : ""
-        return "subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) nominal=\(nominalRate) tbRate=\(tbRate) tbTime=\(tbTime)s paused=\(isPaused) reasons=\(pauseReasons.summary) audio=\(audioEnabled ? audio.diagnostics() : "off") fed=\(framesEnqueued) dropped=\(framesDroppedForRefresh) skips=\(skips) age=\(ages) caughtUp=\(framesCaughtUp) revived=\(layerRevives) lastFeed=\(sinceFeed)s\(budget)\(wd) asset=\(asset.url.lastPathComponent)"
+        return "subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) nominal=\(nominalRate) tbRate=\(tbRate) tbTime=\(tbTime)s paused=\(isPaused) reasons=\(pauseReasons.summary) audio=\(audioEnabled ? audio?.diagnostics() ?? "off" : "off") fed=\(framesEnqueued) dropped=\(framesDroppedForRefresh) skips=\(skips) age=\(ages) caughtUp=\(framesCaughtUp) revived=\(layerRevives) lastFeed=\(sinceFeed)s\(budget)\(wd) asset=\(asset.url.lastPathComponent)"
     }
 
     /// Watchdog: a renderer that claims to play but hasn't enqueued a

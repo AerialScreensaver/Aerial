@@ -11,7 +11,6 @@
 //   let forecast = try? newJSONDecoder().decode(Forecast.self, from: jsonData)
 
 import Foundation
-internal import _LocationEssentials
 
 // MARK: - Forecast
 struct ForecastElement: Codable {

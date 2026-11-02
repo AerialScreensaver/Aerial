@@ -20,7 +20,7 @@ final class MyVideosWatcher {
     /// My Videos panel rescans its rows on this.
     static let folderChangedNotification = Notification.Name("com.glouel.aerial.myVideosFolderChanged")
 
-    private let monitor = DirectoryMonitor(bookmarkData: nil)
+    private let monitor = DirectoryMonitor()
     private var debounce: DispatchWorkItem?
     private var started = false
 

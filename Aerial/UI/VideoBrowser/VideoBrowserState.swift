@@ -57,13 +57,6 @@ enum VideoViewMode: String {
     case grid, list
 }
 
-/// Alert payload for the context menu's "Delete Video" confirmation
-/// (used by both the card and row cell views).
-struct PendingCacheDelete: Identifiable {
-    let id = UUID()
-    let videos: [AerialVideo]
-}
-
 // MARK: - State
 
 class VideoBrowserState: ObservableObject {
@@ -294,33 +287,6 @@ class VideoBrowserState: ObservableObject {
             return selectedVideoIds.joined(separator: "\n")
         }
         return video.id
-    }
-
-    /// Delete downloaded videos from the cache, optionally hiding them so
-    /// the DownloadCoordinator doesn't re-download them later.
-    func deleteVideosFromCache(_ videos: [AerialVideo], alsoHide: Bool) {
-        for video in videos {
-            let path = VideoList.instance.localPathFor(video: video)
-            if !path.isEmpty {
-                do {
-                    try FileManager.default.removeItem(atPath: path)
-                } catch {
-                    errorLog("Couldn't delete cached video at \(path): \(error.localizedDescription)")
-                }
-            }
-        }
-        if alsoHide {
-            var hidden = PrefsVideos.hidden
-            for video in videos where !hidden.contains(video.id) {
-                hidden.append(video.id)
-            }
-            PrefsVideos.hidden = hidden
-        }
-        // Drops the deleted entries from every filter playlist, persists,
-        // and bumps playlistGeneration — the extension advances away if
-        // one of them was playing.
-        PlaylistManager.shared.regenerateAll()
-        refreshTrigger += 1
     }
 
     // MARK: - Computed

@@ -95,6 +95,9 @@ protocol PlaybackRenderer: AnyObject {
     /// stream URL whose last component (`index.m3u8`) would mis-map in
     /// the filename-based lookup. Nil = use the path-based mapping.
     var nowPlayingOverride: (name: String, id: String)? { get }
+    /// Live feeds: (elapsed, length) toward the next rotation — their
+    /// progress bar. Nil for files (their bar uses the content position).
+    var rotationProgress: (elapsed: Double, length: Double)? { get }
     func statusSnapshot() -> VideoRenderer.StatusSnapshot
     func diagnosticsSnapshot() -> String
     func checkFeedHealth()
@@ -119,4 +122,5 @@ extension PlaybackRenderer {
 
 extension VideoRenderer: PlaybackRenderer {
     var nowPlayingOverride: (name: String, id: String)? { nil }
+    var rotationProgress: (elapsed: Double, length: Double)? { nil }
 }

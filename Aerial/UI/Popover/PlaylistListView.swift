@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct PlaylistListView: View {
+struct PlaylistListView<MenuContent: View>: View {
     let entries: [PlaylistEntry]
     let uncachedEntries: [PlaylistEntry]
     let currentIdx: Int
@@ -17,6 +17,8 @@ struct PlaylistListView: View {
     @ObservedObject var downloadTracker: DownloadTracker
     var onTapEntry: (Int) -> Void
     var onDownload: (String) -> Void
+    /// Right-click menu for an entry (the shared `VideoContextMenu`).
+    @ViewBuilder var contextMenu: (PlaylistEntry) -> MenuContent
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -166,6 +168,7 @@ struct PlaylistListView: View {
             guard !isCurrent else { return }
             onTapEntry(index)
         }
+        .contextMenu { contextMenu(entry) }
     }
 
     // MARK: - Uncached Row
@@ -258,6 +261,8 @@ struct PlaylistListView: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
         .opacity(0.6)
+        .contentShape(Rectangle())
+        .contextMenu { contextMenu(entry) }
     }
 
     // MARK: - Helpers

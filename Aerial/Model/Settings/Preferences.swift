@@ -176,16 +176,6 @@ struct Preferences {
         set { manager.setValue(newValue, forKeyPath: \.desktopAutoPauseIgnoredApps) }
     }
 
-    static var cleanWallpaperCache: Bool {
-        get { manager.getValue(forKeyPath: \.cleanWallpaperCache) }
-        set { manager.setValue(newValue, forKeyPath: \.cleanWallpaperCache) }
-    }
-
-    static var wallpaperCacheBookmark: Data? {
-        get { manager.getValue(forKeyPath: \.wallpaperCacheBookmark) }
-        set { manager.setValue(newValue, forKeyPath: \.wallpaperCacheBookmark) }
-    }
-
     static var reclaimMacOSWallpaperVideosAtStartup: Bool {
         get { manager.getValue(forKeyPath: \.reclaimMacOSWallpaperVideosAtStartup) }
         set { manager.setValue(newValue, forKeyPath: \.reclaimMacOSWallpaperVideosAtStartup) }
@@ -271,6 +261,22 @@ struct Preferences {
     static var enabledNowPlayingSources: [String] {
         get { manager.getValue(forKeyPath: \.enabledNowPlayingSources) }
         set { manager.setValue(newValue, forKeyPath: \.enabledNowPlayingSources) }
+    }
+
+    static let nowPlayingModeAutomatic = "automatic"
+    static let nowPlayingModePlayers = "players"
+
+    /// "automatic" = the system now-playing session (any player) through the
+    /// vendored mediaremote-adapter; "players" = the per-player providers
+    /// filtered by `enabledNowPlayingSources`. Unset reads as "players" for
+    /// an install that had customised the player list (its explicit choice
+    /// survives the upgrade, no write needed) and "automatic" otherwise.
+    static var nowPlayingMode: String {
+        get {
+            if let stored = manager.getValue(forKeyPath: \.nowPlayingMode) { return stored }
+            return enabledNowPlayingSources.isEmpty ? nowPlayingModeAutomatic : nowPlayingModePlayers
+        }
+        set { manager.setValue(newValue, forKeyPath: \.nowPlayingMode) }
     }
 
     // MARK: - Battery-aware pause

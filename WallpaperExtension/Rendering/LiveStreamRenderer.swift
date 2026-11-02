@@ -31,7 +31,9 @@ final class LiveStreamRenderer: @unchecked Sendable {
     private(set) var streamURL: URL
     private var videoId: String
     private var feedName: String
-    private let playSeconds: Double
+    /// Rotation length of the feed on screen — per feed, so a live→live
+    /// rotation adopts the new feed's own value.
+    private var playSeconds: Double
 
     private var player: AVPlayer?
     private var itemOutput: AVPlayerItemVideoOutput?
@@ -49,6 +51,17 @@ final class LiveStreamRenderer: @unchecked Sendable {
 
     private var pullTimer: (any DispatchSourceTimer)?
     private var rotationTimer: (any DispatchSourceTimer)?
+    /// When the armed rotation fires; read at pause to bank the remainder.
+    private var rotationDeadline: CFAbsoluteTime?
+    /// Play time left before rotation, banked by a pause. Resume schedules
+    /// this instead of a fresh `playSeconds` — re-arming in full made any
+    /// pause (window coverage toggles every few minutes) postpone the
+    /// rotation indefinitely. Cleared when a pause rebuilds the player.
+    private var rotationRemaining: Double?
+
+    /// Floor on a resumed rotation so a stream never cuts right after it
+    /// comes back.
+    private static let minResumedRotation: Double = 10
 
     /// Companion's audio intent (owner policy folded in by the handler).
     /// Live streams always run at 1.0×, so unlike the file engine there
@@ -83,6 +96,9 @@ final class LiveStreamRenderer: @unchecked Sendable {
         var framesEnqueued = 0
         var lastFrameAt: CFAbsoluteTime
         var recoveryAttempts = 0
+        var rotationLength: Double = 0
+        var rotationDeadline: CFAbsoluteTime?
+        var rotationRemaining: Double?
     }
     private let published: OSAllocatedUnfairLock<LivePublished>
 
@@ -134,7 +150,10 @@ final class LiveStreamRenderer: @unchecked Sendable {
             lastSample: lastSample,
             framesEnqueued: framesEnqueued,
             lastFrameAt: lastFrameAt,
-            recoveryAttempts: recoveryAttempts
+            recoveryAttempts: recoveryAttempts,
+            rotationLength: playSeconds,
+            rotationDeadline: rotationTimer != nil ? rotationDeadline : nil,
+            rotationRemaining: rotationRemaining
         )
         published.withLockUnchecked { $0 = snap }
     }
@@ -145,7 +164,9 @@ final class LiveStreamRenderer: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self, isRunning else { return }
             buildPlayer(url: streamURL)
-            scheduleRotation()
+            // A renderer created paused (saver intent, deep pause) must not keep
+            // popping the playlist and rebuilding players; resume re-arms rotation.
+            if !effectivePaused { scheduleRotation() }
         }
     }
 
@@ -279,10 +300,18 @@ final class LiveStreamRenderer: @unchecked Sendable {
 
     // MARK: - Rotation
 
-    private func scheduleRotation() {
+    /// Arm the rotation `delay` seconds out (default: a full `playSeconds`).
+    /// Consumes any remainder banked by a pause.
+    private func scheduleRotation(after delay: Double? = nil) {
         rotationTimer?.cancel()
+        let seconds = delay ?? playSeconds
+        if delay != nil {
+            debugLog("  [LiveStream] rotation resumes with \(Int(seconds))s left")
+        }
+        rotationRemaining = nil
+        rotationDeadline = CFAbsoluteTimeGetCurrent() + seconds
         let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now() + playSeconds)
+        timer.schedule(deadline: .now() + seconds)
         timer.setEventHandler { [weak self] in
             guard let self, isRunning else { return }
             debugLog("  [LiveStream] rotation after \(Int(playSeconds))s")
@@ -290,6 +319,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
         }
         rotationTimer = timer
         timer.resume()
+        publish()
     }
 
     /// Pop the playlist and act on the result: live → replace the item
@@ -299,16 +329,20 @@ final class LiveStreamRenderer: @unchecked Sendable {
         guard let selection = select?() else {
             // Nothing else to play — keep the current stream and retry
             // at the next rotation window.
-            scheduleRotation()
+            if !effectivePaused { scheduleRotation() }
             return
         }
         switch selection {
-        case .live(let url, let videoId, let name, _):
+        case .live(let url, let videoId, let name, let seconds):
             streamURL = url
             self.videoId = videoId
             self.feedName = name
+            playSeconds = max(seconds, 10)
             buildPlayer(url: url)
-            scheduleRotation()
+            // New feed, full window — even when paused (skip while covered).
+            rotationRemaining = nil
+            rotationDeadline = nil
+            if !effectivePaused { scheduleRotation() }
             publish()
             onVideoChanged?()
         case .file:
@@ -372,7 +406,11 @@ final class LiveStreamRenderer: @unchecked Sendable {
             isPaused = true
             player?.pause()
             stopPulling()
+            if rotationTimer != nil, let deadline = rotationDeadline {
+                rotationRemaining = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
+            }
             rotationTimer?.cancel()
+            rotationTimer = nil
             scheduleDeepPause()
             debugLog("  [LiveStream] paused [\(pauseReasons.summary)] \(context)")
         } else {
@@ -381,6 +419,8 @@ final class LiveStreamRenderer: @unchecked Sendable {
             cancelDeepPauseTimer()
             if deepPaused || player == nil {
                 deepPaused = false
+                // A rebuilt stream starts over — give it a full window.
+                rotationRemaining = nil
                 // Rebuild with a fresh URL — the old connection is gone
                 // and the URL may have expired while parked.
                 if let fresh = refreshStreamURL?(videoId) {
@@ -394,7 +434,11 @@ final class LiveStreamRenderer: @unchecked Sendable {
                 player?.play()
                 startPulling()
             }
-            scheduleRotation()
+            if let remaining = rotationRemaining {
+                scheduleRotation(after: max(remaining, Self.minResumedRotation))
+            } else {
+                scheduleRotation()
+            }
             debugLog("  [LiveStream] resumed \(context)")
         }
     }
@@ -645,6 +689,25 @@ final class LiveStreamRenderer: @unchecked Sendable {
 
     var nowPlayingOverride: (name: String, id: String)? {
         (name: feedName, id: videoId)
+    }
+
+    /// Progress toward the next rotation, for the Companion's progress
+    /// bar: elapsed advances while the timer is armed and is frozen at the
+    /// banked remainder while paused. Nil when no rotation is pending.
+    var rotationProgress: (elapsed: Double, length: Double)? {
+        let p = published.withLockUnchecked { $0 }
+        guard p.rotationLength > 0 else { return nil }
+        let left: Double
+        if let remaining = p.rotationRemaining {
+            left = remaining
+        } else if let deadline = p.rotationDeadline {
+            left = max(deadline - CFAbsoluteTimeGetCurrent(), 0)
+        } else {
+            return nil
+        }
+        // A resumed window can be shorter than playSeconds (banked
+        // remainder) but never longer — clamp so the bar stays in range.
+        return (elapsed: max(p.rotationLength - left, 0), length: p.rotationLength)
     }
 
     /// Identity/pause fields from the mirror; the player's live

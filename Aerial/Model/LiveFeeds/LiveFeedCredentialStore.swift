@@ -71,7 +71,8 @@ enum LiveFeedCredentialStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: feedID.uuidString,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            // No `kSecAttrAccessible`: that attribute belongs to the data-protection
+            // keychain and is rejected by the file-based login keychain this item uses.
         ]
         let status = SecItemAdd(query as CFDictionary, nil)
         if status != errSecSuccess {

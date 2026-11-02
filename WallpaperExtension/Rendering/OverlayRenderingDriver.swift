@@ -44,7 +44,6 @@ final class OverlayRenderingDriver {
     /// relayed dock insets in the control state.
     private let screenUUID: String?
     private var renderTimer: Timer?
-    private var screenObserver: NSObjectProtocol?
 
     /// Drives change-based rendering: every overlay data path
     /// (clock/date tick, weather, music, location, rotation, dock
@@ -257,19 +256,10 @@ final class OverlayRenderingDriver {
         RunLoop.main.add(safety, forMode: .common)
         renderTimer = safety
 
-        // Re-detect dock on screen-parameter changes (user moves dock,
-        // toggles autohide, plugs/unplugs displays). The extension
-        // process may also be respawned by ExtensionKit after such
-        // changes; either path keeps the inset fresh.
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.applyDockInsetForCurrentScreen()
-            }
-        }
+        // Dock/menu-bar insets arrive through Companion's control state
+        // (`applyDockInsetForCurrentScreen` on each relay). The appex has no
+        // NSApplication run loop, so AppKit's screen-parameters notification
+        // never fires here and is not observed.
 
         debugLog("  [OverlayDriver] started with \(layout.allInstances.count) instance(s) at \(displaySize)")
     }
@@ -280,10 +270,6 @@ final class OverlayRenderingDriver {
         changeSubscription = nil
         renderTimer?.invalidate()
         renderTimer = nil
-        if let observer = screenObserver {
-            NotificationCenter.default.removeObserver(observer)
-            screenObserver = nil
-        }
         state.cleanup()
         debugLog("  [OverlayDriver] stopped")
     }
@@ -291,9 +277,6 @@ final class OverlayRenderingDriver {
     deinit {
         changeSubscription?.cancel()
         renderTimer?.invalidate()
-        if let observer = screenObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
     }
 
     /// Re-detect the dock/menu bar for this driver's display and apply

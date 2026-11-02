@@ -7,14 +7,6 @@
 import Foundation
 
 enum PlaybackMath {
-    /// Playtime (video-content seconds) elapsed over a wall-clock interval at a
-    /// given player rate. Speed-factored by `rate`; clamped so a single large
-    /// gap (resume from suspension/occlusion) can't overshoot the target.
-    static func boundedLoopAdvanceDelta(wallDelta: Double, rate: Float, maxWallDelta: Double = 1.0) -> Double {
-        guard rate > 0, wallDelta > 0 else { return 0 }
-        return min(wallDelta, maxWallDelta) * Double(rate)
-    }
-
     /// Bounded-loop plan for the clip pass that just started, in the file
     /// engine's timebase seconds (rate-driven, so playtime is speed-factored
     /// and pause-safe by construction — no accumulator needed).

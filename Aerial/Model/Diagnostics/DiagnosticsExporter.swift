@@ -53,11 +53,14 @@ enum DiagnosticsExporter {
 
         // The window dump enumerates on whatever thread calls it; grab
         // it here so the report reflects the moment the user clicked.
+        // `NSScreen.screens` is main-thread AppKit state, so the display
+        // lines are captured here too rather than on the export queue.
         let windowDump = WallpaperWindowDump.capture()
+        let displayLines = displayReportLines()
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                try export(to: destination, windowDump: windowDump)
+                try export(to: destination, windowDump: windowDump, displayLines: displayLines)
                 debugLog("🩺 Diagnostics exported to \(destination.path)")
                 DispatchQueue.main.async {
                     NSWorkspace.shared.activateFileViewerSelecting([destination])
@@ -76,7 +79,7 @@ enum DiagnosticsExporter {
 
     // MARK: - Bundle assembly
 
-    private static func export(to destination: URL, windowDump: [String]) throws {
+    private static func export(to destination: URL, windowDump: [String], displayLines: [String]) throws {
         let fm = FileManager.default
         let stagingRoot = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("aerial-diagnostics-\(UUID().uuidString)")
@@ -117,7 +120,7 @@ enum DiagnosticsExporter {
         copyCrashReports(to: bundleDir.appendingPathComponent("CrashReports"))
 
         // Generated reports.
-        try systemInfoReport().write(
+        try systemInfoReport(displayLines: displayLines).write(
             to: bundleDir.appendingPathComponent("system-info.txt"),
             atomically: true, encoding: .utf8
         )
@@ -198,7 +201,19 @@ enum DiagnosticsExporter {
         ((try? FileManager.default.contentsOfDirectory(atPath: path)) ?? []).filter { $0.hasSuffix(".mov") }.count
     }
 
-    private static func systemInfoReport() -> String {
+    @MainActor
+    private static func displayReportLines() -> [String] {
+        NSScreen.screens.map { screen in
+            let did = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+            return "\(screen.localizedName): frame=\(screen.frame) scale=\(screen.backingScaleFactor)"
+                + " did=\(did.map(String.init) ?? "?")"
+        }
+    }
+
+    /// Runs on the export queue. Everything it reads is either queue-synced
+    /// (`WallpaperControl`, `Cache`, the JSON stores) or captured on the main
+    /// thread by the caller (`displayLines`).
+    private static func systemInfoReport(displayLines: [String]) -> String {
         var lines: [String] = []
         let info = ProcessInfo.processInfo
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
@@ -212,11 +227,7 @@ enum DiagnosticsExporter {
         lines.append("")
 
         lines.append("== Displays ==")
-        for screen in NSScreen.screens {
-            let did = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
-            lines.append("\(screen.localizedName): frame=\(screen.frame) scale=\(screen.backingScaleFactor)"
-                + " did=\(did.map(String.init) ?? "?")")
-        }
+        lines.append(contentsOf: displayLines)
         lines.append("")
 
         lines.append("== Power ==")

@@ -35,8 +35,19 @@ final class VideoDownload: NSObject, URLSessionDownloadDelegate {
     /// a normal failure.
     static let httpErrorMessagePrefix = "HTTP error: "
 
+    /// Error message used when the video's rendition changed while the
+    /// bytes were in flight (Settings › Advanced, the wizard). The temp
+    /// file is discarded rather than saved under the new rendition's
+    /// filename; nothing to retry here — `DownloadCoordinator`'s next
+    /// pass queues the right rendition.
+    static let renditionChangedErrorMessage = "Rendition changed in flight — discarded"
+
     weak var delegate: VideoDownloadDelegate?
     let video: AerialVideo
+    /// The URL we actually asked for. `video.url` follows the *current*
+    /// format, so comparing the two on completion tells us whether the
+    /// rendition changed underneath the transfer.
+    private var requestedURL: URL?
     private var downloadTask: URLSessionDownloadTask?
     private var hasNotifiedCompletion = false
 
@@ -50,13 +61,14 @@ final class VideoDownload: NSObject, URLSessionDownloadDelegate {
     }
 
     func startDownload() {
-        let urlString = video.url.absoluteString
-        if let resumeData = VideoDownloadResume.load(videoId: video.id, expectedURL: urlString) {
+        let url = video.url
+        requestedURL = url
+        if let resumeData = VideoDownloadResume.load(videoId: video.id, expectedURL: url.absoluteString) {
             debugLog("Resuming URLSession download for \(video.name) (\(resumeData.count) bytes of resume state)")
             downloadTask = session.downloadTask(withResumeData: resumeData)
         } else {
             debugLog("Starting URLSession download for \(video.name)")
-            downloadTask = session.downloadTask(with: video.url)
+            downloadTask = session.downloadTask(with: url)
         }
         downloadTask?.resume()
     }
@@ -74,7 +86,23 @@ final class VideoDownload: NSObject, URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession,
                     downloadTask: URLSessionDownloadTask,
                     didFinishDownloadingTo location: URL) {
+        // `cancel()` and the error path both notify; never report twice.
+        guard !hasNotifiedCompletion else { return }
         hasNotifiedCompletion = true
+
+        // The rendition can change while bytes are in flight. The cache
+        // filename computed below follows the *current* format, so the
+        // old rendition's bytes would be labelled as the new one — and
+        // Apple's manifests ship no MD5 to catch it. Discard instead.
+        if let requested = requestedURL, requested != video.url {
+            warnLog("Discarding download of \(video.name): rendition changed in flight (\(requested.lastPathComponent) → \(video.url.lastPathComponent))")
+            try? FileManager.default.removeItem(at: location)
+            VideoDownloadResume.clear(videoId: video.id)
+            delegate?.videoDownload(self, finished: false,
+                                    errorMessage: VideoDownload.renditionChangedErrorMessage)
+            session.invalidateAndCancel()
+            return
+        }
 
         // URLSessionDownloadTask reports HTTP 4xx/5xx as "success" — the
         // body gets saved to `location` regardless. Catch that before

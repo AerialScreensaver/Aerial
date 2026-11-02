@@ -221,14 +221,21 @@ class PlaybackManager: ObservableObject {
     /// Start the screensaver immediately (the OS screensaver, which on
     /// macOS 15+ renders Aerial via the wallpaper extension's idle mode).
     func startScreensaver() {
-        // Use private API via dlopen
-        if let libHandle = dlopen("/System/Library/PrivateFrameworks/login.framework/Versions/Current/login", RTLD_LAZY) {
-            let sym = dlsym(libHandle, "SACScreenSaverStartNow")
-            typealias SACFunction = @convention(c) () -> Void
-            let SACLockScreenImmediate = unsafeBitCast(sym, to: SACFunction.self)
-            SACLockScreenImmediate()
-            dlclose(libHandle)
+        // Use private API via dlopen. Both lookups can fail on a future
+        // macOS; a nil `dlsym` result bitcast to a function pointer and
+        // called would crash, so bail out loudly instead.
+        guard let libHandle = dlopen("/System/Library/PrivateFrameworks/login.framework/Versions/Current/login", RTLD_LAZY) else {
+            errorLog("startScreensaver: login.framework unavailable")
+            return
         }
+        defer { dlclose(libHandle) }
+        guard let sym = dlsym(libHandle, "SACScreenSaverStartNow") else {
+            errorLog("startScreensaver: SACScreenSaverStartNow not found in login.framework")
+            return
+        }
+        typealias SACFunction = @convention(c) () -> Void
+        let startNow = unsafeBitCast(sym, to: SACFunction.self)
+        startNow()
     }
 
     // MARK: - Playback Controls
@@ -339,14 +346,6 @@ class PlaybackManager: ObservableObject {
         debugLog("⏭ Auto-advance: \(Preferences.desktopAutoAdvanceMinutes)min elapsed, advancing all screens")
         WallpaperControl.shared.advanceVideo(screenUUID: nil)
     }
-
-    /// Re-apply playback after a settings/playlist change. The extension
-    /// reloads on its own when the playlist generation or display config
-    /// bumps (callers always pair this with `PlaylistManager.regenerate`
-    /// or `WallpaperControl.displaysConfigDidChange`), so this is a no-op
-    /// kept for call-site compatibility.
-    func refreshPlayback() {}
-    func refreshPlayback(for screenUUID: String) {}
 
     // MARK: - Battery-aware pause
 
@@ -585,9 +584,9 @@ class PlaybackManager: ObservableObject {
 
     /// Recompute the current playback fraction (0...1) from the last
     /// persisted timestamp (`PlaylistManager.currentPlaybackTimestamp`),
-    /// which the extension keeps current. When duration is unknown or
-    /// zero (e.g. live streams), progress is reported as 0 — the bar
-    /// then hides. Only assigns when the value moves by >~0.5 % to avoid
+    /// which the extension keeps current. Live streams report progress
+    /// toward their next rotation instead; an unknown or zero duration
+    /// reports 0 (empty bar). Only assigns when the value moves by >~0.5 % to avoid
     /// pointless SwiftUI re-renders.
     @MainActor
     private func refreshPlaybackProgress() {
@@ -614,10 +613,25 @@ class PlaybackManager: ObservableObject {
 
         let screenUUID = effectiveScreenUUID
         let progress: Double = {
-            guard let video = PlaylistManager.shared.currentVideo(for: screenUUID),
-                  video.duration > 0 else {
+            guard let video = PlaylistManager.shared.currentVideo(for: screenUUID) else {
                 return 0
             }
+            // Live feeds have no duration: their bar is progress toward
+            // the next rotation, reported by the extension (it alone knows
+            // the banked remainder across pauses). No persisted fallback.
+            if video.isLive {
+                let monitor = WallpaperStatusMonitor.shared
+                let key = screenUUID ?? "broadcast"
+                guard monitor.isRunning,
+                      let status = monitor.status,
+                      let elapsed = status.nowPlayingRotationElapsed[key],
+                      let length = status.nowPlayingRotationLength[key], length > 0,
+                      Date().timeIntervalSince(status.lastSeen) < 45 else { return 0 }
+                let rate = min(status.nowPlayingRate[key] ?? 0, 1)
+                let played = elapsed + Date().timeIntervalSince(status.lastSeen) * rate
+                return max(0, min(1, played / length))
+            }
+            guard video.duration > 0 else { return 0 }
             // Interpolate from the extension's status echo: position at
             // `lastSeen` + elapsed × timebase rate. The rate is the real
             // slope (0 when paused, 1.0 in saver mode, nominal

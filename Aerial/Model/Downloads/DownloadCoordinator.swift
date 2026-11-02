@@ -174,6 +174,32 @@ class DownloadCoordinator {
         }
     }
 
+    /// Single entry point for a video-format change (Settings › Advanced,
+    /// the first-launch wizard). Order matters:
+    /// 1. stop every queued/in-flight download — their bytes are the old
+    ///    rendition (`VideoDownload` also discards on completion if one
+    ///    slips through);
+    /// 2. write the preference;
+    /// 3. optionally wipe the cache (Settings asks first; the wizard has
+    ///    nothing cached yet);
+    /// 4. tell the extension — playlist IDs don't change with the format,
+    ///    so the usual content-signature gate would stay silent and the
+    ///    extension would keep resolving the old rendition's filenames;
+    /// 5. re-plan downloads for the new rendition.
+    func applyVideoFormat(_ format: VideoFormat, clearingCache: Bool) {
+        let previous = PrefsVideos.videoFormat
+        guard format != previous || clearingCache else { return }
+        VideoManager.sharedInstance.cancelDownloadsForFormatChange()
+        PrefsVideos.videoFormat = format
+        infoLog("DownloadCoordinator: video format \(previous) → \(format) (clearCache=\(clearingCache))")
+        if clearingCache {
+            Cache.clearCache()
+            Cache.clearNonCacheableSources()
+        }
+        PlaylistManager.shared.videoFormatDidChange()
+        selectionDidChange()
+    }
+
     /// Called when the user changes video selection in the popover.
     /// Starts a debounce timer; after 3s of inactivity, evaluates downloads.
     func selectionDidChange() {

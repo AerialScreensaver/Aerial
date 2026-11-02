@@ -3,7 +3,7 @@
 //  Aerial
 //
 //  Inspector content shown when no overlay is selected.
-//  Edits layout-level settings (margins, color, shadow) that apply to all overlays.
+//  Edits layout-level settings (margins, text, shadow) that apply to all overlays.
 //
 
 import SwiftUI
@@ -45,12 +45,18 @@ struct LayoutSettingsPane: View {
 
                 Divider()
 
-                // Color
-                Text("Text color")
+                // Text
+                Text("Text")
                     .font(.subheadline.bold())
                     .foregroundStyle(.secondary)
 
-                ColorPicker("Color", selection: textColorBinding, supportsOpacity: true)
+                VStack(alignment: .leading, spacing: 12) {
+                    ColorPicker("Color", selection: textColorBinding, supportsOpacity: true)
+                    Toggle("Monospaced digits", isOn: $state.layout.monospacedDigits)
+                    Text("Keeps clocks and counters from shifting as digits change. May not work with every font.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Divider()
 
@@ -168,6 +174,7 @@ struct LayoutSettingsPane: View {
         state.layout.marginBottom = 50
         state.layout.marginRight = 50
         state.layout.textColorHex = "#FFFFFF"
+        state.layout.monospacedDigits = true
         state.layout.shadowColorHex = "#000000"
         state.layout.shadowRadius = 6
         state.layout.shadowOpacity = 1.0

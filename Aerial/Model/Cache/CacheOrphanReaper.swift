@@ -28,6 +28,12 @@
 //  that would delete most of a folder — either shape means the
 //  referenced set is a stale view, not real orphans.
 //
+//  A DISABLED source's downloads are not orphans either: `VideoList`
+//  only loads enabled sources, so the cache keep-set also reads every
+//  disabled cacheable source's cached manifest directly. Unticking a
+//  source keeps its videos; rotation and trim reclaim them first
+//  (`Cache.disabledSourceCachedVideos`, decided 2026-10-13).
+//
 
 import Foundation
 
@@ -118,6 +124,23 @@ final class CacheOrphanReaper {
                     cacheReferenced.insert(filename)
                 } else {
                     packReferenced[video.source.name, default: []].insert(filename)
+                }
+            }
+        }
+
+        // Disabled cacheable sources are not in `VideoList`, but their
+        // downloads are not orphans (see the header). Read their cached
+        // manifests directly so the keep-set covers them; a disabled
+        // source with no cached manifest has no downloads we know of and
+        // contributes nothing.
+        for source in SourceList.list {
+            guard source.type != .local, source.type != .live else { continue }
+            guard source.isCachable, !source.isEnabled(), source.isCached() else { continue }
+            for video in source.getVideos(dedupingAgainst: []) {
+                for urlString in video.urls.values where !urlString.isEmpty {
+                    guard let filename = URL(string: urlString)?.lastPathComponent,
+                          !filename.isEmpty else { continue }
+                    cacheReferenced.insert(filename)
                 }
             }
         }

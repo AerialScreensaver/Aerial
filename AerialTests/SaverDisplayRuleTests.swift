@@ -24,8 +24,10 @@ struct SaverDisplayRuleTests {
     private let tiny = SaverDisplayRule.Display(uuid: "TINY", isMain: false, countsAsScreen: false)
 
     private func playing(_ mode: DisplayMode, selection: [String: Bool] = [:],
+                         override: SingleDisplayOverride? = nil,
                          _ displays: [SaverDisplayRule.Display]) -> Set<String> {
-        SaverDisplayRule.playingDisplays(mode: mode, selection: selection, displays: displays)
+        SaverDisplayRule.playingDisplays(mode: mode, selection: selection, displays: displays,
+                                         singleDisplayOverride: override)
     }
 
     @Test("all displays")
@@ -74,6 +76,64 @@ struct SaverDisplayRuleTests {
         let builtIn = SaverDisplayRule.Display(uuid: "BUILTIN", isMain: true)
         let sel = ["EXT-A": true, "EXT-B": true]
         #expect(playing(.selection, selection: sel, [builtIn]) == ["BUILTIN"])
+    }
+
+    @Test("single-display override: Don't play is the one deliberate black-everywhere result")
+    func singleDisplayOverride() {
+        // Checkbox off (nil) = today's fallback: the lone display plays.
+        #expect(playing(.secondaryOnly, override: nil, [main]) == ["MAIN"])
+        // Play states the fallback explicitly; Don't play keeps it black.
+        #expect(playing(.secondaryOnly, override: .play, [main]) == ["MAIN"])
+        #expect(playing(.secondaryOnly, override: .dontPlay, [main]).isEmpty)
+        #expect(playing(.mainOnly, override: .dontPlay, [main]).isEmpty)
+        // Undocked laptop with a selection of externals: Don't play wins
+        // over the empty-selection fallback.
+        let builtIn = SaverDisplayRule.Display(uuid: "BUILTIN", isMain: true)
+        #expect(playing(.selection, selection: ["EXT-A": true], override: .dontPlay, [builtIn]).isEmpty)
+        #expect(playing(.selection, selection: ["BUILTIN": true], override: .dontPlay, [builtIn]).isEmpty)
+        // "One display" follows the countsAsScreen quirk: a <200 pt
+        // display does not make it a two-display setup.
+        #expect(playing(.mainOnly, override: .dontPlay, [main, tiny]).isEmpty)
+        // Two real displays: the override is inert, the mode rules.
+        #expect(playing(.mainOnly, override: .dontPlay, [main, second]) == ["MAIN"])
+        #expect(playing(.secondaryOnly, override: .dontPlay, [main, second]) == ["SECOND"])
+        // Inert under All displays (the UI hides the checkbox there, but
+        // the stored keys survive a mode switch).
+        #expect(playing(.allDisplays, override: .dontPlay, [main]) == ["MAIN"])
+        // An empty playing set excludes a real saver window but never a
+        // preview or desktop window.
+        #expect(!SaverDisplayRule.plays(uuid: "MAIN", isSaverRole: true, isPreview: false, playing: []))
+        #expect(SaverDisplayRule.plays(uuid: "MAIN", isSaverRole: true, isPreview: true, playing: []))
+        #expect(SaverDisplayRule.plays(uuid: "MAIN", isSaverRole: false, isPreview: false, playing: []))
+    }
+
+    @Test("overlay screen override: only while the override is why the lone display plays")
+    func overlayScreenOverride() {
+        let ext = "EXT-UUID"
+        func borrowed(_ mode: DisplayMode, _ displays: [SaverDisplayRule.Display], _ single: SingleDisplayOverride?,
+                      perScreen: Bool = true, selected: String = ext) -> String? {
+            SaverDisplayRule.overlayScreenOverride(mode: mode, displays: displays, singleDisplayOverride: single,
+                                                   perScreenOverlays: perScreen, selected: selected)
+        }
+        // All conditions met: borrow the selected screen's layout.
+        #expect(borrowed(.secondaryOnly, [main], .play) == ext)
+        #expect(borrowed(.mainOnly, [main, tiny], .play) == ext)
+        // Override off, Don't play, All displays, two real displays.
+        #expect(borrowed(.secondaryOnly, [main], nil) == nil)
+        #expect(borrowed(.secondaryOnly, [main], .dontPlay) == nil)
+        #expect(borrowed(.allDisplays, [main], .play) == nil)
+        #expect(borrowed(.secondaryOnly, [main, second], .play) == nil)
+        // Per-screen layouts off, or "This display" selected.
+        #expect(borrowed(.secondaryOnly, [main], .play, perScreen: false) == nil)
+        #expect(borrowed(.secondaryOnly, [main], .play, selected: "") == nil)
+        // The predicates behind it.
+        #expect(SaverDisplayRule.isSingleDisplaySetup([main]))
+        #expect(SaverDisplayRule.isSingleDisplaySetup([main, tiny]))
+        #expect(SaverDisplayRule.isSingleDisplaySetup([]))
+        #expect(!SaverDisplayRule.isSingleDisplaySetup([main, second]))
+        #expect(SaverDisplayRule.singleDisplayOverrideApplies(mode: .mainOnly, displays: [main], singleDisplayOverride: .play))
+        #expect(!SaverDisplayRule.singleDisplayOverrideApplies(mode: .mainOnly, displays: [main], singleDisplayOverride: .dontPlay))
+        #expect(!SaverDisplayRule.singleDisplayOverrideApplies(mode: .allDisplays, displays: [main], singleDisplayOverride: .play))
     }
 
     @Test("plays: only a real saver window on an excluded display goes black")

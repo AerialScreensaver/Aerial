@@ -57,6 +57,13 @@ struct WallpaperStatusState: Codable, Equatable {
     /// slope for `nowPlayingPosition`.
     var nowPlayingRate: [String: Double] = [:]
 
+    /// Live feeds only: renderer key → seconds played toward the next
+    /// rotation at `lastSeen`, and that rotation's length. Their progress
+    /// bar interpolates `elapsed + (now − lastSeen) × rate` over `length`
+    /// (a stream has no duration). Absent for file renderers.
+    var nowPlayingRotationElapsed: [String: Double] = [:]
+    var nowPlayingRotationLength: [String: Double] = [:]
+
     /// Version of the control state the extension last applied. Companion
     /// compares this against its own counter to detect a deaf extension
     /// (missed Darwin notification) and re-post.
@@ -104,6 +111,8 @@ extension WallpaperStatusState {
         nowPlayingId = try c.decodeIfPresent([String: String].self, forKey: .nowPlayingId) ?? [:]
         nowPlayingPosition = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingPosition) ?? [:]
         nowPlayingRate = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRate) ?? [:]
+        nowPlayingRotationElapsed = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRotationElapsed) ?? [:]
+        nowPlayingRotationLength = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRotationLength) ?? [:]
         appliedControlVersion = try c.decodeIfPresent(Int.self, forKey: .appliedControlVersion) ?? 0
         extensionVersion = try c.decodeIfPresent(String.self, forKey: .extensionVersion) ?? ""
         extensionBuild = try c.decodeIfPresent(String.self, forKey: .extensionBuild) ?? ""

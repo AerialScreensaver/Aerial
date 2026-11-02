@@ -37,23 +37,47 @@ class WeatherProvider {
 
     private var refreshCancellable: AnyCancellable?
 
-    /// Active location sources to refresh (set by OverlayState)
+    /// Active location sources to refresh: the union over every registered
+    /// subscriber (one `OverlayState` per display), so one display's
+    /// teardown never drops another display's city.
     private var activeLocations: [(key: String, source: WeatherLocationSource, needsForecast: Bool)] = []
+    private var locationsBySubscriber: [ObjectIdentifier: [(source: WeatherLocationSource, needsForecast: Bool)]] = [:]
+    private var subscribers = Set<ObjectIdentifier>()
 
     private init() {}
 
     // MARK: - Public API
 
     /// Register the set of active locations that should be refreshed periodically
+    /// on behalf of `subscriber`. Pass an empty list to clear that subscriber's share.
+    func setActiveLocations(_ locations: [(source: WeatherLocationSource, needsForecast: Bool)], for subscriber: AnyObject) {
+        let id = ObjectIdentifier(subscriber)
+        if locations.isEmpty { locationsBySubscriber.removeValue(forKey: id) }
+        else { locationsBySubscriber[id] = locations }
+        rebuildActiveLocations()
+    }
+
+    /// Legacy single-owner registration. Kept for callers outside the overlay
+    /// system; replaces the shared (nil-subscriber) share only.
     func setActiveLocations(_ locations: [(source: WeatherLocationSource, needsForecast: Bool)]) {
-        // Deduplicate by cache key
-        var seen = Set<String>()
-        activeLocations = locations.compactMap { loc in
+        setActiveLocations(locations, for: self)
+    }
+
+    private func rebuildActiveLocations() {
+        // Deduplicate by cache key; a forecast request wins over current-only.
+        var merged: [String: (key: String, source: WeatherLocationSource, needsForecast: Bool)] = [:]
+        var order: [String] = []
+        for loc in locationsBySubscriber.values.flatMap({ $0 }) {
             let key = loc.source.cacheKey
-            guard !seen.contains(key) else { return nil }
-            seen.insert(key)
-            return (key: key, source: loc.source, needsForecast: loc.needsForecast)
+            if var existing = merged[key] {
+                existing.needsForecast = existing.needsForecast || loc.needsForecast
+                merged[key] = existing
+            } else {
+                merged[key] = (key: key, source: loc.source, needsForecast: loc.needsForecast)
+                order.append(key)
+            }
         }
+        activeLocations = order.compactMap { merged[$0] }
         debugLog("⛅🌡️ Active locations: \(activeLocations.map { $0.key })")
     }
 
@@ -82,17 +106,26 @@ class WeatherProvider {
         }
     }
 
-    /// Start periodic refresh timer
-    func startPeriodicRefresh(interval: TimeInterval = WeatherCache.ttl) {
+    /// Start periodic refresh on behalf of `subscriber`. The timer runs while at
+    /// least one subscriber remains; every call refreshes immediately so a new
+    /// display gets data without waiting for the next tick.
+    func startPeriodicRefresh(interval: TimeInterval = WeatherCache.ttl, for subscriber: AnyObject? = nil) {
+        subscribers.insert(ObjectIdentifier(subscriber ?? self))
         refreshAll()
+        guard refreshCancellable == nil else { return }
         refreshCancellable = Timer.publish(every: interval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.refreshAll() }
     }
 
-    /// Stop periodic refresh timer
-    func stopPeriodicRefresh() {
-        refreshCancellable = nil
+    /// Stop refreshing on behalf of `subscriber`; the timer stops only when no
+    /// subscriber is left. The subscriber's locations are dropped as well.
+    func stopPeriodicRefresh(for subscriber: AnyObject? = nil) {
+        let id = ObjectIdentifier(subscriber ?? self)
+        subscribers.remove(id)
+        locationsBySubscriber.removeValue(forKey: id)
+        rebuildActiveLocations()
+        if subscribers.isEmpty { refreshCancellable = nil }
     }
 
     // MARK: - Fetching

@@ -2,14 +2,22 @@
 //  ScreensaverSettingsPanel.swift
 //  Aerial Companion
 //
-//  Screensaver-only options. Shown in full only when the wallpaper mode is
-//  Off: with Aerial also the desktop wallpaper, the saver shares the
-//  desktop's renderer and these options have nothing to act on.
+//  Screensaver options. Activation (the system's idle delay and display
+//  sleep) always applies. Playback options are shown only when the
+//  wallpaper mode is Off: with Aerial also the desktop wallpaper, the saver
+//  shares the desktop's renderer and they have nothing to act on.
 //
 
 import SwiftUI
 
 struct ScreensaverSettingsPanel: View {
+    /// Picker choices for the system idle delay, in seconds; 0 = never.
+    private static let idleChoices = [60, 120, 300, 600, 1200, 1800, 3600, 0]
+
+    /// Mirrors `com.apple.screensaver` `idleTime` (current host), in seconds.
+    @State private var idleSeconds: Int = 0
+    /// Display sleep for the current power source, in minutes; nil = unknown.
+    @State private var displaySleepMinutes: Int?
     @State private var advanceAtLaunch: Bool = false
     /// Snapshot of `Preferences.wallpaperMode` at panel-appear time.
     @State private var wallpaperMode: WallpaperMode = .animated
@@ -25,10 +33,10 @@ struct ScreensaverSettingsPanel: View {
                     .font(.system(size: 24, weight: .bold))
                     .padding(.bottom, 8)
 
+                activationSection
+
                 if wallpaperMode == .off {
                     playbackSection
-                } else {
-                    wallpaperOnNote
                 }
 
                 Spacer()
@@ -38,6 +46,84 @@ struct ScreensaverSettingsPanel: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
         .onAppear { loadSettings() }
+        .task { await loadDisplaySleep() }
+        // Both values can be changed in System Settings › Lock Screen; pick
+        // the change up when the user comes back.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            idleSeconds = WallpaperControl.screensaverIdleSeconds
+            Task { await loadDisplaySleep() }
+        }
+    }
+
+    // MARK: - Activation
+
+    private var activationSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("Start screensaver after")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                    Picker("", selection: $idleSeconds) {
+                        ForEach(Self.idleChoices, id: \.self) { seconds in
+                            Text(Self.idleTitle(seconds)).tag(seconds)
+                        }
+                        if !Self.idleChoices.contains(idleSeconds) {
+                            Text("Custom (\(Self.idleTitle(idleSeconds)))").tag(idleSeconds)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 220, alignment: .trailing)
+                    .onChange(of: idleSeconds) { newValue in
+                        // Only a user pick — loads set it to the system value.
+                        guard newValue != WallpaperControl.screensaverIdleSeconds else { return }
+                        WallpaperControl.setScreensaverIdleSeconds(newValue)
+                    }
+                }
+
+                HStack {
+                    Text("Turn display off after")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                    Text(displaySleepMinutes.map { Self.idleTitle($0 * 60) } ?? "Unknown")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    Button("Open Lock Screen Settings…") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.Lock-Screen-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                }
+
+                Text("The display must stay on longer than the screensaver delay, or the screensaver never shows. Change when the display turns off in System Settings.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let displaySleepMinutes {
+                    Divider()
+                    ScreensaverTimelineView(
+                        // Round a sub-minute delay up so it doesn't read as "disabled".
+                        activationMinutes: idleSeconds == 0 ? 0 : max(1, idleSeconds / 60),
+                        displaySleepMinutes: displaySleepMinutes
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        } label: {
+            Label("Activation", systemImage: "clock")
+                .font(Font.title3.bold())
+                .padding(4)
+        }
+    }
+
+    private static func idleTitle(_ seconds: Int) -> String {
+        if seconds == 0 { return "Never" }
+        if seconds < 60 { return "\(seconds) seconds" }
+        if seconds % 3600 == 0 { let h = seconds / 3600; return "\(h) hour\(h == 1 ? "" : "s")" }
+        let m = seconds / 60
+        return "\(m) minute\(m == 1 ? "" : "s")"
     }
 
     // MARK: - Playback
@@ -77,22 +163,16 @@ struct ScreensaverSettingsPanel: View {
         }
     }
 
-    private var wallpaperOnNote: some View {
-        HStack(alignment: .top, spacing: 6) {
-            Image(systemName: "info.circle")
-                .foregroundColor(.secondary)
-            Text("These options apply when Aerial is not your desktop wallpaper (Wallpaper mode: Off).")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
     // MARK: - Private Methods
 
     private func loadSettings() {
+        idleSeconds = WallpaperControl.screensaverIdleSeconds
         wallpaperMode = Preferences.wallpaperMode
         advanceAtLaunch = PrefsVideos.saverAdvanceAtLaunch
         desktopWallpaperActive = WallpaperControl.shared.desktopWallpaperActive
+    }
+
+    private func loadDisplaySleep() async {
+        displaySleepMinutes = await WallpaperControl.displaySleepMinutes()
     }
 }

@@ -34,6 +34,9 @@ struct NightShift {
             return (true, sunrise, sunset, nil)
         }
 
+        #if COMPANION_APP
+        // Companion only: it is not sandboxed, and LocationProvider relies
+        // on this lookup to produce the PrefsTime cache the extension reads.
         if isNightShiftDataCached {
             return (nightShiftAvailable, nightShiftSunrise, nightShiftSunset, nil)
         }
@@ -45,7 +48,6 @@ struct NightShift {
         }
 
         let (nsInfo, ts) = Aerial.helper.shell(launchPath: cbdpath, arguments: ["nightshift-internal"])
-        
 
         if ts != 0 {
             // Task didn't return correctly ? Abort
@@ -82,6 +84,19 @@ struct NightShift {
         // /usr/bin/corebrightnessdiag nightshift-internal | grep nextSunset | cut -d \" -f2
         warnLog("Location services may be disabled, Night Shift can't detect Sunrise and Sunset times without them")
         return (false, nil, nil, "Location services may be disabled")
+        #else
+        // No relayed data yet. The sandboxed extension cannot run
+        // `corebrightnessdiag` itself, and attempting to spawn it from the acquire
+        // path risked a blocked pipe read or an ObjC exception inside WallpaperAgent.
+        // Companion's LocationProvider fills PrefsTime; until then, Night Shift is
+        // simply unavailable here and the day/night decision falls back.
+        if !isNightShiftDataCached {
+            isNightShiftDataCached = true
+            nightShiftAvailable = false
+            debugLog("NightShift: no relayed sunrise/sunset yet; unavailable in the extension until Companion provides them")
+        }
+        return (false, nil, nil, "Night Shift times are not available yet")
+        #endif
     }
 
     // Helpers

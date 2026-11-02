@@ -36,6 +36,7 @@ struct OverlayPreviewRenderer: View {
             }
             .padding(previewEdgeInsets)
             .foregroundStyle(Color(overlayHex: state.layout.textColorHex))
+            .monospacedDigit(state.layout.monospacedDigits)
             .frame(width: refWidth, height: refHeight)
             .overlay(
                 dockMiniature

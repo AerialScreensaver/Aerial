@@ -21,17 +21,33 @@ final class VideoManager: NSObject {
     var progressCallbacks = [VideoProgressCallback]()
     var finishedCallbacks = [VideoFinishedCallback]()
 
+    /// Queue bookkeeping is touched from DownloadCoordinator's work queue
+    /// (queueDownload), main (finishedDownload via the download delegate) and
+    /// the OperationQueue thread (activeDownloadId). One lock covers it all.
+    private let stateLock = NSLock()
+
     /// List of queued videos, by video.id
     private var queuedVideos = [String]()
 
     /// The video.id currently being downloaded (set when operation starts)
-    fileprivate(set) var activeDownloadId: String?
+    private var activeDownloadStorage: String?
+    var activeDownloadId: String? {
+        stateLock.lock(); defer { stateLock.unlock() }
+        return activeDownloadStorage
+    }
+    fileprivate func markActive(_ id: String) {
+        stateLock.lock(); defer { stateLock.unlock() }
+        activeDownloadStorage = id
+    }
 
     /// Public accessor for the queued video IDs
-    var queuedVideoIds: [String] { queuedVideos }
+    var queuedVideoIds: [String] {
+        stateLock.lock(); defer { stateLock.unlock() }
+        return queuedVideos
+    }
 
     /// Dictionary of operations, keyed by the video.id
-    fileprivate var operations = [String: VideoDownloadOperation]()
+    private var operations = [String: VideoDownloadOperation]()
 
     /// Number of videos that were queued
     private var totalQueued = 0
@@ -40,14 +56,21 @@ final class VideoManager: NSObject {
     // var downloadItems: [VideoDownloadItem]
     /// Serial OperationQueue for downloads
 
-    private let queue: OperationQueue = {
-        // swiftlint:disable:next identifier_name
-        let _queue = OperationQueue()
-        _queue.name = "videodownload"
-        _queue.maxConcurrentOperationCount = 1
+    private let queue: OperationQueue
 
-        return _queue
-    }()
+    /// `queue` is injectable so tests can hand in a suspended queue and
+    /// inspect what got enqueued without touching the network.
+    init(queue: OperationQueue? = nil) {
+        if let queue {
+            self.queue = queue
+        } else {
+            let downloads = OperationQueue()
+            downloads.name = "videodownload"
+            downloads.maxConcurrentOperationCount = 1
+            self.queue = downloads
+        }
+        super.init()
+    }
 
     func addCallback(_ callback:@escaping VideoManagerCallback) {
         managerCallbacks.append(callback)
@@ -67,27 +90,66 @@ final class VideoManager: NSObject {
             stopAll = false
         }
 
-        let operation = VideoDownloadOperation(video: video, delegate: self)
+        // Same video queued twice (card + inspector, manual + coordinator
+        // sweep) used to start two downloads racing for one cache file.
+        // Hand back the live operation instead.
+        let operation: VideoDownloadOperation
+        let completed: Int
+        let total: Int
+        stateLock.lock()
+        if let existing = operations[video.id], !existing.isCancelled, !existing.isFinished {
+            stateLock.unlock()
+            debugLog("VideoManager: \(video.name) already queued — reusing the live download")
+            return existing
+        }
+        operation = VideoDownloadOperation(video: video, delegate: self)
         operations[video.id] = operation
-        queue.addOperation(operation)
-
         queuedVideos.append(video.id)       // Our Internal List of queued videos
         totalQueued += 1                    // Increment our count
+        completed = totalQueued - queuedVideos.count
+        total = totalQueued
+        stateLock.unlock()
+        queue.addOperation(operation)
 
         DispatchQueue.main.async {
             // Callback the callbacks
             for callback in self.managerCallbacks {
-                callback(self.totalQueued-self.queuedVideos.count, self.totalQueued)
+                callback(completed, total)
             }
         }
         return operation
     }
 
+    /// Cancel one queued or in-flight download, leaving the rest of the
+    /// queue alone. No-op when nothing live is tracked for `id`.
+    func cancelDownload(id: String) {
+        stateLock.lock()
+        let operation = operations[id]
+        stateLock.unlock()
+        guard let operation, !operation.isCancelled, !operation.isFinished else { return }
+        operation.cancel()
+    }
+
+    /// A rendition change invalidates every queued and in-flight request:
+    /// their bytes belong to the old format and must never land under the
+    /// new format's filename (`VideoDownload` double-checks on completion;
+    /// this just stops the wasted transfer early). Cached files are
+    /// untouched — that's the caller's `Cache.clearCache()` decision.
+    func cancelDownloadsForFormatChange() {
+        let ids = queuedVideoIds
+        guard !ids.isEmpty else { return }
+        infoLog("VideoManager: video format changed — cancelling \(ids.count) queued download(s)")
+        for id in ids {
+            cancelDownload(id: id)
+        }
+    }
+
     // Callbacks for Items
     func finishedDownload(id: String, success: Bool, errorMessage: String? = nil) {
+        stateLock.lock()
         // Clear active download tracking
-        if activeDownloadId == id {
-            activeDownloadId = nil
+        if activeDownloadStorage == id {
+            activeDownloadStorage = nil
         }
 
         // Manage our queuedVideo index
@@ -102,6 +164,7 @@ final class VideoManager: NSObject {
         if queuedVideos.isEmpty {
             totalQueued = 0
         }
+        stateLock.unlock()
 
         debugLog("VideoManager: download finished id=\(id) success=\(success) (\(completed)/\(total))")
 
@@ -116,35 +179,50 @@ final class VideoManager: NSObject {
     }
 
     func updateProgress(id: String, progress: Double) {
+        stateLock.lock()
+        let completed = totalQueued - queuedVideos.count
+        let total = totalQueued
+        stateLock.unlock()
         DispatchQueue.main.async {
             // Callback the callbacks
             for callback in self.progressCallbacks {
-                callback(self.totalQueued-self.queuedVideos.count, self.totalQueued, progress)
+                callback(completed, total, progress)
             }
         }
     }
 
 }
 
-final class VideoDownloadOperation: AsynchronousOperation {
+final class VideoDownloadOperation: AsynchronousOperation, @unchecked Sendable {
     var video: AerialVideo
     var download: VideoDownload?
+    /// The manager that queued us — injected rather than read off the
+    /// singleton so a test-owned `VideoManager(queue:)` sees its own
+    /// callbacks.
+    private weak var manager: VideoManager?
 
     init(video: AerialVideo, delegate: VideoManager) {
         debugLog("Video queued \(video.name)")
         self.video = video
+        self.manager = delegate
     }
 
     override func main() {
-        let videoManager = VideoManager.sharedInstance
+        guard !isCancelled, let videoManager = manager else {
+            finish()
+            return
+        }
         if videoManager.stopAll {
             finish()
             return
         }
 
         debugLog("Starting download for \(video.name)")
-        videoManager.activeDownloadId = video.id
+        videoManager.markActive(video.id)
         DispatchQueue.main.async {
+            // Cancelled between the queue starting us and this hop:
+            // `cancel()` already reported the failure, don't start.
+            guard !self.isCancelled else { return }
             self.download = VideoDownload(video: self.video, delegate: self)
             self.download!.startDownload()
         }
@@ -152,16 +230,14 @@ final class VideoDownloadOperation: AsynchronousOperation {
 
     override func cancel() {
         defer { finish() }
-        let videoManager = VideoManager.sharedInstance
 
-        if let _ = self.download {
-            self.download!.cancel()
+        if let download = self.download {
+            download.cancel()
         } else {
-            videoManager.finishedDownload(id: self.video.id, success: false)
+            manager?.finishedDownload(id: self.video.id, success: false)
         }
         self.download = nil
         super.cancel()
-        // finish()
     }
 }
 
@@ -171,7 +247,7 @@ extension VideoDownloadOperation: VideoDownloadDelegate {
         debugLog("VideoDownloadOperation: \(success ? "completed" : "failed") \(videoDownload.video.name)")
         defer { finish() }
 
-        let videoManager = VideoManager.sharedInstance
+        guard let videoManager = manager else { return }
         if success {
             // Call up to clean the view
             videoManager.finishedDownload(id: videoDownload.video.id, success: true)
@@ -187,7 +263,7 @@ extension VideoDownloadOperation: VideoDownloadDelegate {
 
     func videoDownload(_ videoDownload: VideoDownload, receivedBytes: Int, progress: Float) {
         // Call up to update the view
-        let videoManager = VideoManager.sharedInstance
+        guard let videoManager = manager else { return }
         videoManager.updateProgress(id: videoDownload.video.id, progress: Double(progress))
     }
 }

@@ -51,6 +51,12 @@ struct LiveFeed: Codable, Identifiable, Equatable {
     var resolvedAt: Date?
     /// Optional path to a thumbnail frame in the source's thumbs folder.
     var thumbnailPath: String?
+    /// Time slice (day / sunrise / sunset / night) the feed belongs to for
+    /// day/night filtering, like a video's. Nil in feeds saved before the
+    /// picker existed — they were catalogued as "day".
+    var timeOfDay: String?
+
+    var effectiveTimeOfDay: String { timeOfDay ?? "day" }
 
     init(id: UUID = UUID(),
          displayName: String,
@@ -60,7 +66,8 @@ struct LiveFeed: Codable, Identifiable, Equatable {
          addedAt: Date = Date(),
          resolvedURL: String? = nil,
          resolvedAt: Date? = nil,
-         thumbnailPath: String? = nil) {
+         thumbnailPath: String? = nil,
+         timeOfDay: String? = nil) {
         self.id = id
         self.displayName = displayName
         self.sourceURL = sourceURL
@@ -70,6 +77,7 @@ struct LiveFeed: Codable, Identifiable, Equatable {
         self.resolvedURL = resolvedURL
         self.resolvedAt = resolvedAt
         self.thumbnailPath = thumbnailPath
+        self.timeOfDay = timeOfDay
     }
 
     /// URL the extension should actually play. Resolved for YouTube, verbatim

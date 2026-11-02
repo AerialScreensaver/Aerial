@@ -2,12 +2,13 @@
 //
 // Loads WallpaperExtensionKit.framework via dlopen to register the
 // runtime XPC type classes, swizzles WallpaperSnapshotXPC's encode
-// to bypass the exact NSXPCCoder check, then surfaces the
-// WallpaperExtensionConfig.
+// so the snapshot's IOSurface actually reaches WallpaperAgent, then
+// surfaces the WallpaperExtensionConfig.
 
 import AppKit
 import ExtensionFoundation
 import Foundation
+import IOSurface
 
 @main
 final class Aerial4WallpaperExtension: NSObject, AppExtension {
@@ -46,7 +47,8 @@ final class Aerial4WallpaperExtension: NSObject, AppExtension {
                 dumpWallpaperClassInventory(frameworkPath: frameworkPath)
             }
         } else {
-            let err = String(cString: dlerror())
+            // dlerror() is NULL when nothing is pending; String(cString:) would trap on it.
+            let err = dlerror().map { String(cString: $0) } ?? "unknown"
             debugLog("INIT (PID: \(ProcessInfo.processInfo.processIdentifier), version=\(runningExtensionIdentity), build=\(buildTimestamp)) — dlopen failed: \(err)")
         }
 
@@ -92,12 +94,17 @@ final class Aerial4WallpaperExtension: NSObject, AppExtension {
         registerDockObserver()
     }
 
-    /// Swizzle WallpaperSnapshotXPC.encodeWithCoder: to bypass the exact NSXPCCoder check.
+    /// Swizzle WallpaperSnapshotXPC.encodeWithCoder: to write the surface ourselves.
     ///
-    /// The system's encode does `type(of: coder) == NSXPCCoder.self`, but NSXPC hands
-    /// the method an NSXPCEncoder (a subclass) — so the check fails and snapshots
-    /// silently encode to nothing. We temporarily flip the coder's isa to NSXPCCoder
-    /// for the call, then restore. Both classes implement `encodeXPCObject:forKey:`.
+    /// The system encode is `(coder as? NSXPCCoder)?.encodeXPCObject(
+    /// IOSurfaceCreateXPCObject(rawValue), forKey: "surface")`, and WallpaperAgent's
+    /// initWithCoder: returns nil when "surface" is missing ("Failed to create
+    /// snapshot to export"). Early macOS 26 builds checked the coder's exact class,
+    /// which NSXPCEncoder fails, so we used to flip its isa to NSXPCCoder for the
+    /// call. That silently dropped every snapshot: -[NSXPCCoder encodeXPCObject:
+    /// forKey:] is an empty stub, only NSXPCEncoder implements it. We now encode
+    /// "surface" directly on the untouched NSXPCEncoder, which works whatever check
+    /// the system encode does, and fall back to the original encode otherwise.
     private func swizzleSnapshotEncodeIfNeeded() {
         guard let snapshotClass = objc_getClass("WallpaperSnapshotXPC") as? AnyClass else {
             debugLog("  [Swizzle] WallpaperSnapshotXPC not found")
@@ -119,21 +126,35 @@ final class Aerial4WallpaperExtension: NSObject, AppExtension {
             return
         }
 
+        // Same offset createSnapshotXPC(surface:) writes the surface to.
+        let rawValueOffset = class_getInstanceVariable(snapshotClass, "rawValue").map(ivar_getOffset) ?? 8
+        let encodeXPCSel = NSSelectorFromString("encodeXPCObject:forKey:")
+        typealias EncodeXPCFunc = @convention(c) (AnyObject, Selector, xpc_object_t, NSString) -> Void
+
+        // First snapshot only: which path ran, so a regression isn't silent again.
+        var loggedPath = false
         let block: @convention(block) (AnyObject, NSCoder) -> Void = { obj, coder in
-            guard let origClass: AnyClass = object_getClass(coder) else {
-                // No class to restore — run the original encoder untouched
-                // rather than trap inside WallpaperAgent's XPC reply.
+            let surfacePtr = Unmanaged.passUnretained(obj).toOpaque()
+                .load(fromByteOffset: rawValueOffset, as: UnsafeRawPointer?.self)
+            guard coder.isKind(of: nsxpcCoderClass),
+                  let surfacePtr,
+                  let imp = class_getMethodImplementation(object_getClass(coder), encodeXPCSel) else {
+                if !loggedPath {
+                    loggedPath = true
+                    debugLog("  [Swizzle] snapshot encode: original path (coder=\(type(of: coder)), surface=\(surfacePtr != nil))")
+                }
                 origFunc(obj, sel, coder)
                 return
             }
-            object_setClass(coder, nsxpcCoderClass)
-            // Catch here so a raise inside the system encoder can never
-            // leave the coder's isa flipped; the snapshot then encodes to
-            // nothing (the pre-swizzle behaviour) instead of aborting.
+            let surface = Unmanaged<IOSurface>.fromOpaque(surfacePtr).takeUnretainedValue()
+            let encodeXPC = unsafeBitCast(imp, to: EncodeXPCFunc.self)
             ObjCException.attempt("WallpaperSnapshotXPC.encodeWithCoder:") {
-                origFunc(obj, sel, coder)
+                encodeXPC(coder, encodeXPCSel, IOSurfaceCreateXPCObject(surface), "surface")
             }
-            object_setClass(coder, origClass)
+            if !loggedPath {
+                loggedPath = true
+                debugLog("  [Swizzle] snapshot encode: direct \"surface\" via \(type(of: coder)) (\(IOSurfaceGetWidth(surface))x\(IOSurfaceGetHeight(surface)))")
+            }
         }
         let newIMP = imp_implementationWithBlock(block)
         method_setImplementation(origMethod, newIMP)

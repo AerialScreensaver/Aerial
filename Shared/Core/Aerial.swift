@@ -70,6 +70,13 @@ class Aerial: NSObject {
 
     // Launch a process through shell and capture/return output
     func shell(launchPath: String, arguments: [String] = []) -> (String?, Int32) {
+        // A launch that never happens must not reach the pipe read below:
+        // with no child holding the write end, `readDataToEndOfFile` blocks
+        // forever, and `terminationStatus` on an unlaunched Process raises.
+        guard FileManager.default.isExecutableFile(atPath: launchPath) else {
+            debugLog("shell: \(launchPath) is not executable")
+            return (nil, -1)
+        }
         let task = Process()
         task.launchPath = launchPath
         task.arguments = arguments
@@ -78,16 +85,11 @@ class Aerial: NSObject {
         task.standardOutput = pipe
         task.standardError = pipe
 
-        if #available(OSX 10.13, *) {
-            do {
-                try task.run()
-            } catch {
-                // handle errors
-                debugLog("Error: \(error.localizedDescription)")
-            }
-        } else {
-            // A non existing command will crash 10.12
-            task.launch()
+        do {
+            try task.run()
+        } catch {
+            debugLog("shell: could not launch \(launchPath): \(error.localizedDescription)")
+            return (nil, -1)
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()

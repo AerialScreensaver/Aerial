@@ -14,7 +14,6 @@ enum SettingsPanel: String, CaseIterable, Identifiable {
     case screensaver = "Screensaver"
     case displays = "Displays"
     case cache = "Cache"
-    case storage = "Storage"
     case time = "Time"
     case overlays = "Overlays"
     case accessibility = "Accessibility"
@@ -34,8 +33,6 @@ enum SettingsPanel: String, CaseIterable, Identifiable {
             return "text.below.photo"
         case .cache:
             return "internaldrive"
-        case .storage:
-            return "externaldrive"
         case .displays:
             return "display.2"
         case .desktop:
@@ -61,14 +58,12 @@ enum SettingsPanel: String, CaseIterable, Identifiable {
             return "Clock, weather & more"
         case .cache:
             return "Network/Disk use"
-        case .storage:
-            return "Disk cleanup"
         case .displays:
             return "Screen layout"
         case .desktop:
             return "Live wallpaper"
         case .screensaver:
-            return "Screensaver-only options"
+            return "Activation & playback"
         case .accessibility:
             return "Shortcuts & visuals"
         case .autoUpdates:
@@ -164,8 +159,6 @@ struct SettingsView: View {
                     OverlaysSettingsPanel()
                 case .cache:
                     CacheSettingsPanel()
-                case .storage:
-                    StorageSettingsPanel()
                 case .displays:
                     DisplaysSettingsPanel()
                 case .desktop:

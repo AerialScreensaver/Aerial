@@ -137,6 +137,19 @@ final class WallpaperControlListener: @unchecked Sendable {
         return lastApplied.dockInsets
     }
 
+    /// "Menu bar background" style Companion wants.
+    var currentMenuBarBackground: MenuBarBackgroundStyle {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.menuBarBackgroundValue
+    }
+
+    /// Per-screen menu bar geometry relayed by Companion (screen UUID →
+    /// height incl. notch; 0 = no permanent menu bar on that screen).
+    var currentMenuBarGeometry: [String: MenuBarGeometry] {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.menuBarGeometry
+    }
+
     /// Screen UUIDs auto-paused (window coverage) per the last-applied
     /// control state. Read by the status reporter for the dashboard echo.
     func autoPausedScreens() -> [String] {
@@ -249,6 +262,7 @@ final class WallpaperControlListener: @unchecked Sendable {
             )
         }
         reassertAudioOwnership(context: "rebaseline")
+        MenuBarBackgroundController.applyAll(reason: "rebaseline")
     }
 
     private func applyDeltas(from prev: WallpaperControlState, to next: WallpaperControlState) {
@@ -340,11 +354,10 @@ final class WallpaperControlListener: @unchecked Sendable {
         //     overlay driver so wallpaper overlays follow dock moves live.
         if next.dockInsets != prev.dockInsets {
             debugLog("[WallpaperControl] dock insets changed — refreshing overlay drivers")
-            let drivers = sharedHandlerState.allWallpapers()
-                .compactMap { $0.wallpaper.overlayDriver }
+            let wallpapers = sharedHandlerState.allWallpapers()
             Task { @MainActor in
-                for driver in drivers {
-                    driver.refreshDockInset()
+                for (_, w) in wallpapers {
+                    w.overlayDriver?.refreshDockInset()
                 }
             }
             // Companion re-publishes insets on every screen-parameter
@@ -354,7 +367,14 @@ final class WallpaperControlListener: @unchecked Sendable {
             reassertAudioOwnership(context: "screen-params")
             // The same event also means the display set/arrangement
             // may have changed — re-slice spanned windows if it did.
-            refreshTopologyAndResliceIfChanged(reason: "screen-params")
+            handlerQueue.async { refreshTopologyAndResliceIfChanged(reason: "screen-params") }
+        }
+
+        // 1d. Menu bar background style or geometry (auto-hide toggled,
+        //     display added, notch screen resized) — re-apply the band on
+        //     every window.
+        if next.menuBarBackground != prev.menuBarBackground || next.menuBarGeometry != prev.menuBarGeometry {
+            MenuBarBackgroundController.applyAll(reason: "control-delta")
         }
 
         // 2. Per-screen counters. We iterate the UNION so a screen
@@ -412,7 +432,9 @@ final class WallpaperControlListener: @unchecked Sendable {
             // Windows showing the no-video fallback: Companion bumps the
             // playlist after every finished download, so this is the
             // moment a fresh install's first video becomes playable.
-            retryAttachForUnfedWindows(reason: "playlist-changed")
+            // (The reloads above ran on this thread first, so the retry
+            // sees the fresh catalog by program order.)
+            handlerQueue.async { retryAttachForUnfedWindows(reason: "playlist-changed") }
         }
         for uuid in allKeys {
             let prevS = prev.screens[uuid] ?? WallpaperScreenControl()
@@ -569,8 +591,13 @@ final class WallpaperControlListener: @unchecked Sendable {
             Cache.invalidateSourcesRoots()
             SourceList.rescan()
             VideoList.instance.reloadSources()
-            DisplayDetection.sharedInstance.detectDisplays()
-            reconfigureAllWallpapers()
+            // Topology + reconfigure on the handler queue, which owns every
+            // window operation (X4); `detectDisplays()` rides along so the
+            // extension only ever writes DisplayDetection from that queue.
+            handlerQueue.async {
+                DisplayDetection.sharedInstance.detectDisplays()
+                reconfigureAllWallpapers()
+            }
         }
 
         // 3a. Screensaver display selection changed ("Screensaver plays
@@ -583,7 +610,7 @@ final class WallpaperControlListener: @unchecked Sendable {
         if next.saverSettingsGeneration != prev.saverSettingsGeneration {
             debugLog("[WallpaperControl] saver-displays-changed (gen \(prev.saverSettingsGeneration) → \(next.saverSettingsGeneration)) — reload only, applies at the next saver start")
             ScreensaverSettingsManager.shared.reloadFromDisk()
-            DisplayDetection.sharedInstance.detectDisplays()
+            handlerQueue.async { DisplayDetection.sharedInstance.detectDisplays() }
         }
 
         // 3c. Time adaptation prefs changed (time mode, Dark Mode
@@ -606,7 +633,8 @@ final class WallpaperControlListener: @unchecked Sendable {
         //     removed, or dragged in System Settings). Insets may be
         //     identical, so this rides its own counter.
         if next.screenLayoutGeneration != prev.screenLayoutGeneration {
-            refreshTopologyAndResliceIfChanged(reason: "screen-layout gen \(next.screenLayoutGeneration)")
+            let generation = next.screenLayoutGeneration
+            handlerQueue.async { refreshTopologyAndResliceIfChanged(reason: "screen-layout gen \(generation)") }
         }
 
         // 4. Overlay config changed (separate-desktop toggle, editor

@@ -74,6 +74,7 @@ struct CacheSettingsPanel: View {
                 downloadsSection
                 networkSection
                 storageSection
+                MacOSWallpaperVideosSection()
 
                 Spacer()
             }
@@ -142,6 +143,7 @@ struct CacheSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Disk Usage", systemImage: "internaldrive")
@@ -357,6 +359,7 @@ struct CacheSettingsPanel: View {
                 }
 
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Location", systemImage: "folder")
@@ -852,6 +855,10 @@ struct CacheSettingsPanel: View {
         let oldPacksRoot = PrefsCache.expansionsAtCacheLocation ? Cache.expansionsRootCandidate : nil
 
         Task.detached {
+            // The self-heal timer must not re-attach the OLD image between detach and
+            // adopt, or the new path would be recorded against the wrong mount.
+            ExternalCacheImage.shared.beginImageSwitch()
+            defer { ExternalCacheImage.shared.endImageSwitch() }
             do {
                 if switchingImages {
                     // One mount point, one image: release the current one first.
@@ -1073,6 +1080,7 @@ struct CacheSettingsPanel: View {
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Downloads", systemImage: "arrow.down.circle")
@@ -1169,6 +1177,7 @@ struct CacheSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Network", systemImage: "wifi")
@@ -1199,6 +1208,7 @@ struct CacheSettingsPanel: View {
                         }
                     }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Storage", systemImage: "externaldrive")

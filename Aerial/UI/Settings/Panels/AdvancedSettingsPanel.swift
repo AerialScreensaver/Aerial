@@ -136,6 +136,7 @@ struct AdvancedSettingsPanel: View {
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Launch", systemImage: "power").font(Font.title3.bold()).padding(4)
@@ -203,6 +204,7 @@ struct AdvancedSettingsPanel: View {
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Video", systemImage: "film").font(Font.title3.bold()).padding(4)
@@ -240,6 +242,7 @@ struct AdvancedSettingsPanel: View {
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Audio", systemImage: "speaker.wave.2").font(Font.title3.bold()).padding(4)
@@ -271,6 +274,7 @@ struct AdvancedSettingsPanel: View {
                             }
 
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Playback", systemImage: "play.circle").font(Font.title3.bold()).padding(4)
@@ -311,6 +315,7 @@ struct AdvancedSettingsPanel: View {
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Diagnostics", systemImage: "stethoscope").font(Font.title3.bold()).padding(4)
@@ -340,6 +345,7 @@ struct AdvancedSettingsPanel: View {
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Language", systemImage: "globe").font(Font.title3.bold()).padding(4)
@@ -370,6 +376,7 @@ struct AdvancedSettingsPanel: View {
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Troubleshooting", systemImage: "ant").font(Font.title3.bold()).padding(4)
@@ -383,10 +390,10 @@ struct AdvancedSettingsPanel: View {
         .background(Color(NSColor.controlBackgroundColor))
         .alert("Changing format will delete all videos", isPresented: $showFormatAlert) {
             Button("Change Format and Delete Videos", role: .destructive) {
-                PrefsVideos.videoFormat = VideoFormat(rawValue: pendingFormat)!
+                // Cancels in-flight downloads, writes the pref, wipes the
+                // cache and signals the extension, in that order.
+                DownloadCoordinator.shared.applyVideoFormat(VideoFormat(rawValue: pendingFormat)!, clearingCache: true)
                 originalFormat = pendingFormat
-                Cache.clearCache()
-                Cache.clearNonCacheableSources()
             }
             Button("Cancel", role: .cancel) {
                 videoFormat = originalFormat

@@ -33,6 +33,19 @@ struct UnifiedPaths {
             if fileManager.fileExists(atPath: markerPath) {
                 alreadyInitialized = true
                 // Don't return - continue to subdirectory creation below
+            } else if looksLikeOurData(basePath) {
+                // Our own folder with the marker missing: an interrupted first run, or a
+                // user who deleted a corrupt companion.json to "reset". Renaming it would
+                // move their whole video cache away; just recreate the marker.
+                debugLog("🚀 UnifiedPaths: Folder has Aerial data but no companion.json, recreating marker")
+                do {
+                    try "{}\n".write(toFile: markerPath, atomically: true, encoding: .utf8)
+                    alreadyInitialized = true
+                } catch {
+                    errorLog("🚀 UnifiedPaths: Failed to recreate companion.json: \(error.localizedDescription)")
+                    showPermissionError(details: "Could not recreate companion.json in \(AerialPaths.baseDirectory)/.\n\nError: \(error.localizedDescription)")
+                    return false
+                }
             } else {
                 // Directory exists but no companion.json - user might have created it
                 // Rename it to preserve any user data
@@ -79,10 +92,12 @@ struct UnifiedPaths {
                 return false
             }
 
-            // Step 3: Create companion.json marker (empty file)
+            // Step 3: Create companion.json marker. Only its presence
+            // matters, but keep it valid JSON so anything that opens it
+            // as a document doesn't choke on an empty file.
             debugLog("🚀 UnifiedPaths: Creating companion.json marker")
             do {
-                try "".write(toFile: markerPath, atomically: true, encoding: .utf8)
+                try "{}\n".write(toFile: markerPath, atomically: true, encoding: .utf8)
             } catch {
                 errorLog("🚀 UnifiedPaths: Failed to create companion.json: \(error.localizedDescription)")
                 showPermissionError(details: "Could not create companion.json marker file.\n\nError: \(error.localizedDescription)")
@@ -130,6 +145,13 @@ struct UnifiedPaths {
         return true
     }
 
+    /// Files only this app creates. Any one of them proves the folder is ours.
+    static func looksLikeOurData(_ basePath: String) -> Bool {
+        let fm = FileManager.default
+        return ["screensaver.json", "overlay-config.json", "Cache", "Logs", "wallpaper-control.json"]
+            .contains { fm.fileExists(atPath: basePath + "/" + $0) }
+    }
+
     // MARK: - Helper Methods (Delegate to AerialPaths)
 
     /// Get the full path for the Logs directory
@@ -161,9 +183,11 @@ struct UnifiedPaths {
 
     // MARK: - Error Handling
 
-    /// Show a permission error dialog to the user
+    /// Show a permission error dialog to the user. Synchronous: the caller quits
+    /// the app right after a `false` return, and an alert dispatched for later
+    /// would never appear.
     private static func showPermissionError(details: String) {
-        DispatchQueue.main.async {
+        let present = {
             Helpers.showErrorAlert(
                 question: "Cannot Initialize Aerial Directory",
                 text: """
@@ -181,5 +205,7 @@ struct UnifiedPaths {
                 button: "Quit"
             )
         }
+        // swiftlint:disable:next main_queue_sync
+        if Thread.isMainThread { present() } else { DispatchQueue.main.sync(execute: present) }
     }
 }

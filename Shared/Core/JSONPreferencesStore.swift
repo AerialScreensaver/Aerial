@@ -26,27 +26,74 @@ class JSONPreferencesStore {
     ///   - fileURL: The file URL to read from
     /// - Returns: The decoded value, or nil if file doesn't exist or can't be decoded
     func read<T: Codable>(_ type: T.Type, from fileURL: URL) -> T? {
+        if case .value(let value) = readChecked(type, from: fileURL) {
+            return value
+        }
+        return nil
+    }
+
+    /// What `readChecked` found. Callers that fall back to defaults must
+    /// tell the last two apart: `absent` may be replaced by defaults,
+    /// `undecodable` is a file the user's settings are still IN — writing
+    /// defaults over it would destroy them. See `quarantine`.
+    enum ReadOutcome<T> {
+        case absent
+        case value(T)
+        case undecodable(Error)
+    }
+
+    /// `read`, but distinguishing "no file" from "a file we can't parse".
+    func readChecked<T: Codable>(_ type: T.Type, from fileURL: URL) -> ReadOutcome<T> {
         return fileQueue.sync {
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                return .absent
+            }
             do {
-                // Check if file exists
-                guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                    return nil
-                }
-
-                // Read file data
                 let data = try Data(contentsOf: fileURL)
-
-                // Decode JSON
                 let decoder = JSONDecoder()
-                let result = try decoder.decode(T.self, from: data)
-
-                return result
+                return .value(try decoder.decode(T.self, from: data))
             } catch {
-                errorLog("[JSONPreferencesStore] Failed to read from \(fileURL.path): \(error.localizedDescription)")
+                errorLog("[JSONPreferencesStore] ⚠️ Undecodable \(fileURL.lastPathComponent): \(error.localizedDescription)")
+                return .undecodable(error)
+            }
+        }
+    }
+
+    /// Move an undecodable file aside as `<name>.corrupt-<timestamp>.<ext>`
+    /// next to it, so the user's bytes survive for recovery and the next
+    /// write starts from a clean slate. Returns where it went, nil when
+    /// the move failed (the caller should then keep refusing to write).
+    @discardableResult
+    func quarantine(_ fileURL: URL, now: Date = Date()) -> URL? {
+        return fileQueue.sync {
+            let stamp = Self.quarantineStamp.string(from: now)
+            let ext = fileURL.pathExtension
+            let base = fileURL.deletingPathExtension().lastPathComponent
+            var name = "\(base).corrupt-\(stamp)"
+            if FileManager.default.fileExists(atPath: fileURL.deletingLastPathComponent()
+                    .appendingPathComponent(ext.isEmpty ? name : "\(name).\(ext)").path) {
+                name += "-" + UUID().uuidString.prefix(8)
+            }
+            if !ext.isEmpty { name += ".\(ext)" }
+            let target = fileURL.deletingLastPathComponent().appendingPathComponent(name)
+            do {
+                try FileManager.default.moveItem(at: fileURL, to: target)
+                errorLog("[JSONPreferencesStore] ⚠️ Quarantined \(fileURL.lastPathComponent) → \(name)")
+                return target
+            } catch {
+                errorLog("[JSONPreferencesStore] Failed to quarantine \(fileURL.path): \(error.localizedDescription)")
                 return nil
             }
         }
     }
+
+    private static let quarantineStamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter
+    }()
 
     /// Write a Codable value to a JSON file atomically
     /// - Parameters:

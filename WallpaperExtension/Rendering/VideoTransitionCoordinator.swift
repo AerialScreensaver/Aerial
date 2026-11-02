@@ -300,9 +300,9 @@ final class VideoTransitionCoordinator: @unchecked Sendable {
 
     /// Build and animate ghosts over each subscriber. All CoreAnimation
     /// work happens on main (never main.sync from the renderer queue —
-    /// the snapshot path does queue.sync from MainActor and would
-    /// deadlock). `afterCommit` runs once the ghost transaction is
-    /// committed.
+    /// main-side readers bounded-sync into this queue and would wait
+    /// out the timeout). `afterCommit` runs once the ghost transaction
+    /// is committed.
     private func runGhosts(
         on subscribers: [CALayer],
         sample: CMSampleBuffer,

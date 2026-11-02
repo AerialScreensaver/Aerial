@@ -148,8 +148,8 @@ final class DashboardModel: ObservableObject {
                                           mode: PrefsVideos.newShouldPlay,
                                           filterStrings: PrefsVideos.newShouldPlayString)
 
-        // Restart live playback under the new mode and rescan downloads.
-        playbackManager.refreshPlayback()
+        // The extension restarts playback on its own when the playlist
+        // generation bumps; rescan downloads under the new mode.
         DownloadCoordinator.shared.selectionDidChange()
 
         // Re-render (card layout switches independent ↔ single shared card)
@@ -182,7 +182,6 @@ final class DashboardModel: ObservableObject {
         PrefsDisplays.displayMode = mode
         WallpaperControl.shared.saverDisplaysDidChange()
         DisplayDetection.sharedInstance.detectDisplays()
-        playbackManager.refreshPlayback()
         refreshTrigger += 1
     }
 

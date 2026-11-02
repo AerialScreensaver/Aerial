@@ -224,7 +224,7 @@ final class LiveFeedTransmuxerManager {
         }
         guard let ffmpeg = LiveFeedsTooling.shared.ffmpegPath else {
             throw NSError(domain: "com.glouel.aerial.transmuxer", code: -2,
-                          userInfo: [NSLocalizedDescriptionKey: "ffmpeg not found — install via `brew install ffmpeg`"])
+                          userInfo: [NSLocalizedDescriptionKey: "ffmpeg not found — install via `\(LiveFeedsTooling.installCommand("ffmpeg"))`"])
         }
 
         try LiveFeedsGateway.shared.ensureRunning()

@@ -266,7 +266,8 @@ struct SourceInfo {
     static func findDuplicate(id: String, url1080pH264: String, in existing: [AerialVideo]) -> (Bool, AerialVideo?) {
         // We blacklist some duplicates
         if url1080pH264 != "" {
-            if blacklist.contains((URL(string: url1080pH264)?.lastPathComponent)!) {
+            // A manifest URL with illegal characters is not a URL at all; treat it as no match.
+            if let name = URL(string: url1080pH264)?.lastPathComponent, blacklist.contains(name) {
                 return (true, nil)
             }
         }

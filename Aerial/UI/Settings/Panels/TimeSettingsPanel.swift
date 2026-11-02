@@ -129,6 +129,7 @@ struct TimeSettingsPanel: View {
                         // Disabled
                         radioRow(mode: .disabled, icon: "xmark.circle", label: "Disabled")
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Time Adaptation", systemImage: "clock").font(Font.title3.bold()).padding(4)
@@ -204,6 +205,7 @@ struct TimeSettingsPanel: View {
                             .help("Strict (0°) and Official (0.83°) switch at true sunrise/sunset. Civil (6°), Nautical (12°) and Astronomical (18°) switch at dawn/dusk, based on how far the Sun sits below the horizon.")
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                 } label: {
                     Label("Options", systemImage: "slider.horizontal.3").font(Font.title3.bold()).padding(4)

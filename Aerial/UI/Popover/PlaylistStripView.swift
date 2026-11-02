@@ -25,6 +25,11 @@ struct PlaylistSectionView: View {
     @State private var listMode: Bool = Preferences.playlistListMode
     @State private var cycleMode: PlaylistCycleMode = Preferences.playlistMode
     @State private var displayToPlaylistIndex: [Int: Int] = [:]
+    @State private var videoById: [String: AerialVideo] = [:]
+    /// Held in state (refreshed by `reload()`) so the .contextMenu
+    /// snapshot never serves a stale playlist list.
+    @State private var userPlaylists: [UserPlaylistSummary] = []
+    @State private var pendingCacheDelete: PendingCacheDelete?
 
     var body: some View {
         VStack(spacing: 4) {
@@ -51,7 +56,8 @@ struct PlaylistSectionView: View {
                         playbackManager: playbackManager,
                         downloadTracker: downloadTracker,
                         onTapEntry: { tapEntry(index: $0) },
-                        onDownload: { downloadEntry(videoId: $0) }
+                        onDownload: { downloadEntry(videoId: $0) },
+                        contextMenu: { videoMenu(for: $0) }
                     )
                 } else {
                     thumbnailStrip
@@ -66,6 +72,7 @@ struct PlaylistSectionView: View {
                 .padding(.top, 4)
             }
         }
+        .videoCacheDeleteAlert($pendingCacheDelete) { reload() }
         .onAppear { reload() }
         .onChange(of: playbackManager.popoverScreenUUID) { _ in
             // Only the popover scope follows the active screen; a pinned
@@ -388,6 +395,7 @@ struct PlaylistSectionView: View {
             guard !isCurrent else { return }
             tapEntry(index: index)
         }
+        .contextMenu { videoMenu(for: entry) }
         // Each thumbnail is announced as a single VO element with
         // position context; the play/pause overlay button keeps its
         // own label so it remains separately reachable.
@@ -473,6 +481,7 @@ struct PlaylistSectionView: View {
                 .lineLimit(1)
                 .frame(width: 96)
         }
+        .contextMenu { videoMenu(for: entry) }
         // Combine the dimmed thumbnail + label as one VO node and
         // surface "not downloaded yet" so users understand why these
         // entries can't be activated.
@@ -496,6 +505,19 @@ struct PlaylistSectionView: View {
         downloadTracker.queueDownload(videoId: videoId)
     }
 
+    /// The shared right-click menu for one entry (no multi-selection here).
+    @ViewBuilder
+    private func videoMenu(for entry: PlaylistEntry) -> some View {
+        if let video = videoById[entry.videoId] {
+            VideoContextMenu(
+                videos: [video],
+                userPlaylists: userPlaylists,
+                pendingCacheDelete: $pendingCacheDelete,
+                onChange: { reload() }
+            )
+        }
+    }
+
     // MARK: - Data Loading
 
     /// The screen this section's queries resolve against. `.popover`
@@ -510,6 +532,13 @@ struct PlaylistSectionView: View {
     private func reload() {
         let screenUUID = scopeScreenUUID
         let allEntries = PlaylistManager.shared.allEntries(for: screenUUID)
+        // Build lookup once instead of linear scan per entry
+        let lookup = Dictionary(
+            VideoList.instance.videos.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        videoById = lookup
+        userPlaylists = UserPlaylistManager.shared.allSummaries()
         let playlistCurrentIdx = PlaylistManager.shared.currentIndex(for: screenUUID)
 
         // Re-read the mode so a change made elsewhere (dashboard Order
@@ -520,17 +549,11 @@ struct PlaylistSectionView: View {
         let (isRestricted, restrictTo) = TimeManagement.sharedInstance.shouldRestrictPlaybackToDayNightVideo()
 
         if isRestricted {
-            // Build a videoId→timeOfDay lookup to avoid repeated linear scans
-            let videoTimeMap = Dictionary(
-                VideoList.instance.videos.map { ($0.id, $0.timeOfDay) },
-                uniquingKeysWith: { first, _ in first }
-            )
-
             var filtered: [PlaylistEntry] = []
             var indexMap: [Int: Int] = [:]
 
             for (originalIdx, entry) in allEntries.enumerated() {
-                let matches = videoTimeMap[entry.videoId] == restrictTo
+                let matches = lookup[entry.videoId].map(TimeManagement.videoMatchesCurrentTime) ?? false
                 let isCurrent = originalIdx == playlistCurrentIdx
 
                 if matches || isCurrent {
@@ -549,7 +572,7 @@ struct PlaylistSectionView: View {
         }
 
         reloadUncachedEntries(isRestricted: isRestricted, restrictTo: restrictTo)
-        loadMissingThumbnails()
+        loadMissingThumbnails(videoById: lookup)
     }
 
     private func reloadUncachedEntries(isRestricted: Bool, restrictTo: String) {
@@ -582,13 +605,8 @@ struct PlaylistSectionView: View {
             .map { PlaylistEntry(videoId: $0.id, videoName: $0.name, secondaryName: $0.secondaryName, duration: $0.duration) }
     }
 
-    private func loadMissingThumbnails() {
+    private func loadMissingThumbnails(videoById: [String: AerialVideo]) {
         let allVideoEntries = entries + uncachedEntries
-        // Build lookup once instead of linear scan per entry
-        let videoById = Dictionary(
-            VideoList.instance.videos.map { ($0.id, $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
         for entry in allVideoEntries {
             guard thumbnails[entry.videoId] == nil else { continue }
             if let video = videoById[entry.videoId] {

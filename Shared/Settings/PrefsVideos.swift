@@ -76,7 +76,7 @@ struct PrefsVideos {
 
     static var onBatteryMode: OnBatteryMode {
         get {
-            return OnBatteryMode(rawValue: intOnBatteryMode)!
+            return OnBatteryMode(rawValue: intOnBatteryMode) ?? .keepEnabled
         }
         set(value) {
             intOnBatteryMode = value.rawValue
@@ -91,7 +91,9 @@ struct PrefsVideos {
 
     static var videoFormat: VideoFormat {
         get {
-            return VideoFormat(rawValue: intVideoFormat)!
+            // Out-of-range values (hand edit, downgrade) fall back to our
+            // default format instead of crashing both processes.
+            return VideoFormat(rawValue: intVideoFormat) ?? .v4KSDR240
         }
         set(value) {
             intVideoFormat = value.rawValue
@@ -106,7 +108,7 @@ struct PrefsVideos {
 
     static var fadeMode: FadeMode {
         get {
-            return FadeMode(rawValue: intFadeMode)!
+            return FadeMode(rawValue: intFadeMode) ?? .disabled
         }
         set(value) {
             intFadeMode = value.rawValue
@@ -130,7 +132,7 @@ struct PrefsVideos {
 
     static var refreshPeriodicity: RefreshPeriodicity {
         get {
-            return RefreshPeriodicity(rawValue: intRefreshPeriodicity)!
+            return RefreshPeriodicity(rawValue: intRefreshPeriodicity) ?? .weekly
         }
         set(value) {
             intRefreshPeriodicity = value.rawValue
@@ -205,9 +207,8 @@ struct PrefsVideos {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         dateFormatter.locale = Locale.init(identifier: "en_GB")
-        let dateObj = dateFormatter.date(from: PrefsVideos.lastVideoCheck)!
-
-        // debugLog("Last manifest check : \(dateObj)")
+        // A malformed stored date reads as "never checked" rather than crashing.
+        guard let dateObj = dateFormatter.date(from: PrefsVideos.lastVideoCheck) else { return -Double.greatestFiniteMagnitude }
 
         return dateObj.timeIntervalSinceNow
     }

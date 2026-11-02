@@ -108,6 +108,7 @@ struct AccessibilityPanel: View {
                     #endif
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Global Shortcuts", systemImage: "keyboard")
@@ -149,6 +150,7 @@ struct AccessibilityPanel: View {
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Display", systemImage: "eye")

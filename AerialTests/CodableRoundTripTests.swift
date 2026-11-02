@@ -396,6 +396,7 @@ struct CodableRoundTripTests {
         )
         layout.addInstance(i1)
         layout.addInstance(i2)
+        layout.monospacedDigits = false
 
         let decoded = try roundTrip(layout)
         #expect(decoded.instances(at: .topLeft).count == 1)
@@ -407,9 +408,10 @@ struct CodableRoundTripTests {
         #expect(decoded.shadowOpacity == 1.0)
         #expect(decoded.textColorHex == "#FFFFFF")
         #expect(decoded.shadowColorHex == "#000000")
+        #expect(decoded.monospacedDigits == false)
     }
 
-    @Test("OverlayLayout missing textColorHex/shadowColorHex defaults to white/black")
+    @Test("OverlayLayout missing textColorHex/shadowColorHex/monospacedDigits defaults to white/black/on")
     func overlayLayoutColorDefaults() throws {
         // Old config without textColorHex or shadowColorHex
         let json = """
@@ -428,6 +430,7 @@ struct CodableRoundTripTests {
         let decoded = try JSONDecoder().decode(OverlayLayout.self, from: json.data(using: .utf8)!)
         #expect(decoded.textColorHex == "#FFFFFF")
         #expect(decoded.shadowColorHex == "#000000")
+        #expect(decoded.monospacedDigits == true)
     }
 
     // MARK: - ScreensaverSettings
@@ -574,6 +577,39 @@ struct CodableRoundTripTests {
         settings.saverAdvanceAtLaunch = true
         let reencoded = try JSONDecoder().decode(VideoSettings.self, from: JSONEncoder().encode(settings))
         #expect(reencoded.saverAdvanceAtLaunch)
+    }
+
+    @Test("DisplaySettings single-display override defaults when missing and round-trips")
+    func displaySettingsSingleDisplayOverride() throws {
+        // A settings file written before 2026-10-15: no override keys.
+        let json = """
+        {
+            "intDisplayMode": 2,
+            "intViewingMode": 0,
+            "intAspectMode": 0,
+            "displayMarginsAdvanced": false,
+            "horizontalMargin": 0,
+            "verticalMargin": 0,
+            "advancedMargins": ""
+        }
+        """
+        let decoded = try JSONDecoder().decode(DisplaySettings.self, from: json.data(using: .utf8)!)
+        #expect(decoded.intDisplayMode == 2)
+        #expect(decoded.singleDisplayOverrideEnabled == false)
+        #expect(decoded.intSingleDisplayOverride == SingleDisplayOverride.play.rawValue)
+        #expect(decoded.singleDisplayOverlayScreenUUID == "")
+        #expect(decoded.singleDisplayOverlayScreenName == "")
+
+        var settings = DisplaySettings.default
+        settings.singleDisplayOverrideEnabled = true
+        settings.intSingleDisplayOverride = SingleDisplayOverride.dontPlay.rawValue
+        settings.singleDisplayOverlayScreenUUID = "EXT-UUID"
+        settings.singleDisplayOverlayScreenName = "LG UltraFine"
+        let reencoded = try JSONDecoder().decode(DisplaySettings.self, from: JSONEncoder().encode(settings))
+        #expect(reencoded.singleDisplayOverrideEnabled)
+        #expect(reencoded.intSingleDisplayOverride == SingleDisplayOverride.dontPlay.rawValue)
+        #expect(reencoded.singleDisplayOverlayScreenUUID == "EXT-UUID")
+        #expect(reencoded.singleDisplayOverlayScreenName == "LG UltraFine")
     }
 
     @Test("TimeSettings nightShift fields default to 0 when missing")

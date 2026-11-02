@@ -30,44 +30,69 @@ class CompanionSettingsManager {
 
     /// Get a value by key path
     func getValue<T>(forKeyPath keyPath: WritableKeyPath<CompanionSettings, T>) -> T {
-        return queue.sync {
-            // Lazy load on first access
-            if !hasLoaded {
-                loadSettingsInternal()
-                hasLoaded = true
-            }
-            return cachedSettings[keyPath: keyPath]
-        }
+        ensureLoaded()
+        return queue.sync { cachedSettings[keyPath: keyPath] }
     }
 
-    /// Set a value by key path and write to disk immediately
+    /// Set a value by key path and write to disk immediately. The cache only
+    /// changes when the write succeeded.
     func setValue<T>(_ value: T, forKeyPath keyPath: WritableKeyPath<CompanionSettings, T>) {
+        ensureLoaded()
         queue.sync(flags: .barrier) {
-            // Ensure settings are loaded before setting
-            if !self.hasLoaded {
-                self.loadSettingsInternal()
-                self.hasLoaded = true
-            }
-            self.cachedSettings[keyPath: keyPath] = value
-            self.saveSettings()
+            var next = cachedSettings
+            next[keyPath: keyPath] = value
+            if save(next) { cachedSettings = next }
         }
     }
 
     // MARK: - Private Methods
 
-    /// Internal method for loading settings - does NOT access Preferences to avoid circular dependency
-    private func loadSettingsInternal() {
-        // Try to read from JSON file
-        if let settings = store.read(CompanionSettings.self, from: CompanionSettings.fileURL) {
-            cachedSettings = settings
-        } else {
-            // File doesn't exist - use defaults
-            // Migration is handled explicitly by PathMigration, not automatically here
-            cachedSettings = .default
+    /// The lazy first load mutates the cache, so it runs under the barrier.
+    private func ensureLoaded() {
+        guard !queue.sync(execute: { hasLoaded }) else { return }
+        queue.sync(flags: .barrier) {
+            guard !hasLoaded else { return }
+            loadSettingsInternal()
+            hasLoaded = true
         }
     }
 
-    private func saveSettings() {
-        store.write(cachedSettings, to: CompanionSettings.fileURL)
+    /// Same contract as `ScreensaverSettingsManager`: an undecodable file
+    /// is moved aside (`JSONPreferencesStore.quarantine`), never replaced
+    /// with defaults; if even the move fails, writes stay off.
+    private var refusingWrites = false
+
+    /// Internal method for loading settings - does NOT access Preferences to avoid circular dependency
+    private func loadSettingsInternal() {
+        switch store.readChecked(CompanionSettings.self, from: CompanionSettings.fileURL) {
+        case .value(let settings):
+            cachedSettings = settings
+            refusingWrites = false
+        case .absent:
+            // File doesn't exist - use defaults
+            // Migration is handled explicitly by PathMigration, not automatically here
+            cachedSettings = .default
+            refusingWrites = false
+        case .undecodable:
+            cachedSettings = .default
+            refusingWrites = store.quarantine(CompanionSettings.fileURL) == nil
+            errorLog("⚠️ \(CompanionSettings.fileURL.lastPathComponent) undecodable — running on defaults\(refusingWrites ? ", writes refused" : ", file quarantined")")
+        }
+    }
+
+    /// Returns true when the settings reached disk.
+    private func save(_ settings: CompanionSettings) -> Bool {
+        let name = CompanionSettings.fileURL.lastPathComponent
+        guard !refusingWrites else {
+            errorLog("⚠️ \(name) undecodable — refusing to overwrite it with in-memory defaults")
+            ScreensaverSettingsManager.postWriteFailure("\(name) is unreadable and was left untouched")
+            return false
+        }
+        guard store.write(settings, to: CompanionSettings.fileURL) else {
+            errorLog("[CompanionSettingsManager] Settings were not saved")
+            ScreensaverSettingsManager.postWriteFailure("\(name) could not be written")
+            return false
+        }
+        return true
     }
 }

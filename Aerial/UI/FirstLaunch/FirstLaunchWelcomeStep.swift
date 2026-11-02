@@ -37,7 +37,6 @@ struct FirstLaunchWelcomeStep: View {
                 VStack(spacing: 13) {
                     Text("Aerial 4 doesn't collect **any** telemetry or data of any kind. In order to work *locally*, some optional features will ask for system a permission, but **always** provide an alternative :")
                     Text("- **Location Services** : Aerial can use your position to show Weather forecasts, and to calculate your local sunset/sunrise times to adapt the content that plays.")
-                    Text("- **Access to macOS Wallpaper cache** : a bug in macOS Sonoma and Tahoe  makes them indefinitely keep a raw uncompressed copy of every wallpaper you ever set. If you use the Wallpaper continuity feature, it's **highly recommended** you let Aerial clean that cache for you.")
                 }
                 .font(.system(size: 15))
                 .foregroundColor(.secondary)

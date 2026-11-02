@@ -143,6 +143,7 @@ struct OverlaysSettingsPanel: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(8)
             }
 

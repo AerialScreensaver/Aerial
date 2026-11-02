@@ -539,16 +539,33 @@ struct Cache {
 
     // MARK: - Eviction
 
+    /// Cached videos of DISABLED cacheable sources, favourites excluded.
+    /// `VideoList` only loads enabled sources, so without this pass those
+    /// files were invisible to every evictor and never aged out, while the
+    /// orphan reaper deleted them as unreferenced. Decided 2026-10-13:
+    /// unticking a source keeps its downloads (the reaper's keep-set now
+    /// covers them) and they are the first thing rotation and trim reclaim.
+    static func disabledSourceCachedVideos() -> [AerialVideo] {
+        SourceList.list
+            .filter { $0.isCachable && !$0.isEnabled() && $0.type != .local && $0.type != .live && $0.isCached() }
+            .flatMap { $0.getVideos(dedupingAgainst: []) }
+            .filter { $0.isAvailableOffline && !PrefsVideos.favorites.contains($0.id) }
+    }
+
     /// Cached videos that are safe to evict — from a cacheable source and
-    /// not a favourite — oldest file first (creation date). `cutoff`
+    /// not a favourite. Disabled-source videos first (the first tier of
+    /// every evictor), then oldest file first (creation date). `cutoff`
     /// restricts the list to files older than that date (the Replace
     /// cadence); nil means every candidate, which is what a manual trim
-    /// needs. Hidden videos are included (they go first in every evictor).
+    /// needs. Hidden videos are included (they go next in every evictor).
     static func evictionCandidates(olderThan cutoff: Date?) -> [AerialVideo] {
-        let currentlyCached = VideoList.instance.videos.filter {
+        let disabled = disabledSourceCachedVideos()
+        let disabledIds = Set(disabled.map(\.id))
+        let currentlyCached = disabled + VideoList.instance.videos.filter {
             $0.isAvailableOffline && $0.source.isCachable && !PrefsVideos.favorites.contains($0.id)
+                && !disabledIds.contains($0.id)
         }
-        var dated: [(date: Date, video: AerialVideo)] = []
+        var dated: [(date: Date, disabled: Bool, video: AerialVideo)] = []
         for video in currentlyCached {
             // A video can vanish between enumeration and stat (another
             // eviction pass, the user clearing the cache, Time Machine
@@ -558,13 +575,14 @@ struct Cache {
                   let creationDate = attributes[.creationDate] as? Date
             else { continue }
             if let cutoff, creationDate >= cutoff { continue }
-            dated.append((date: creationDate, video: video))
+            dated.append((date: creationDate, disabled: disabledIds.contains(video.id), video: video))
         }
         // Stable on equal dates — two downloads finishing in the same
         // second used to collide in a dictionary and one silently vanished.
         return dated.enumerated()
             .sorted { lhs, rhs in
-                lhs.element.date != rhs.element.date
+                if lhs.element.disabled != rhs.element.disabled { return lhs.element.disabled }
+                return lhs.element.date != rhs.element.date
                     ? lhs.element.date < rhs.element.date
                     : lhs.offset < rhs.offset
             }
@@ -714,6 +732,7 @@ struct Cache {
 
         let hidden = Set(PrefsVideos.hidden)
         let inRotation = Set(VideoList.instance.currentRotation().map(\.id))
+        let disabledSource = Set(disabledSourceCachedVideos().map(\.id))
         var byId: [String: AerialVideo] = [:]
         var candidates: [CacheTrimPlanner.Candidate] = []
         for (order, video) in evictionCandidates(olderThan: nil).enumerated() {
@@ -725,7 +744,7 @@ struct Cache {
             candidates.append(CacheTrimPlanner.Candidate(
                 id: video.id, bytes: bytes,
                 isHidden: hidden.contains(video.id), inRotation: inRotation.contains(video.id),
-                order: order
+                order: order, isDisabledSource: disabledSource.contains(video.id)
             ))
         }
         let picked = CacheTrimPlanner.plan(currentBytes: currentBytes, targetBytes: targetBytes,
@@ -761,10 +780,11 @@ struct Cache {
 }
 
 /// Pure "what to delete" for a manual cache trim — no filesystem, no
-/// singletons, so it can be unit tested. Tiers: hidden first, then out of
-/// rotation, then in rotation; oldest first within a tier (`order` is the
-/// caller's oldest-first rank); protected ids never selected; stops once
-/// the projected size is under the target.
+/// singletons, so it can be unit tested. Tiers: disabled-source videos
+/// first, then hidden, then out of rotation, then in rotation; oldest
+/// first within a tier (`order` is the caller's oldest-first rank);
+/// protected ids never selected; stops once the projected size is under
+/// the target.
 enum CacheTrimPlanner {
     struct Candidate {
         let id: String
@@ -772,6 +792,9 @@ enum CacheTrimPlanner {
         let isHidden: Bool
         let inRotation: Bool
         let order: Int
+        /// Downloaded for a source the user has since unticked. Reclaimed
+        /// before anything else (decided 2026-10-13).
+        var isDisabledSource: Bool = false
     }
 
     struct Result: Equatable {
@@ -788,9 +811,10 @@ enum CacheTrimPlanner {
         }
         let eligible = candidates.filter { !protecting.contains($0.id) }
         let tiers: [[Candidate]] = [
-            eligible.filter { $0.isHidden },
-            eligible.filter { !$0.isHidden && !$0.inRotation },
-            eligible.filter { !$0.isHidden && $0.inRotation },
+            eligible.filter { $0.isDisabledSource },
+            eligible.filter { !$0.isDisabledSource && $0.isHidden },
+            eligible.filter { !$0.isDisabledSource && !$0.isHidden && !$0.inRotation },
+            eligible.filter { !$0.isDisabledSource && !$0.isHidden && $0.inRotation },
         ].map { tier in tier.sorted { $0.order < $1.order } }
 
         var remaining = currentBytes

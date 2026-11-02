@@ -44,7 +44,7 @@ final class LiveFeedsSourceSync {
                 accessibilityLabel: feed.displayName,
                 id: feed.id.uuidString,
                 title: feed.displayName,
-                timeOfDay: "day",
+                timeOfDay: feed.effectiveTimeOfDay,
                 scene: "nature",
                 pointsOfInterest: [:],
                 url4KHDR: playbackURL,

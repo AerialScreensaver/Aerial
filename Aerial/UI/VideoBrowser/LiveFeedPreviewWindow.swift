@@ -137,13 +137,13 @@ private struct LiveFeedPreviewView: View {
                 missingToolCard(
                     icon: "terminal",
                     title: "yt-dlp is required to preview YouTube feeds",
-                    install: "brew install yt-dlp"
+                    install: LiveFeedsTooling.installCommand("yt-dlp")
                 )
             } else if status == .missingFfmpeg {
                 missingToolCard(
                     icon: "terminal",
                     title: "ffmpeg is required to preview RTSP feeds",
-                    install: "brew install ffmpeg"
+                    install: LiveFeedsTooling.installCommand("ffmpeg")
                 )
             } else {
                 PreviewPlayerView(player: playback.player)
@@ -170,6 +170,9 @@ private struct LiveFeedPreviewView: View {
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.8))
                 .textSelection(.enabled)
+            Link("More help in the FAQ", destination: LiveFeedsTooling.faqURL)
+                .font(.caption)
+                .foregroundStyle(.white)
         }
         .padding()
     }
@@ -298,7 +301,7 @@ private struct LiveFeedPreviewView: View {
         case .rtsp:
             guard LiveFeedsTooling.shared.ffmpegPath != nil else {
                 status = .missingFfmpeg
-                append("! ffmpeg not found — install via `brew install ffmpeg`")
+                append("! ffmpeg not found — install via `\(LiveFeedsTooling.installCommand("ffmpeg"))`")
                 return
             }
             // Transmuxing is async — kick off the ffmpeg + gateway path
@@ -311,7 +314,7 @@ private struct LiveFeedPreviewView: View {
         case .youtube:
             guard LiveFeedsTooling.shared.ytDlpPath != nil else {
                 status = .missingYtDlp
-                append("! yt-dlp not found — install via `brew install yt-dlp`")
+                append("! yt-dlp not found — install via `\(LiveFeedsTooling.installCommand("yt-dlp"))`")
                 return
             }
             if let url = feed.playbackURL, !url.isEmpty {

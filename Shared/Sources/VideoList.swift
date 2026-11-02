@@ -27,7 +27,22 @@ class VideoList {
     static let instance: VideoList = VideoList()
     var callbacks = [VideoListRefreshCallback]()
 
-    var videos: [AerialVideo] = []
+    /// Published catalog. Rebuilt on main (`refreshVideoList`) and read from the
+    /// download coordinator's work queue, the playlist barrier queue and, in the
+    /// extension, every renderer queue. A Swift array is not safe to read while
+    /// another thread reassigns it, so every access goes through `videosLock`;
+    /// readers get a copy-on-write snapshot and never observe a half-written value.
+    var videos: [AerialVideo] {
+        get { videosLock.lock(); defer { videosLock.unlock() }; return publishedVideos }
+        set { videosLock.lock(); defer { videosLock.unlock() }; publishedVideos = newValue }
+    }
+    private var publishedVideos: [AerialVideo] = []
+    private let videosLock = NSLock()
+
+    /// Serializes the legacy in-memory `playlist` (generate / pluck / fallback),
+    /// which the extension's renderer queues can reach concurrently when no
+    /// persisted playlist exists. Recursive: `randomVideo` calls `generatePlaylist`.
+    private let playlistLock = NSRecursiveLock()
 
     /// Serializes `refreshCatalogFromDisk()` — the wallpaper extension
     /// calls it from the control-listener thread AND from renderer
@@ -123,26 +138,26 @@ class VideoList {
         // saved for better user experience. So we need to filter the filters first !
         var filters: [String] = []
 
+        // "prefix:value" with nothing after the colon is a corrupt persisted entry
+        // (the files are world-writable JSON); skip it instead of trapping on [1].
+        func value(after prefix: String, in afilter: String) -> String? {
+            guard afilter.starts(with: prefix + ":") else { return nil }
+            let rest = afilter.dropFirst(prefix.count + 1)
+            return rest.isEmpty ? nil : rest.lowercased()
+        }
+
         for afilter in filter {
             switch mode {
             case .location:
-                if afilter.starts(with: "location") {
-                    filters.append(afilter.split(separator: ":")[1].lowercased())
-                }
+                if let value = value(after: "location", in: afilter) { filters.append(value) }
             case .cache:
                 filters.append(afilter.lowercased())
             case .time:
-                if afilter.starts(with: "time") {
-                    filters.append(afilter.split(separator: ":")[1].lowercased())
-                }
+                if let value = value(after: "time", in: afilter) { filters.append(value) }
             case .scene:
-                if afilter.starts(with: "scene") {
-                    filters.append(afilter.split(separator: ":")[1].lowercased())
-                }
+                if let value = value(after: "scene", in: afilter) { filters.append(value) }
             case .source:
-                if afilter.starts(with: "source") {
-                    filters.append(afilter.split(separator: ":")[1].lowercased())
-                }
+                if let value = value(after: "source", in: afilter) { filters.append(value) }
             case .rotation:
                 filters.append(afilter.lowercased())
             case .favorite:
@@ -518,6 +533,7 @@ class VideoList {
 
     // MARK: - Playlist management
     func generatePlaylist(isRestricted: Bool, restrictedTo: String, isVertical: Bool) {
+        playlistLock.lock(); defer { playlistLock.unlock() }
         debugLog("generate playlist (isVertical: \(isVertical)")
         // Start fresh
         playlist = [AerialVideo]()
@@ -595,6 +611,9 @@ class VideoList {
             // Fall through to normal behavior if override returned nil
         }
 
+        // Everything below mutates the shared in-memory playlist.
+        playlistLock.lock(); defer { playlistLock.unlock() }
+
         var shouldLoop = false
         let timeManagement = TimeManagement.sharedInstance
 
@@ -640,6 +659,7 @@ class VideoList {
     }
 
     func pluckOrientedVideo(isVertical: Bool) -> AerialVideo? {
+        playlistLock.lock(); defer { playlistLock.unlock() }
         // Grab the first one matching the orientation. None is a real
         // outcome (a playlist made only of portrait-flagged local videos
         // asked for landscape) — callers fall back, never trap.
@@ -656,6 +676,7 @@ class VideoList {
 
     // Find a backup plan when conditions are not met
     func findBestEffortVideo() -> AerialVideo? {
+        playlistLock.lock(); defer { playlistLock.unlock() }
         // So this is embarassing. This can happen if :
         // - No video checked
         // - No video for current conditions (only day video checked, and looking for night)
@@ -695,10 +716,30 @@ class VideoList {
                 return currentRotation().shuffled().first
             }
 
-            // Really nothing ? I can't even !
-            warnLog("returning truly random video after condition change not met !")
-            return shuffled.first!
+            // Really nothing in rotation? Anything the user hasn't hidden,
+            // then — a hidden video must never come back through here.
+            if let visible = shuffled.first(where: { !PrefsVideos.hidden.contains($0.id) }) {
+                warnLog("returning truly random (non-hidden) video after condition change not met !")
+                return visible
+            }
+            warnLog("every video is hidden — nothing to play")
+            return nil
         }
+    }
+
+    /// The extension's last-resort pick when the playlist can't hand it a
+    /// playable file (selection still downloading, filters too tight):
+    /// a random CACHED video from the current rotation, so the stop-gap
+    /// never shows a hidden or excluded video. Nil when nothing in
+    /// rotation is cached — the caller may then widen to "anything
+    /// cached at all".
+    func cachedFallbackURL() -> URL? {
+        // Live entries report "available offline" so the playlist keeps
+        // them; they have no local file, so they are no fallback.
+        let cached = currentRotation().filter { !$0.isLive && $0.isAvailableOffline }
+        guard let pick = cached.randomElement(),
+              let path = VideoCache.cachePath(forVideo: pick) else { return nil }
+        return URL(fileURLWithPath: path)
     }
 
 }

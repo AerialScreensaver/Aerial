@@ -46,6 +46,9 @@ struct DesktopSettingsPanel: View {
     /// Pause the wallpaper while any camera is in use.
     @State private var pauseOnCamera: Bool = false
 
+    /// "Menu bar background" band style (wallpaper only).
+    @State private var menuBarBackground: MenuBarBackgroundStyle = WallpaperControl.shared.currentMenuBarBackground
+
     /// Auto-advance the playlist at a fixed cadence (even while paused).
     @State private var autoAdvanceEnabled: Bool = false
     /// Auto-advance cadence in minutes.
@@ -80,6 +83,8 @@ struct DesktopSettingsPanel: View {
                     .padding(.bottom, 8)
 
                 autoAdvanceSection
+
+                menuBarSection
 
                 // Auto-pause and battery pause govern the wallpaper on
                 // every OS — the occlusion auto-pause now drives the
@@ -265,6 +270,7 @@ struct DesktopSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Auto-Pause", systemImage: "pause.circle")
@@ -433,6 +439,7 @@ struct DesktopSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Pause on Battery", systemImage: "battery.25percent")
@@ -470,6 +477,7 @@ struct DesktopSettingsPanel: View {
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Power & Thermal", systemImage: "thermometer.medium")
@@ -495,9 +503,40 @@ struct DesktopSettingsPanel: View {
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Camera", systemImage: "video")
+                .font(Font.title3.bold())
+                .padding(4)
+        }
+    }
+
+    // MARK: - Menu Bar Section
+
+    private var menuBarSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 16) {
+                Picker("Menu bar background", selection: $menuBarBackground) {
+                    ForEach(MenuBarBackgroundStyle.allCases, id: \.self) { style in
+                        Text(style.displayName).tag(style)
+                    }
+                }
+                .pickerStyle(.menu)
+                .font(.system(size: 14))
+                .onChange(of: menuBarBackground) { newValue in
+                    WallpaperControl.shared.setMenuBarBackground(newValue)
+                }
+
+                Text("Draws a solid band behind the menu bar so its text keeps the same color whatever the video shows. \"Color from video\" picks a tone from the top of each video. Desktop only; hidden when the menu bar is set to hide automatically.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        } label: {
+            Label("Menu Bar", systemImage: "menubar.rectangle")
                 .font(Font.title3.bold())
                 .padding(4)
         }
@@ -537,6 +576,7 @@ struct DesktopSettingsPanel: View {
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Troubleshooting", systemImage: "ant")

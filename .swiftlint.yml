@@ -5,6 +5,7 @@ excluded:
   - build
   - Experiments
   - Scripts        # standalone dev tools, not shipped
+  - Vendor         # vendored third-party packages (mediaremote-adapter)
   - AerialTests    # `!` is an assertion idiom in tests — a trap there IS the failure
   - Shared/Time/Solar.swift  # Third-party code
 

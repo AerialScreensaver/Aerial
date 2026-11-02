@@ -50,7 +50,7 @@ struct PrefsCache {
 
     static var cachePeriodicity: CachePeriodicity {
         get {
-            return CachePeriodicity(rawValue: intCachePeriodicity)!
+            return CachePeriodicity(rawValue: intCachePeriodicity) ?? .weekly
         }
         set(value) {
             intCachePeriodicity = value.rawValue

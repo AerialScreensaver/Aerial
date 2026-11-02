@@ -13,6 +13,12 @@ class ScreensaverSettingsManager {
 
     static let shared = ScreensaverSettingsManager()
 
+    /// Posted on main when a settings write fails, so the UI can say the change
+    /// was not saved instead of silently diverging from disk. `userInfo["error"]`
+    /// carries the description. Nothing listens yet (decided 2026-10-13: log +
+    /// notification only); the error line already names the file.
+    static let writeDidFailNotification = Notification.Name("com.glouel.aerial.settingsWriteDidFail")
+
     // MARK: - Private Properties
 
     private var cachedSettings: ScreensaverSettings
@@ -30,26 +36,19 @@ class ScreensaverSettingsManager {
 
     /// Get a value by key path
     func getValue<T>(forKeyPath keyPath: WritableKeyPath<ScreensaverSettings, T>) -> T {
-        return queue.sync {
-            // Lazy load on first access
-            if !hasLoaded {
-                loadSettingsInternal()
-                hasLoaded = true
-            }
-            return cachedSettings[keyPath: keyPath]
-        }
+        ensureLoaded()
+        return queue.sync { cachedSettings[keyPath: keyPath] }
     }
 
-    /// Set a value by key path and write to disk immediately
+    /// Set a value by key path and write to disk immediately. The in-memory
+    /// cache only changes when the write succeeded, so what the UI shows is
+    /// what will be there after a relaunch.
     func setValue<T>(_ value: T, forKeyPath keyPath: WritableKeyPath<ScreensaverSettings, T>) {
+        ensureLoaded()
         queue.sync(flags: .barrier) {
-            // Ensure settings are loaded before setting
-            if !self.hasLoaded {
-                self.loadSettingsInternal()
-                self.hasLoaded = true
-            }
-            self.cachedSettings[keyPath: keyPath] = value
-            self.saveSettings()
+            var next = cachedSettings
+            next[keyPath: keyPath] = value
+            if save(next) { cachedSettings = next }
         }
     }
 
@@ -66,19 +65,66 @@ class ScreensaverSettingsManager {
 
     // MARK: - Private Methods
 
-    /// Internal method for loading settings - does NOT access other Prefs to avoid circular dependency
-    private func loadSettingsInternal() {
-        // Try to read from JSON file
-        if let settings = store.read(ScreensaverSettings.self, from: ScreensaverSettings.fileURL) {
-            cachedSettings = settings
-        } else {
-            // File doesn't exist - use defaults
-            // Migration is handled explicitly by PathMigration, not automatically here
-            cachedSettings = .default
+    /// True while screensaver.json exists but could not be decoded. We then
+    /// run on defaults in memory and REFUSE to write them back — a session
+    /// on defaults beats silently replacing the user's settings. Companion
+    /// moves the file aside (`JSONPreferencesStore.quarantine`) so its next
+    /// write is a clean start; the extension never touches the file (an
+    /// older build at loginwindow failing on a newer schema must not nuke
+    /// it — see the stale-appex notes).
+    private var refusingWrites = false
+
+    /// The lazy first load mutates the cache, so it must run under the barrier;
+    /// a plain concurrent read of `hasLoaded` decides whether that is needed.
+    private func ensureLoaded() {
+        guard !queue.sync(execute: { hasLoaded }) else { return }
+        queue.sync(flags: .barrier) {
+            guard !hasLoaded else { return }
+            loadSettingsInternal()
+            hasLoaded = true
         }
     }
 
-    private func saveSettings() {
-        store.write(cachedSettings, to: ScreensaverSettings.fileURL)
+    /// Internal method for loading settings - does NOT access other Prefs to avoid circular dependency
+    private func loadSettingsInternal() {
+        switch store.readChecked(ScreensaverSettings.self, from: ScreensaverSettings.fileURL) {
+        case .value(let settings):
+            cachedSettings = settings
+            refusingWrites = false
+        case .absent:
+            // File doesn't exist - use defaults
+            // Migration is handled explicitly by PathMigration, not automatically here
+            cachedSettings = .default
+            refusingWrites = false
+        case .undecodable:
+            cachedSettings = .default
+            #if COMPANION_APP
+            refusingWrites = store.quarantine(ScreensaverSettings.fileURL) == nil
+            #else
+            refusingWrites = true
+            #endif
+            errorLog("⚠️ screensaver.json undecodable — running on defaults\(refusingWrites ? ", writes refused" : ", file quarantined")")
+        }
+    }
+
+    /// Returns true when the settings reached disk.
+    private func save(_ settings: ScreensaverSettings) -> Bool {
+        guard !refusingWrites else {
+            errorLog("⚠️ screensaver.json undecodable — refusing to overwrite it with in-memory defaults")
+            Self.postWriteFailure("screensaver.json is unreadable and was left untouched")
+            return false
+        }
+        guard store.write(settings, to: ScreensaverSettings.fileURL) else {
+            errorLog("[ScreensaverSettingsManager] Settings were not saved")
+            Self.postWriteFailure("screensaver.json could not be written")
+            return false
+        }
+        return true
+    }
+
+    static func postWriteFailure(_ message: String) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: writeDidFailNotification, object: nil, userInfo: ["error": message])
+        }
     }
 }

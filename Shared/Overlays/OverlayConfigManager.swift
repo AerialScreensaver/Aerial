@@ -36,10 +36,12 @@ class OverlayConfigManager {
 
     /// Get the full config
     var config: OverlayConfig {
-        queue.sync {
-            ensureLoaded()
-            return cachedConfig
+        // The lazy first load mutates `cachedConfig`; two first-time readers on a
+        // concurrent queue must not both run it. Check, then load under the barrier.
+        if !queue.sync(execute: { hasLoaded }) {
+            queue.sync(flags: .barrier) { ensureLoaded() }
         }
+        return queue.sync { cachedConfig }
     }
 
     /// Replace the full config

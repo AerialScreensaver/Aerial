@@ -67,7 +67,10 @@ class AsynchronousOperation: Operation, @unchecked Sendable {
 
     public final override func start() {
         if isCancelled {
-            finish()
+            // Cancelled before it ever ran. `finish()` only flips an
+            // EXECUTING operation, so mark it finished directly — a
+            // serial queue would otherwise wait on it forever.
+            state = .finished
             return
         }
 
@@ -86,6 +89,6 @@ class AsynchronousOperation: Operation, @unchecked Sendable {
     /// Call this function to finish an operation that is currently executing
 
     public final func finish() {
-        if isExecuting { state = .finished }
+        if state != .finished { state = .finished }
     }
 }

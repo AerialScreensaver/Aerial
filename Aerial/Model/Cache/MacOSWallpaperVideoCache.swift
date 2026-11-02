@@ -9,12 +9,9 @@
 //
 //  Target: ~/Library/Application Support/com.apple.wallpaper/aerials/videos/
 //  Each macOS wallpaper aerial is a single <UUID>.mov owned by the user, so
-//  we can delete it directly — no security-scoped bookmark needed (unlike
-//  WallpaperCacheCleaner, which reaches into the agent's sandbox container).
+//  we can delete it directly — no security-scoped bookmark needed.
 //
-//  Distinct from:
-//   - Aerial's own video library (/Users/Shared/Aerial/Cache), and
-//   - the macOS wallpaper *image-frame* cache pruned by WallpaperCacheCleaner.
+//  Distinct from Aerial's own video library (/Users/Shared/Aerial/Cache).
 //
 //  NOT the system *screensaver* aerials at
 //  /Library/Application Support/com.apple.idleassetsd/ — those are

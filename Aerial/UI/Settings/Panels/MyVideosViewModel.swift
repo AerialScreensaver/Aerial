@@ -528,7 +528,7 @@ class MyVideosViewModel: ObservableObject {
     /// the main actor.
     private func remuxToMP4(source: URL, destination: URL) async throws {
         guard let ffmpeg = LiveFeedsTooling.shared.ffmpegPath else {
-            throw ConversionError(message: "ffmpeg not found — install it with `brew install ffmpeg`")
+            throw ConversionError(message: "ffmpeg not found — install it with `\(LiveFeedsTooling.installCommand("ffmpeg"))`")
         }
         let ffprobe = LiveFeedsTooling.shared.ffprobePath
 

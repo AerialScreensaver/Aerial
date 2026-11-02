@@ -9,6 +9,14 @@ import SwiftUI
 
 struct DisplaysSettingsPanel: View {
     @State private var displayMode: DisplayMode = .allDisplays
+    @State private var singleDisplayOverrideEnabled: Bool = false
+    @State private var singleDisplayOverride: SingleDisplayOverride = .play
+    /// Settings › Overlays "Use separate overlay layout per screen" —
+    /// gates the "Use overlays from" sub-row. Re-read on every appear
+    /// (panels are rebuilt on each sidebar switch).
+    @State private var overlayPerScreen: Bool = false
+    @State private var singleDisplayOverlayScreenUUID: String = ""
+    @State private var singleDisplayOverlayScreenName: String = ""
     @State private var viewingMode: ViewingMode = .independent
     @State private var aspectMode: AspectMode = .fill
     @State private var horizontalMargin: Double = 0
@@ -76,6 +84,7 @@ struct DisplaysSettingsPanel: View {
                         .foregroundColor(.secondary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Display Arrangement", systemImage: "display.2")
@@ -104,16 +113,71 @@ struct DisplaysSettingsPanel: View {
                         .frame(width: 220, alignment: .trailing)
                         .onChange(of: displayMode) { newValue in
                             PrefsDisplays.displayMode = newValue
-                            DisplayDetection.sharedInstance.detectDisplays()
-                            displayViewRefresh = UUID()
-                            // Saver-only knob: a light reload on the
-                            // extension side, never a wallpaper reconfigure.
-                            WallpaperControl.shared.saverDisplaysDidChange()
+                            noteSaverDisplaysChanged()
                         }
                     }
                     Text("The desktop wallpaper always uses every display.")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
+
+                    if displayMode != .allDisplays {
+                        // "Override if only one display remains": a lone
+                        // display plays in every mode by the rule's own
+                        // fallback; the override states that policy
+                        // explicitly (Play) or flips it to black (Don't
+                        // play). Applies at the next saver start.
+                        HStack {
+                            Toggle("Override if only one display remains", isOn: $singleDisplayOverrideEnabled)
+                                .font(.system(size: 14))
+                                .onChange(of: singleDisplayOverrideEnabled) { newValue in
+                                    PrefsDisplays.singleDisplayOverrideEnabled = newValue
+                                    noteSaverDisplaysChanged()
+                                }
+                            Spacer()
+                            Picker("", selection: $singleDisplayOverride) {
+                                Text("Play").tag(SingleDisplayOverride.play)
+                                Text("Don't play").tag(SingleDisplayOverride.dontPlay)
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 220, alignment: .trailing)
+                            .disabled(!singleDisplayOverrideEnabled)
+                            .onChange(of: singleDisplayOverride) { newValue in
+                                PrefsDisplays.singleDisplayOverride = newValue
+                                noteSaverDisplaysChanged()
+                            }
+                        }
+                        .padding(.top, 6)
+
+                        if overlayPerScreen {
+                            // "Use overlays from": with per-screen overlay
+                            // layouts (Settings › Overlays), the lone display
+                            // borrows the selected screen's layout while the
+                            // override is what keeps it playing — typically
+                            // the undocked external the layout was made for.
+                            HStack {
+                                Text("Use overlays from")
+                                    .font(.system(size: 14))
+                                Spacer()
+                                Picker("", selection: $singleDisplayOverlayScreenUUID) {
+                                    Text("This display").tag("")
+                                    ForEach(overlayScreenChoices) { choice in
+                                        Text(choice.name).tag(choice.uuid)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 220, alignment: .trailing)
+                                .onChange(of: singleDisplayOverlayScreenUUID) { newValue in
+                                    PrefsDisplays.singleDisplayOverlayScreenUUID = newValue
+                                    singleDisplayOverlayScreenName = overlayScreenChoices.first { $0.uuid == newValue }?.rawName ?? ""
+                                    PrefsDisplays.singleDisplayOverlayScreenName = singleDisplayOverlayScreenName
+                                    noteSaverDisplaysChanged()
+                                }
+                            }
+                            .padding(.leading, 20)
+                            .disabled(!singleDisplayOverrideEnabled || singleDisplayOverride == .dontPlay)
+                            .opacity(singleDisplayOverrideEnabled && singleDisplayOverride == .play ? 1 : 0.5)
+                        }
+                    }
                 }
 
                 Divider()
@@ -175,6 +239,7 @@ struct DisplaysSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Display Settings", systemImage: "rectangle.on.rectangle")
@@ -278,6 +343,7 @@ struct DisplaysSettingsPanel: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
         } label: {
             Label("Margins", systemImage: "arrow.up.and.down.and.arrow.left.and.right")
@@ -354,10 +420,58 @@ struct DisplaysSettingsPanel: View {
         WallpaperControl.shared.displaysConfigDidChange()
     }
 
+    /// One entry of the "Use overlays from" picker.
+    private struct OverlayScreenChoice: Identifiable {
+        let uuid: String
+        /// `localizedName` as stored with the choice (no numbering).
+        let rawName: String
+        /// Menu label.
+        let name: String
+        var id: String { uuid }
+    }
+
+    /// Screens offered by "Use overlays from": every connected screen,
+    /// labelled like the Overlay Editor's picker, plus the stored choice
+    /// when it is not connected — the usual case while undocked, since it
+    /// IS the display the layout was made for.
+    private var overlayScreenChoices: [OverlayScreenChoice] {
+        let screens = NSScreen.screens
+        var choices: [OverlayScreenChoice] = screens.enumerated().compactMap { index, screen in
+            let uuid = screen.screenUuid
+            guard !uuid.isEmpty else { return nil }
+            let name = screen.localizedName
+            return OverlayScreenChoice(uuid: uuid, rawName: name,
+                                       name: screens.count > 1 ? "\(index + 1): \(name)" : name)
+        }
+        let stored = singleDisplayOverlayScreenUUID
+        if !stored.isEmpty, !choices.contains(where: { $0.uuid == stored }) {
+            let saved = singleDisplayOverlayScreenName.isEmpty ? "Saved display" : singleDisplayOverlayScreenName
+            choices.append(OverlayScreenChoice(uuid: stored, rawName: singleDisplayOverlayScreenName,
+                                               name: "\(saved) (not connected)"))
+        }
+        return choices
+    }
+
+    /// A "Screensaver plays videos on" knob changed (mode, the
+    /// single-display override, or a ticked display): refresh the
+    /// arrangement preview and tell the extension to re-read the file
+    /// for the next saver start — a light reload on its side, never a
+    /// wallpaper reconfigure.
+    private func noteSaverDisplaysChanged() {
+        DisplayDetection.sharedInstance.detectDisplays()
+        displayViewRefresh = UUID()
+        WallpaperControl.shared.saverDisplaysDidChange()
+    }
+
     // MARK: - Load Settings
 
     private func loadSettings() {
         displayMode = PrefsDisplays.displayMode
+        singleDisplayOverrideEnabled = PrefsDisplays.singleDisplayOverrideEnabled
+        singleDisplayOverride = PrefsDisplays.singleDisplayOverride
+        overlayPerScreen = OverlayConfigManager.shared.config.perScreen
+        singleDisplayOverlayScreenUUID = PrefsDisplays.singleDisplayOverlayScreenUUID
+        singleDisplayOverlayScreenName = PrefsDisplays.singleDisplayOverlayScreenName
         viewingMode = PrefsDisplays.viewingMode
         aspectMode = PrefsDisplays.aspectMode
         horizontalMargin = PrefsDisplays.horizontalMargin

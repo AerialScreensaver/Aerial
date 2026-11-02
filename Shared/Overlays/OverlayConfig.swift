@@ -259,6 +259,9 @@ struct OverlayLayout: Codable, Equatable {
     var shadowOffsetY: Double
     var shadowColorHex: String
     var textColorHex: String
+    /// Tabular (fixed-width) digits for every overlay in this layout, so
+    /// clocks and counters don't shift as digits change. Default on.
+    var monospacedDigits: Bool
 
     static let empty = OverlayLayout(
         stacks: [:],
@@ -271,7 +274,8 @@ struct OverlayLayout: Codable, Equatable {
         shadowOffsetX: 0,
         shadowOffsetY: 3,
         shadowColorHex: "#000000",
-        textColorHex: "#FFFFFF"
+        textColorHex: "#FFFFFF",
+        monospacedDigits: true
     )
 
     /// All instances across all positions, flattened
@@ -350,6 +354,7 @@ struct OverlayLayout: Codable, Equatable {
         case marginTop, marginLeft, marginBottom, marginRight
         case shadowRadius, shadowOpacity, shadowOffsetX, shadowOffsetY
         case shadowColorHex, textColorHex
+        case monospacedDigits
         // Legacy keys (read-only, for backwards compatibility)
         case marginXLegacy = "marginX"
         case marginYLegacy = "marginY"
@@ -358,7 +363,8 @@ struct OverlayLayout: Codable, Equatable {
     init(stacks: [OverlayPosition: [OverlayInstance]],
          marginTop: Int, marginLeft: Int, marginBottom: Int, marginRight: Int,
          shadowRadius: Int, shadowOpacity: Float, shadowOffsetX: Double, shadowOffsetY: Double,
-         shadowColorHex: String, textColorHex: String) {
+         shadowColorHex: String, textColorHex: String,
+         monospacedDigits: Bool = true) {
         self.stacks = stacks
         self.marginTop = marginTop
         self.marginLeft = marginLeft
@@ -370,6 +376,7 @@ struct OverlayLayout: Codable, Equatable {
         self.shadowOffsetY = shadowOffsetY
         self.shadowColorHex = shadowColorHex
         self.textColorHex = textColorHex
+        self.monospacedDigits = monospacedDigits
     }
 
     init(from decoder: Decoder) throws {
@@ -399,6 +406,8 @@ struct OverlayLayout: Codable, Equatable {
         // Backwards compat: missing colors default to black/white
         shadowColorHex = (try? container.decodeIfPresent(String.self, forKey: .shadowColorHex)) ?? "#000000"
         textColorHex = (try? container.decodeIfPresent(String.self, forKey: .textColorHex)) ?? "#FFFFFF"
+        // Missing key (configs written before the option existed) → on.
+        monospacedDigits = (try? container.decodeIfPresent(Bool.self, forKey: .monospacedDigits)) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
@@ -418,6 +427,7 @@ struct OverlayLayout: Codable, Equatable {
         try container.encode(shadowOffsetY, forKey: .shadowOffsetY)
         try container.encode(shadowColorHex, forKey: .shadowColorHex)
         try container.encode(textColorHex, forKey: .textColorHex)
+        try container.encode(monospacedDigits, forKey: .monospacedDigits)
     }
 }
 

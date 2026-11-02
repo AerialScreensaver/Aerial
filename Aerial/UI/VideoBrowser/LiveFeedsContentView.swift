@@ -16,6 +16,9 @@ struct LiveFeedsContentView: View {
     @State private var showingAdd = false
     @State private var editing: LiveFeed?
     @State private var showingToolingGuidance: LiveFeedKind?
+    /// Feed id → its catalog video (absent until the stream URL resolves).
+    @State private var videoByFeedId: [UUID: AerialVideo] = [:]
+    @State private var pendingCacheDelete: PendingCacheDelete?
 
     var body: some View {
         ScrollView {
@@ -35,13 +38,18 @@ struct LiveFeedsContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: LiveFeedManager.didChangeNotification)) { _ in
             reload()
         }
+        // A feed's catalog video appears once its stream URL resolves
+        // (VideoList callback → refreshTrigger).
+        .onChange(of: state.refreshTrigger) { _ in reload() }
+        .videoCacheDeleteAlert($pendingCacheDelete) { state.refreshTrigger += 1 }
         .sheet(isPresented: $showingAdd) {
             LiveFeedEditor(feed: nil, onSave: { feed in
                 LiveFeedManager.shared.add(
                     displayName: feed.displayName,
                     sourceURL: feed.sourceURL,
                     kind: feed.kind,
-                    playbackSeconds: feed.playbackSeconds
+                    playbackSeconds: feed.playbackSeconds,
+                    timeOfDay: feed.timeOfDay
                 )
                 maybePromptForTooling(kind: feed.kind)
                 showingAdd = false
@@ -50,6 +58,11 @@ struct LiveFeedsContentView: View {
         .sheet(item: $editing) { feed in
             LiveFeedEditor(feed: feed, onSave: { updated in
                 LiveFeedManager.shared.update(updated)
+                if updated.effectiveTimeOfDay != feed.effectiveTimeOfDay {
+                    // The slice decides which day/night-filtered playlists
+                    // the feed belongs to — same as hiding a video.
+                    PlaylistManager.shared.regenerateAll()
+                }
                 editing = nil
             }, onCancel: { editing = nil })
         }
@@ -95,17 +108,90 @@ struct LiveFeedsContentView: View {
     private var feedsList: some View {
         LazyVStack(alignment: .leading, spacing: 10) {
             ForEach(feeds) { feed in
-                LiveFeedRow(feed: feed,
-                            onEdit: { editing = feed },
-                            onDelete: { LiveFeedManager.shared.remove(id: feed.id) },
-                            onPreview: { LiveFeedPreviewWindowController.show(for: feed) },
-                            onReload: { reloadFeed(feed) })
+                feedRow(feed)
             }
+        }
+    }
+
+    /// The row plus the shared right-click menu and drag-to-playlist.
+    /// Both need the feed's catalog video; until its stream resolves the
+    /// menu explains why and the row doesn't drag.
+    @ViewBuilder
+    private func feedRow(_ feed: LiveFeed) -> some View {
+        let row = LiveFeedRow(feed: feed,
+                              onEdit: { editing = feed },
+                              onDelete: { LiveFeedManager.shared.remove(id: feed.id) },
+                              onPreview: { LiveFeedPreviewWindowController.show(for: feed) },
+                              onReload: { reloadFeed(feed) })
+        if let video = videoByFeedId[feed.id] {
+            row
+                .contentShape(Rectangle())
+                .onDrag {
+                    // Same payload as the library cards — the sidebar
+                    // playlist drop resolves it through VideoList.
+                    NSItemProvider(object: video.id as NSString)
+                }
+                .contextMenu {
+                    // Playlists from the observed state: the .contextMenu
+                    // builder is a snapshot from the last body evaluation.
+                    VideoContextMenu(
+                        videos: [video],
+                        userPlaylists: state.userPlaylists,
+                        pendingCacheDelete: $pendingCacheDelete,
+                        onChange: { state.refreshTrigger += 1 }
+                    )
+                    Divider()
+                    feedActions(feed)
+                }
+        } else {
+            row
+                .contentShape(Rectangle())
+                .contextMenu {
+                    Button("Not available yet — waiting for the stream") {}
+                        .disabled(true)
+                    Divider()
+                    feedActions(feed)
+                }
+        }
+    }
+
+    /// The row's inline buttons, repeated in its context menu.
+    @ViewBuilder
+    private func feedActions(_ feed: LiveFeed) -> some View {
+        Button {
+            LiveFeedPreviewWindowController.show(for: feed)
+        } label: {
+            Label("Preview Stream", systemImage: "play.rectangle")
+        }
+        if feed.kind != .hls {
+            Button {
+                reloadFeed(feed)
+            } label: {
+                Label(feed.kind == .youtube ? "Re-resolve Stream" : "Restart Transmuxer",
+                      systemImage: "arrow.clockwise")
+            }
+        }
+        Button {
+            editing = feed
+        } label: {
+            Label("Edit…", systemImage: "pencil")
+        }
+        Button(role: .destructive) {
+            LiveFeedManager.shared.remove(id: feed.id)
+        } label: {
+            Label("Remove Feed", systemImage: "trash")
         }
     }
 
     private func reload() {
         feeds = LiveFeedManager.shared.allFeeds().sorted { $0.addedAt < $1.addedAt }
+        let live = Dictionary(
+            VideoList.instance.videos.filter(\.isLive).map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        videoByFeedId = Dictionary(uniqueKeysWithValues: feeds.compactMap { feed in
+            live[feed.id.uuidString].map { (feed.id, $0) }
+        })
     }
 
     /// Force-rerun the async resolution for a feed — yt-dlp for YouTube
@@ -148,59 +234,68 @@ private struct LiveFeedRow: View {
     let onReload: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            thumbnailView
-                .frame(width: 96, height: 54)  // 16:9 at list-card scale
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(4)
-                .clipped()
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                thumbnailView
+                    .frame(width: 96, height: 54)  // 16:9 at list-card scale
+                    .background(Color.black.opacity(0.3))
+                    .cornerRadius(4)
+                    .clipped()
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(feed.displayName)
-                    .font(.system(size: 14, weight: .medium))
-                Text(kindLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(maskedURL)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                if feed.kind == .youtube {
-                    Text(resolutionStatus)
-                        .font(.caption2)
-                        .foregroundStyle(feed.resolvedURL == nil ? .orange : .secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(feed.displayName)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(kindLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(maskedURL)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    if feed.kind == .youtube {
+                        Text(resolutionStatus)
+                            .font(.caption2)
+                            .foregroundStyle(feed.resolvedURL == nil ? .orange : .secondary)
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Image(systemName: timeOfDayIcon(feed.effectiveTimeOfDay))
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .help(feed.effectiveTimeOfDay.capitalized)
+                    Text("\(Int(feed.playbackSeconds))s")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("\(Int(feed.playbackSeconds))s")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 6) {
-                    Button(action: onPreview) {
-                        Image(systemName: "play.rectangle")
-                    }
-                    .help("Preview stream")
-                    if feed.kind != .hls {
-                        Button(action: onReload) {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        .help(feed.kind == .youtube
-                              ? "Re-resolve via yt-dlp"
-                              : "Restart ffmpeg transmuxer")
-                    }
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                    }
-                    Button(role: .destructive, action: onDelete) {
-                        Image(systemName: "trash")
-                    }
+            HStack(spacing: 8) {
+                Button(action: onPreview) {
+                    Label("Preview", systemImage: "play.rectangle")
                 }
-                .buttonStyle(.borderless)
+                .help("Preview stream")
+                if feed.kind != .hls {
+                    Button(action: onReload) {
+                        Label(feed.kind == .youtube ? "Re-resolve" : "Restart",
+                              systemImage: "arrow.clockwise")
+                    }
+                    .help(feed.kind == .youtube
+                          ? "Re-resolve via yt-dlp"
+                          : "Restart ffmpeg transmuxer")
+                }
+                Button(action: onEdit) {
+                    Label("Edit", systemImage: "pencil")
+                }
+                Spacer()
+                Button(role: .destructive, action: onDelete) {
+                    Label("Remove", systemImage: "trash")
+                }
             }
+            .buttonStyle(.bordered)
         }
         .padding(12)
         .background(Color(NSColor.controlBackgroundColor))
@@ -269,6 +364,7 @@ private struct LiveFeedEditor: View {
     @State private var displayName: String
     @State private var sourceURL: String
     @State private var playbackSeconds: Double
+    @State private var timeOfDay: String
 
     init(feed: LiveFeed?, onSave: @escaping (LiveFeed) -> Void, onCancel: @escaping () -> Void) {
         self.feed = feed
@@ -277,6 +373,7 @@ private struct LiveFeedEditor: View {
         _displayName = State(initialValue: feed?.displayName ?? "")
         _sourceURL = State(initialValue: feed?.sourceURL ?? "")
         _playbackSeconds = State(initialValue: feed?.playbackSeconds ?? 300)
+        _timeOfDay = State(initialValue: feed?.effectiveTimeOfDay ?? "day")
     }
 
     private var detectedKind: LiveFeedKind {
@@ -307,6 +404,11 @@ private struct LiveFeedEditor: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
+                Text("Time of day").font(.caption).foregroundStyle(.secondary)
+                TimeOfDayPicker(selection: $timeOfDay)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Play for").font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Slider(value: $playbackSeconds, in: 10...1800, step: 10)
@@ -322,16 +424,22 @@ private struct LiveFeedEditor: View {
                 Button(feed == nil ? "Add" : "Save") {
                     let id = feed?.id ?? UUID()
                     let addedAt = feed?.addedAt ?? Date()
+                    let url = sourceURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                    // Keep the stream resolution when the URL is unchanged —
+                    // clearing it dropped the feed from the catalog until the
+                    // next launch (update() doesn't re-resolve).
+                    let keepResolution = feed?.sourceURL == url
                     let updated = LiveFeed(
                         id: id,
                         displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
-                        sourceURL: sourceURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                        sourceURL: url,
                         kind: detectedKind,
                         playbackSeconds: playbackSeconds,
                         addedAt: addedAt,
-                        resolvedURL: nil,
-                        resolvedAt: nil,
-                        thumbnailPath: feed?.thumbnailPath
+                        resolvedURL: keepResolution ? feed?.resolvedURL : nil,
+                        resolvedAt: keepResolution ? feed?.resolvedAt : nil,
+                        thumbnailPath: feed?.thumbnailPath,
+                        timeOfDay: timeOfDay
                     )
                     onSave(updated)
                 }
@@ -389,6 +497,9 @@ private struct LiveFeedToolingSheet: View {
                         NSWorkspace.shared.open(url)
                     }
                 }
+                Button("Help…") {
+                    NSWorkspace.shared.open(LiveFeedsTooling.faqURL)
+                }
                 Spacer()
                 Button("I've installed it") {
                     LiveFeedsTooling.shared.refreshPaths()
@@ -403,11 +514,15 @@ private struct LiveFeedToolingSheet: View {
     }
 
     private var description: String {
+        let manager = LiveFeedsTooling.packageManagerName
+        let note = LiveFeedsTooling.prefersMacPorts
+            ? " Homebrew no longer supports Intel Macs on macOS 27."
+            : ""
         switch kind {
         case .youtube:
-            return "YouTube live streams are resolved via the yt-dlp command-line tool. Install it via Homebrew, then try again."
+            return "YouTube live streams are resolved via the yt-dlp command-line tool. Install it via \(manager), then try again.\(note)"
         case .rtsp:
-            return "RTSP streams are transmuxed via ffmpeg. Install it via Homebrew. (Full RTSP playback support is coming in a later update.)"
+            return "RTSP streams are transmuxed via ffmpeg. Install it via \(manager).\(note) (Full RTSP playback support is coming in a later update.)"
         case .hls:
             return ""
         }
@@ -415,8 +530,8 @@ private struct LiveFeedToolingSheet: View {
 
     private var installCommand: String {
         switch kind {
-        case .youtube: return "brew install yt-dlp"
-        case .rtsp:    return "brew install ffmpeg"
+        case .youtube: return LiveFeedsTooling.installCommand("yt-dlp")
+        case .rtsp:    return LiveFeedsTooling.installCommand("ffmpeg")
         case .hls:     return ""
         }
     }

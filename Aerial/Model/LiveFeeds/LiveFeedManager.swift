@@ -76,14 +76,16 @@ final class LiveFeedManager {
     // MARK: - Write
 
     @discardableResult
-    func add(displayName: String, sourceURL: String, kind: LiveFeedKind? = nil, playbackSeconds: Double = 300) -> LiveFeed {
+    func add(displayName: String, sourceURL: String, kind: LiveFeedKind? = nil, playbackSeconds: Double = 300,
+             timeOfDay: String? = nil) -> LiveFeed {
         // Strip any `user:pass@` fragment from the URL before it hits
         // disk; the credential half goes to Keychain under the feed id.
         let (cleanedURL, creds) = LiveFeedCredentialStore.extractCredentials(from: sourceURL)
         let feed = LiveFeed(displayName: displayName,
                             sourceURL: cleanedURL,
                             kind: kind,
-                            playbackSeconds: playbackSeconds)
+                            playbackSeconds: playbackSeconds,
+                            timeOfDay: timeOfDay)
         if creds != nil {
             LiveFeedCredentialStore.save(credentials: creds, for: feed.id)
         }
@@ -118,6 +120,9 @@ final class LiveFeedManager {
         // Regenerate the thumbnail when the URL changes — the previous
         // one might point to a different stream entirely.
         if previous?.sourceURL != cleaned.sourceURL {
+            // New stream: resolve it (the editor drops the old resolution),
+            // same as `add`.
+            LiveFeedResolver.shared.resolveIfNeeded(cleaned, force: true)
             LiveFeedThumbnailer.shared.ensureThumbnail(for: cleaned, force: true)
         }
     }

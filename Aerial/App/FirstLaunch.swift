@@ -113,7 +113,10 @@ enum FirstLaunch {
 
         // Land new users on the best-quality default (mirrors the legacy
         // apply(mode:) — migration doesn't carry screensaver-side prefs).
-        PrefsVideos.videoFormat = .v4KSDR240
+        // Through the coordinator so the extension just enabled above and
+        // any download already in flight hear about it; nothing to wipe
+        // this early.
+        DownloadCoordinator.shared.applyVideoFormat(.v4KSDR240, clearingCache: false)
 
         // Mark the mode explicitly chosen so the wizard step / one-time
         // upgrade prompt doesn't reappear.

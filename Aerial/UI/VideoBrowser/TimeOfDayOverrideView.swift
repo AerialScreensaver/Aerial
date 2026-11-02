@@ -28,13 +28,6 @@ struct TimeOfDayOverrideView: View {
         currentOverride ?? originalValue
     }
 
-    private let options: [(String, String, String)] = [
-        ("day", "sun.max", "Day"),
-        ("sunrise", "sunrise", "Sunrise"),
-        ("sunset", "sunset", "Sunset"),
-        ("night", "moon.stars", "Night"),
-    ]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Time of Day")
@@ -61,33 +54,10 @@ struct TimeOfDayOverrideView: View {
             }
 
             // Segmented picker
-            HStack(spacing: 2) {
-                ForEach(options, id: \.0) { value, icon, label in
-                    let isActive = effectiveValue == value
-                    Button(action: { applyOverride(value) }) {
-                        VStack(spacing: 2) {
-                            Image(systemName: icon)
-                                .font(.system(size: 14))
-                            Text(label)
-                                .font(.system(size: 9))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(isActive ? Color.aerial.opacity(0.15) : Color.clear)
-                        .foregroundColor(isActive ? .aerial : .secondary)
-                        .cornerRadius(4)
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Override to \(label)")
-                    .accessibilityLabel("Set time of day to \(label)")
-                    .accessibilityAddTraits(isActive ? .isSelected : [])
-                }
-            }
-            .padding(2)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(NSColor.controlBackgroundColor))
-            )
+            TimeOfDayPicker(selection: Binding(
+                get: { effectiveValue },
+                set: { applyOverride($0) }
+            ))
 
             // Reset button
             if currentOverride != nil {

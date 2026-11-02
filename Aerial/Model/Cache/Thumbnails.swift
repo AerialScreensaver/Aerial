@@ -211,7 +211,15 @@ struct Thumbnails {
         return video.url
     }
 
-    private static func unscaledBitmapImageRep(forImage image: NSImage) -> NSBitmapImageRep {
+    /// A frame we could not turn into a thumbnail. Thrown, never trapped:
+    /// a zero-sized or otherwise unusable first frame is the video's
+    /// problem, not a reason to take the app down.
+    enum ThumbnailError: Error {
+        case bitmapRepUnavailable
+        case encodingFailed
+    }
+
+    private static func unscaledBitmapImageRep(forImage image: NSImage) -> NSBitmapImageRep? {
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,
             pixelsWide: Int(image.size.width),
@@ -224,7 +232,7 @@ struct Thumbnails {
             bytesPerRow: 0,
             bitsPerPixel: 0
         ) else {
-            preconditionFailure()
+            return nil
         }
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
@@ -241,9 +249,11 @@ struct Thumbnails {
         if let size = size {
             image.size = size
         }
-        let rep = unscaledBitmapImageRep(forImage: image)
+        guard let rep = unscaledBitmapImageRep(forImage: image) else {
+            throw ThumbnailError.bitmapRepUnavailable
+        }
         guard let data = rep.representation(using: type, properties: [.compressionFactor: 0.8]) else {
-            preconditionFailure()
+            throw ThumbnailError.encodingFailed
         }
         try data.write(to: url)
     }

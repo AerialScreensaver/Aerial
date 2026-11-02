@@ -11,7 +11,6 @@
 //   let openWeather = try? newJSONDecoder().decode(OWeather.self, from: jsonData)
 
 import Foundation
-internal import _LocationEssentials
 
 enum NetworkError: Error {
     case badURL
@@ -63,7 +62,10 @@ struct OWMain: Codable {
 // MARK: - OWSys
 struct OWSys: Codable {
     let type, id: Int?
-    let country: String
+    /// OpenWeather omits `country` for some locations (open sea, a few
+    /// territories); a non-optional field made the whole payload fail to
+    /// decode and blanked the weather overlay there.
+    let country: String?
     let sunrise, sunset: Int
 }
 

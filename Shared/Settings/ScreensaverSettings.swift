@@ -261,6 +261,25 @@ struct DisplaySettings: Codable {
     var verticalMargin: Double
     var advancedMargins: String
 
+    /// "Override if only one display remains" (Settings › Displays, under
+    /// "Screensaver plays videos on"; shown for every mode but All
+    /// displays). Off: a lone display follows the mode's own fallback
+    /// (it plays, in every mode). On: `intSingleDisplayOverride` decides.
+    var singleDisplayOverrideEnabled: Bool
+    /// `SingleDisplayOverride` raw value: 0 = play, 1 = don't play (the
+    /// lone display stays black — the one deliberate black-everywhere
+    /// saver). Only read while `singleDisplayOverrideEnabled`.
+    var intSingleDisplayOverride: Int
+    /// "Use overlays from": display UUID whose per-screen overlay layout a
+    /// saver window borrows while the single-display override keeps it
+    /// playing. "" = its own display. Only read with per-screen overlay
+    /// layouts on (`OverlayConfig.perScreen`).
+    var singleDisplayOverlayScreenUUID: String
+    /// The picked display's localizedName, so the picker can still label
+    /// the selection while that display is not connected (the usual case:
+    /// it is the undocked external the layout was made for).
+    var singleDisplayOverlayScreenName: String
+
     static let `default` = DisplaySettings(
         intDisplayMode: 0,  // DisplayMode.allDisplays
         intViewingMode: 0,  // ViewingMode.independent
@@ -268,8 +287,34 @@ struct DisplaySettings: Codable {
         displayMarginsAdvanced: false,
         horizontalMargin: 0,
         verticalMargin: 0,
-        advancedMargins: ""
+        advancedMargins: "",
+        singleDisplayOverrideEnabled: false,
+        intSingleDisplayOverride: SingleDisplayOverride.play.rawValue,
+        singleDisplayOverlayScreenUUID: "",
+        singleDisplayOverlayScreenName: ""
     )
+}
+
+extension DisplaySettings {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        intDisplayMode = try container.decode(Int.self, forKey: .intDisplayMode)
+        intViewingMode = try container.decode(Int.self, forKey: .intViewingMode)
+        intAspectMode = try container.decode(Int.self, forKey: .intAspectMode)
+        displayMarginsAdvanced = try container.decode(Bool.self, forKey: .displayMarginsAdvanced)
+        horizontalMargin = try container.decode(Double.self, forKey: .horizontalMargin)
+        verticalMargin = try container.decode(Double.self, forKey: .verticalMargin)
+        advancedMargins = try container.decode(String.self, forKey: .advancedMargins)
+        // Late additions (2026-10-15) — existing settings files don't
+        // carry them, and a missing key must not fail the whole decode
+        // (the manager would fall back to defaults and quarantine the
+        // file). The fallback IS the effective default for every
+        // existing install.
+        singleDisplayOverrideEnabled = try container.decodeIfPresent(Bool.self, forKey: .singleDisplayOverrideEnabled) ?? false
+        intSingleDisplayOverride = try container.decodeIfPresent(Int.self, forKey: .intSingleDisplayOverride) ?? SingleDisplayOverride.play.rawValue
+        singleDisplayOverlayScreenUUID = try container.decodeIfPresent(String.self, forKey: .singleDisplayOverlayScreenUUID) ?? ""
+        singleDisplayOverlayScreenName = try container.decodeIfPresent(String.self, forKey: .singleDisplayOverlayScreenName) ?? ""
+    }
 }
 
 // MARK: - Time Settings

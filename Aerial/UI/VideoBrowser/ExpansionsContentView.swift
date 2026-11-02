@@ -166,7 +166,6 @@ struct ExpansionsContentView: View {
         }
         PrefsVideos.newShouldPlayString = globalFilters
         PlaylistManager.shared.regenerate(for: nil, mode: .expansions, filterStrings: globalFilters)
-        PlaybackManager.shared.refreshPlayback()
 
         // Step 2: In independent mode, the popover and playback both
         // consult per-screen playlists. Commit the same intent to
@@ -190,7 +189,6 @@ struct ExpansionsContentView: View {
                     perScreenFilters = entries
                 }
                 PlaylistManager.shared.regenerate(for: uuid, mode: .expansions, filterStrings: perScreenFilters)
-                PlaybackManager.shared.refreshPlayback(for: uuid)
             }
         }
 

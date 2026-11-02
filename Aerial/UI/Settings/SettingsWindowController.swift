@@ -33,6 +33,11 @@ final class SettingsWindowController: NSWindowController {
         // 15.6 not 15.2: highest 15.x we tested. 15.x doesn't render Tahoe chrome anyway, so NSWindow is visually identical.
         if #available(macOS 15.6, *) {
             openWindow(id: "aerialSettings")
+            // An accessory app opening a SwiftUI window from the popover
+            // can leave it frontmost but inactive (grey controls on the
+            // first open after launch). Activate explicitly, as the
+            // NSWindow path below always did.
+            NSApp.activate(ignoringOtherApps: true)
         } else {
             shared.showWindow(nil)
             shared.window?.makeKeyAndOrderFront(nil)

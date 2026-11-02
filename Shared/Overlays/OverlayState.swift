@@ -46,6 +46,12 @@ class OverlayState: ObservableObject {
         Color(overlayHex: configLayout?.textColorHex ?? "#FFFFFF")
     }
 
+    /// Layout-level tabular digits, derived from `configLayout?.monospacedDigits`.
+    /// Defaults to on when no layout is loaded.
+    var monospacedDigits: Bool {
+        configLayout?.monospacedDigits ?? true
+    }
+
     /// Version banner
     @Published var showVersionBanner = false
     var versionBannerText = ""
@@ -159,7 +165,7 @@ class OverlayState: ObservableObject {
         if hasWeather {
             setupWeatherSubscriptions()
             registerActiveWeatherLocations()
-            WeatherProvider.shared.startPeriodicRefresh()
+            WeatherProvider.shared.startPeriodicRefresh(for: self)
         }
 
         let hasMusic = configInstances.contains { $0.kind == .music }
@@ -189,7 +195,7 @@ class OverlayState: ObservableObject {
         if configInstances.contains(where: { $0.kind == .weather }) {
             setupWeatherSubscriptions()
             registerActiveWeatherLocations()
-            WeatherProvider.shared.startPeriodicRefresh()
+            WeatherProvider.shared.startPeriodicRefresh(for: self)
         }
         if configInstances.contains(where: { $0.kind == .music }) {
             setupMusicSubscriptions()
@@ -361,7 +367,7 @@ class OverlayState: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
             configChangeObserver = nil
         }
-        WeatherProvider.shared.stopPeriodicRefresh()
+        WeatherProvider.shared.stopPeriodicRefresh(for: self)
         weatherSubs.removeAll()
         musicSub?.cancel()
         musicSub = nil
@@ -556,7 +562,7 @@ class OverlayState: ObservableObject {
             let mode = instance.typeSettings["mode"]?.asString ?? "current"
             return (source: source, needsForecast: mode != "current")
         }
-        WeatherProvider.shared.setActiveLocations(locations)
+        WeatherProvider.shared.setActiveLocations(locations, for: self)
     }
 
     /// Map a weather update to all overlay instances with matching location

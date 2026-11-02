@@ -36,6 +36,29 @@ final class LiveFeedsTooling {
         refreshPaths()
     }
 
+    // MARK: - Install guidance
+
+    /// FAQ answer covering Homebrew, MacPorts and manual installs.
+    static let faqURL = URL(string: "https://aerialscreensaver.github.io/faq/#youtube-and-live-streams")!
+
+    /// Homebrew dropped Intel Macs on macOS 27; MacPorts still covers them.
+    /// Checks the hardware rather than `#if arch(x86_64)` so an Apple Silicon
+    /// Mac running us under Rosetta still gets Homebrew.
+    static let prefersMacPorts: Bool = {
+        var isArm: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        let hasArm = sysctlbyname("hw.optional.arm64", &isArm, &size, nil, 0) == 0 && isArm == 1
+        return !hasArm && ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27
+    }()
+
+    static var packageManagerName: String {
+        prefersMacPorts ? "MacPorts" : "Homebrew"
+    }
+
+    static func installCommand(_ tool: String) -> String {
+        prefersMacPorts ? "sudo port install \(tool)" : "brew install \(tool)"
+    }
+
     /// Re-run the discovery pass. Called after the user dismisses the install
     /// sheet so the app picks up newly-installed tools without a restart.
     func refreshPaths() {

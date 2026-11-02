@@ -101,6 +101,7 @@ struct OverlayRootView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(configEdgeInsets(layout: layout))
             .foregroundStyle(state.textColor)
+            .monospacedDigit(state.monospacedDigits)
             .animation(.easeInOut(duration: 0.6), value: tick)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -195,3 +196,18 @@ extension OverlayPosition {
     }
 }
 
+// MARK: - Layout-level tabular digits
+
+extension View {
+    /// `View.monospacedDigit()` propagates tabular figures to every child
+    /// view's font (system or custom, if the font has them) but has no Bool
+    /// form; this wraps it so the layout flag can switch it on or off.
+    @ViewBuilder
+    func monospacedDigit(_ enabled: Bool) -> some View {
+        if enabled {
+            monospacedDigit()
+        } else {
+            self
+        }
+    }
+}

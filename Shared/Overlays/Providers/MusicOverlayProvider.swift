@@ -39,6 +39,9 @@ private struct MusicSettingsContent: View {
     #if COMPANION_APP
     @State private var testResult: String?
     @State private var isTesting = false
+    /// "automatic" / "players" — see `Preferences.nowPlayingMode`.
+    @State private var mode: String = Preferences.nowPlayingMode
+    @ObservedObject private var coordinator = NowPlayingCoordinator.shared
     /// In-memory mirror of `Preferences.enabledNowPlayingSources`.
     /// Empty set carries the "all enabled" implicit-default semantics
     /// (so an unconfigured install opts into every known player and
@@ -49,21 +52,38 @@ private struct MusicSettingsContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Shows the currently playing song from the players you select.")
+            Text("Shows the currently playing song.")
                 .foregroundStyle(.secondary)
                 .font(.caption)
 
             #if COMPANION_APP
             Divider()
 
-            Text("Players to monitor")
+            Text("Source")
                 .font(.system(size: 12, weight: .semibold))
-            Text("These apply to all Music overlays in Aerial.")
+            Text("Applies to all Music overlays in Aerial.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
 
-            ForEach(NowPlayingSourceRegistry.all, id: \.identifier) { src in
-                Toggle(src.displayName, isOn: bindingForSource(src.identifier))
+            Picker("Source", selection: $mode) {
+                Text("Automatic — any player (recommended)").tag(Preferences.nowPlayingModeAutomatic)
+                Text("Specific players").tag(Preferences.nowPlayingModePlayers)
+            }
+            .labelsHidden()
+            .onChange(of: mode) { _, newValue in
+                Preferences.nowPlayingMode = newValue
+                NowPlayingCoordinator.shared.reconfigure()
+            }
+
+            if mode == Preferences.nowPlayingModeAutomatic {
+                Text(automaticCaption)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            } else {
+                ForEach(NowPlayingSourceRegistry.all, id: \.identifier) { src in
+                    Toggle(src.displayName, isOn: bindingForSource(src.identifier))
+                }
             }
 
             Divider()
@@ -87,6 +107,18 @@ private struct MusicSettingsContent: View {
     }
 
     #if COMPANION_APP
+    /// What the Automatic source is doing, from the coordinator's status.
+    private var automaticCaption: String {
+        switch coordinator.automaticStatus {
+        case .off, .probing:
+            return "Checking the system now-playing service…"
+        case .active:
+            return "Listening to any player (Apple Music, Spotify, browsers, Podcasts…) through the system now-playing service."
+        case .unavailable(let reason):
+            return "Not available on this Mac: \(reason). Choose Specific players."
+        }
+    }
+
     private func isSourceEnabled(_ identifier: String) -> Bool {
         // Empty set = implicit "all enabled".
         enabledSources.isEmpty || enabledSources.contains(identifier)

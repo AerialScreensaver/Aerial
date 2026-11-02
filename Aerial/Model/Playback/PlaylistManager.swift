@@ -187,6 +187,7 @@ class PlaylistManager {
 
         if didReshuffle {
             DispatchQueue.main.async {
+                // Already on main: post directly (no `self` capture needed).
                 NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: screenUUID)
             }
         }
@@ -252,11 +253,6 @@ class PlaylistManager {
         return queue.sync {
             resolvePlaylist(screenUUID)?.playbackTimestamp
         }
-    }
-
-    /// Mark the playlist for resume on next pop (used for screensaver handoff).
-    func markForResume() {
-        needsResume = true
     }
 
     // MARK: - Public API
@@ -355,12 +351,28 @@ class PlaylistManager {
             persist()
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: screenUUID)
+        postPlaylistDidChange(screenUUID)
+    }
+
+    /// The video format changed. Playlist IDs don't depend on the format,
+    /// so the content-signature gate in `persist()` would stay silent and
+    /// the extension would keep resolving the OLD rendition's filenames
+    /// (which Settings just deleted) until something else bumped a
+    /// generation. Force the signal: the extension re-reads
+    /// screensaver.json on any playlist bump and re-pops with the new
+    /// rendition.
+    func videoFormatDidChange() {
+        regenerateAll(forceSignal: true)
     }
 
     /// Regenerate all playlists (shared + per-screen) using each playlist's stored filter.
     /// Use this when a download completes so every playlist picks up the newly cached video.
-    func regenerateAll() {
+    /// `forceSignal` tells the extension even when no playlist's content changed
+    /// (see `videoFormatDidChange`). `excluding` drops those video IDs as if
+    /// they were no longer cached — a cache delete regenerates with them
+    /// excluded BEFORE removing the files, so the extension moves off a
+    /// deleted current video while its file still exists.
+    func regenerateAll(forceSignal: Bool = false, excluding: Set<String> = []) {
         // Defense-in-depth: a transiently empty video list (mid-reloadSources
         // rebuild) must never be persisted as empty playlists and signaled to
         // the extension — every scope would be clobbered to [] and paused
@@ -368,6 +380,12 @@ class PlaylistManager {
         // re-triggers regeneration once the list is repopulated.
         guard !VideoList.instance.videos.isEmpty else {
             debugLog("📋 regenerateAll skipped — video list is empty (transient reload?)")
+            if forceSignal {
+                // Nothing to persist, but the extension still has to
+                // re-read its settings; a nil-scope bump reaches every screen.
+                WallpaperControl.shared.playlistDidChange(screenUUID: nil)
+                postPlaylistDidChange(nil)
+            }
             return
         }
         queue.sync(flags: .barrier) {
@@ -378,21 +396,21 @@ class PlaylistManager {
             // Regenerate shared playlist
             if let shared = state.sharedPlaylist,
                let mode = NewShouldPlay(rawValue: shared.filterMode) {
-                state.sharedPlaylist = refreshPlaylist(shared, mode: mode, filterStrings: shared.filterStrings)
+                state.sharedPlaylist = refreshPlaylist(shared, mode: mode, filterStrings: shared.filterStrings, excluding: excluding)
             }
 
             // Regenerate each per-screen playlist
             for (uuid, playlist) in state.screenPlaylists {
                 if let mode = NewShouldPlay(rawValue: playlist.filterMode) {
-                    state.screenPlaylists[uuid] = refreshPlaylist(playlist, mode: mode, filterStrings: playlist.filterStrings)
+                    state.screenPlaylists[uuid] = refreshPlaylist(playlist, mode: mode, filterStrings: playlist.filterStrings, excluding: excluding)
                 }
             }
 
             needsResume = true
-            persist()
+            persist(forceSignal: forceSignal)
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+        postPlaylistDidChange(nil)
     }
 
     /// Single entry point for the playback-mode selectors (popover strip,
@@ -425,7 +443,7 @@ class PlaylistManager {
             persist()
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+        postPlaylistDidChange(nil)
     }
 
     /// Immediately reshuffle every playlist's order, keeping the currently
@@ -451,7 +469,7 @@ class PlaylistManager {
             persist()
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+        postPlaylistDidChange(nil)
     }
 
     /// Shuffle a playlist's entries while keeping the current video at the
@@ -494,7 +512,7 @@ class PlaylistManager {
             persist()
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: screenUUID)
+        postPlaylistDidChange(screenUUID)
     }
 
     /// Whether the active playlist is a user playlist (filterMode == -1).
@@ -538,23 +556,7 @@ class PlaylistManager {
             persist()
         }
 
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: screenUUID)
-    }
-
-    // MARK: - Live Sync
-
-    /// Merge the extension progress sidecar, persist, and delete the
-    /// sidecar. Intended for the "extension just stopped, Companion is
-    /// about to take over" handoff points (manual desktop launch, etc.)
-    /// where the extension is not going to write again and we don't
-    /// want a stale sidecar leaking into the next round trip.
-    func consumeExtensionProgressIfAvailable() {
-        queue.sync(flags: .barrier) {
-            if mergeExtensionProgress() {
-                persist()
-                store.delete(at: PlaylistProgressState.fileURL)
-            }
-        }
+        postPlaylistDidChange(screenUUID)
     }
 
     // MARK: - Direct Navigation
@@ -594,7 +596,7 @@ class PlaylistManager {
             // Delete stale sidecar — the Companion's explicit index takes precedence
             store.delete(at: PlaylistProgressState.fileURL)
         }
-        NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: screenUUID)
+        postPlaylistDidChange(screenUUID)
     }
 
     /// Sync each scope's `currentIndex` to the video the wallpaper
@@ -635,7 +637,7 @@ class PlaylistManager {
             }
         }
         if changed {
-            NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: nil)
+            postPlaylistDidChange(nil)
         }
     }
 
@@ -713,17 +715,36 @@ class PlaylistManager {
         return video
     }
 
+    /// Scopes (nil = shared) whose ACTIVE USER PLAYLIST is on one of `ids`.
+    /// `regenerateAll` never touches user playlists, so a cache delete has
+    /// to advance these screens itself.
+    func userPlaylistScopes(playing ids: Set<String>) -> [String?] {
+        return queue.sync {
+            func isPlaying(_ playlist: PersistedPlaylist?) -> Bool {
+                guard let playlist, playlist.filterMode == -1,
+                      playlist.entries.indices.contains(playlist.currentIndex) else { return false }
+                return ids.contains(playlist.entries[playlist.currentIndex].videoId)
+            }
+            // Only the scopes the extension actually plays: per-screen
+            // playlists can outlive a switch away from independent mode.
+            guard PrefsDisplays.viewingMode == .independent else {
+                return isPlaying(state.sharedPlaylist) ? [nil] : []
+            }
+            return state.screenPlaylists.filter { isPlaying($0.value) }.map { $0.key }
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Full rebuild: shuffled playlist from scratch with currentIndex 0 (first video to play).
     /// Must be called inside the barrier queue.
-    private func buildFreshPlaylist(mode: NewShouldPlay, filterStrings: [String]) -> PersistedPlaylist {
+    private func buildFreshPlaylist(mode: NewShouldPlay, filterStrings: [String], excluding: Set<String> = []) -> PersistedPlaylist {
         let allMatching = VideoList.instance.videosMatchingFilter(
             mode: mode,
             filterStrings: filterStrings
         )
 
-        let cached = allMatching.filter { $0.isAvailableOffline }
+        let cached = allMatching.filter { $0.isAvailableOffline && !excluding.contains($0.id) }
         var shuffled = cached.shuffled()
 
         // Fall back to the global cache ONLY when the filter resolves
@@ -736,7 +757,7 @@ class PlaylistManager {
         // silently play unrelated content while the user waits.
         if shuffled.isEmpty && allMatching.isEmpty {
             shuffled = VideoList.instance.videos
-                .filter { $0.isAvailableOffline && !PrefsVideos.hidden.contains($0.id) }
+                .filter { $0.isAvailableOffline && !PrefsVideos.hidden.contains($0.id) && !excluding.contains($0.id) }
                 .shuffled()
         }
 
@@ -763,13 +784,13 @@ class PlaylistManager {
     /// Refresh in place: keep existing entries and position, remove stale videos,
     /// append newly cached ones. Falls back to buildFreshPlaylist if nothing survives.
     /// Must be called inside the barrier queue.
-    private func refreshPlaylist(_ existing: PersistedPlaylist, mode: NewShouldPlay, filterStrings: [String]) -> PersistedPlaylist {
+    private func refreshPlaylist(_ existing: PersistedPlaylist, mode: NewShouldPlay, filterStrings: [String], excluding: Set<String> = []) -> PersistedPlaylist {
         // Build the set of video IDs that currently match and are cached
         let allMatching = VideoList.instance.videosMatchingFilter(
             mode: mode,
             filterStrings: filterStrings
         )
-        let cachedIds = Set(allMatching.filter { $0.isAvailableOffline }.map { $0.id })
+        let cachedIds = Set(allMatching.filter { $0.isAvailableOffline && !excluding.contains($0.id) }.map { $0.id })
 
         // Remember which video is current
         let currentVideoId: String? = existing.entries.indices.contains(existing.currentIndex)
@@ -789,7 +810,7 @@ class PlaylistManager {
 
         // If nothing survived, full rebuild
         if keptEntries.isEmpty {
-            return buildFreshPlaylist(mode: mode, filterStrings: filterStrings)
+            return buildFreshPlaylist(mode: mode, filterStrings: filterStrings, excluding: excluding)
         }
 
         // Adjust currentIndex after removals
@@ -803,7 +824,7 @@ class PlaylistManager {
 
         // Append newly cached videos (not already in the playlist) in shuffled order
         let existingIds = Set(keptEntries.map { $0.videoId })
-        let newVideos = allMatching.filter { $0.isAvailableOffline && !existingIds.contains($0.id) }.shuffled()
+        let newVideos = allMatching.filter { $0.isAvailableOffline && !excluding.contains($0.id) && !existingIds.contains($0.id) }.shuffled()
         let newEntries = newVideos.map { video in
             PlaylistEntry(
                 videoId: video.id,
@@ -840,7 +861,26 @@ class PlaylistManager {
         }
     }
 
-    private func persist() {
+    /// Deliver `playlistDidChangeNotification` on main. Regeneration runs
+    /// from `DownloadCoordinator`'s work queue (every download completion,
+    /// the hourly check) and three SwiftUI views observe with `.onReceive`
+    /// and no `receive(on:)`, so a synchronous post from there mutated
+    /// `@State` off main. Main-thread callers keep synchronous delivery so
+    /// popover/dashboard refresh ordering is unchanged; only off-main
+    /// posts hop.
+    private func postPlaylistDidChange(_ object: Any?) {
+        if Thread.isMainThread {
+            NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: object)
+        } else {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: Self.playlistDidChangeNotification, object: object)
+            }
+        }
+    }
+
+    /// `forceSignal` bypasses the content-signature gate and bumps every
+    /// screen — only for changes the signature can't see (video format).
+    private func persist(forceSignal: Bool = false) {
         store.write(state, to: PlaylistState.fileURL)
 
         // Signal the wallpaper extension ONLY for scopes whose CONTENT
@@ -850,14 +890,14 @@ class PlaylistManager {
         // and made the extension drop + advance its videos on every
         // Companion launch.
         let current = Self.signatures(of: state)
-        guard current != lastSignaledSignatures else { return }
+        guard forceSignal || current != lastSignaledSignatures else { return }
 
         let sharedChanged = current["shared"] != lastSignaledSignatures["shared"]
         let allScreenKeys = Set(current.keys).union(lastSignaledSignatures.keys).subtracting(["shared"])
         let changedScreens = allScreenKeys.filter { current[$0] != lastSignaledSignatures[$0] }
         lastSignaledSignatures = current
 
-        if sharedChanged {
+        if sharedChanged || forceSignal {
             // The shared playlist serves every display in cloned/spanned
             // mode — bump all screens (the extension's broadcast renderer
             // matches any screen's signal).

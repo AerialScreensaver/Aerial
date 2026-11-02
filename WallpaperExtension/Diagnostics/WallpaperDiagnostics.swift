@@ -61,23 +61,30 @@ func spannedLayerFrame(for displayID: UInt32?, playing: Set<String>? = nil) -> C
 /// reconciles — turns any manual test session into a self-documenting
 /// lifecycle trace (process identity is the pid= in every line's prefix).
 func dumpTopology(reason: String) {
-    // Runs on the logging queue, off the calling (XPC / main / control)
-    // thread — diagnosticsSnapshot() below queue.syncs into each
-    // renderer queue and can momentarily block behind the feed loop,
-    // which must never stall an acquire reply.
+    // Runs on the logging queue, off the calling (handler / main /
+    // control) thread — diagnosticsSnapshot() below bounded-syncs into
+    // each renderer queue and can momentarily block behind the feed
+    // loop, which must never stall an acquire reply or the handler queue.
     extensionDiagnosticsQueue.async {
+        // One mirror read per window per observation: every line below
+        // compares fields from the same copy, never across a transition.
         let wallpapers = sharedHandlerState.allWallpapers()
-        let renderers = sharedHandlerState.allRenderers()
+            .map { (wid: $0.wid, wallpaper: $0.wallpaper, state: $0.wallpaper.mirror) }
+        // Renderer refCounts copied under HandlerState's lock; the objects
+        // themselves are queue-confined and safe to query from here.
+        let summaries = sharedHandlerState.rendererSummaries()
+        let renderers = summaries.map(\.shared)
+        let refCounts = Dictionary(summaries.map { ($0.shared.rendererKey, $0.refCount) }, uniquingKeysWith: { first, _ in first })
         // presenters= is a leak canary: one ContentsSwapPresenter runs a
         // 60 Hz CVDisplayLink per wallpaper — 22 piled up in the 2026-07
         // Tahoe churn incident (the user-visible 35% CPU spin).
-        let presenters = wallpapers.filter { $0.wallpaper.contentsSwapPresenter != nil }.count
+        let presenters = wallpapers.filter { $0.state.contentsSwapPresenter != nil }.count
         debugLog("🗺 topology (\(reason)): \(wallpapers.count) wallpapers, \(renderers.count) renderers, \(presenters) presenters")
-        for (wid, w) in wallpapers.sorted(by: { $0.wid < $1.wid }) {
-            debugLog("  🗺 wid=\(wid.prefix(8)) did=\(w.displayID.map(String.init) ?? "nil") key=\(shortKey(w.rendererKey)) saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) mode=\(w.lastPresentationMode) overlay=\(w.overlayDriver != nil) presenter=\(w.contentsSwapPresenter != nil)\(w.saverExcluded ? " excluded=true" : "")")
+        for (wid, w, s) in wallpapers.sorted(by: { $0.wid < $1.wid }) {
+            debugLog("  🗺 wid=\(wid.prefix(8)) did=\(s.displayID.map(String.init) ?? "nil") key=\(shortKey(s.rendererKey)) saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) mode=\(s.lastPresentationMode) overlay=\(s.hasOverlay) presenter=\(s.contentsSwapPresenter != nil)\(s.saverExcluded ? " excluded=true" : "")")
         }
         for shared in renderers.sorted(by: { $0.rendererKey < $1.rendererKey }) {
-            debugLog("  🗺 renderer key=\(shortKey(shared.rendererKey)) refCount=\(shared.refCount) video=\(shared.videoURL.lastPathComponent) \(shared.renderer.diagnosticsSnapshot())")
+            debugLog("  🗺 renderer key=\(shortKey(shared.rendererKey)) refCount=\(refCounts[shared.rendererKey] ?? -1) video=\(shared.videoURL.lastPathComponent) \(shared.renderer.diagnosticsSnapshot())")
         }
         // Stale/unfed layer detector: every window's hosted layer must be
         // fed by the renderer its key names. A layer fed by a DIFFERENT
@@ -85,33 +92,33 @@ func dumpTopology(reason: String) {
         // a layer fed by nobody renders whatever frame it last got —
         // frozen content. Transient one-shots right after an acquire are
         // benign (subscribe is async); repeated hits are the bug.
-        for (wid, w) in wallpapers {
-            guard let layer = w.displayLayer else { continue }
+        for (wid, w, s) in wallpapers {
+            // An excluded saver window is black on purpose, not frozen.
+            guard !s.saverExcluded else { continue }
+            let layer = w.displayLayer
             if let owner = renderers.first(where: { $0.renderer.feedsLayer(layer) }) {
-                if owner.rendererKey != w.rendererKey {
-                    debugLog("  ⚠️ stale layer: wid=\(wid.prefix(8)) hosts a layer fed by key=\(shortKey(owner.rendererKey)) but window key=\(shortKey(w.rendererKey))")
+                if owner.rendererKey != s.rendererKey {
+                    debugLog("  ⚠️ stale layer: wid=\(wid.prefix(8)) hosts a layer fed by key=\(shortKey(owner.rendererKey)) but window key=\(shortKey(s.rendererKey))")
                 }
             } else {
-                debugLog("  ⚠️ unfed layer: wid=\(wid.prefix(8)) key=\(shortKey(w.rendererKey)) — no live renderer feeds its layer (frozen)")
+                debugLog("  ⚠️ unfed layer: wid=\(wid.prefix(8)) key=\(shortKey(s.rendererKey)) — no live renderer feeds its layer (frozen)")
             }
         }
         for shared in renderers {
-            // Excluded saver windows never subscribe (no displayLayer).
-            let windowCount = wallpapers.filter { $0.wallpaper.rendererKey == shared.rendererKey && !$0.wallpaper.saverExcluded }.count
+            // Excluded saver windows never subscribe (off-tree layer).
+            let windowCount = wallpapers.filter { $0.state.rendererKey == shared.rendererKey && !$0.state.saverExcluded }.count
             let subs = shared.renderer.subscriberCount
             if subs != windowCount {
                 debugLog("  ⚠️ subscriber mismatch key=\(shortKey(shared.rendererKey)): \(subs) subscriber layer(s) vs \(windowCount) window(s)")
             }
         }
+        // refCount vs attachedRendererKey, under HandlerState's lock
+        // (Debug builds only; see the method for what a one-shot means).
+        sharedHandlerState.auditReferences(context: reason)
     }
 }
 
 // MARK: - Saver-session layer-geometry audit
-
-/// Timestamp of the last saver-fallback OFF transition — feeds the
-/// reuse beacon in `setNotificationScreensaver`. Main-queue only (the
-/// distributed-notification observers deliver on .main).
-nonisolated(unsafe) var lastSaverStopAt: Date?
 
 /// Last audit block we logged; the audit re-logs only on change so an
 /// idle saver session costs one block, not one per second.
@@ -178,7 +185,7 @@ private func auditLayerGeometry() {
         // snapshot — the "background pane" that shows through wherever
         // a mis-scaled AVSBDL surface leaves the video layer transparent
         // (the beta3 overlap photo's second half).
-        lines.append("📐 #\(w.acquireSeq) wid=\(wid.prefix(8)) did=\(w.displayID.map(String.init) ?? "nil") saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) root=\(rectDesc(root.frame))@\(root.contentsScale) contents=\(root.contents == nil ? "nil" : "set") t=\(tDesc) subs=[\(subs)]")
+        lines.append("📐 #\(w.acquireSeq) wid=\(wid.prefix(8)) did=\(w.mirror.displayID.map(String.init) ?? "nil") saver=\(w.isScreenSaver) preview=\(w.isPreview) variant=\(w.experimentVariant) root=\(rectDesc(root.frame))@\(root.contentsScale) contents=\(root.contents == nil ? "nil" : "set") t=\(tDesc) subs=[\(subs)]")
     }
     let signature = lines.joined(separator: "\n")
     guard signature != lastGeometryAuditSignature else { return }
@@ -190,32 +197,35 @@ private func auditLayerGeometry() {
 /// Attach or remove the diagnostic badge on one wallpaper according to
 /// the current `PrefsAdvanced.showDiagnosticBadges` setting. Idempotent
 /// — always clears any existing badge first, so it doubles as the
-/// removal path when the toggle goes off. Runs on the caller's thread
-/// (same threads that build the rest of the tree).
+/// removal path when the toggle goes off. Handler queue only (it edits
+/// the root tree and the window's mirror).
 func applyDiagnosticBadge(to wallpaper: ActiveWallpaper, wid: String) {
+    assertHandlerQueue("applyDiagnosticBadge")
+    let state = wallpaper.mirror
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    wallpaper.debugBadge?.removeFromSuperlayer()
-    wallpaper.debugBadge = nil
+    state.debugBadge?.removeFromSuperlayer()
+    var badge: DebugBadgeLayer?
     if PrefsAdvanced.showDiagnosticBadges {
         // "P" outranks "S": a Settings preview of the saver is still a
         // preview window — the letter tells photos which composite path
         // (thumbnail vs fullscreen) the badge lives in.
         let role = wallpaper.isPreview ? "P" : (wallpaper.isScreenSaver ? "S" : "W")
-        let badge = DebugBadgeLayer.make(
+        let made = DebugBadgeLayer.make(
             seq: wallpaper.acquireSeq,
             role: role,
-            did: wallpaper.displayID,
+            did: state.displayID,
             wid: wid,
-            size: wallpaper.lastDestination.size,
-            contentsScale: wallpaper.lastDestination.scaleFactor,
+            size: state.lastDestination.size,
+            contentsScale: state.lastDestination.scaleFactor,
             variant: wallpaper.experimentVariant
         )
-        wallpaper.rootLayer.addSublayer(badge)
-        wallpaper.debugBadge = badge
-        debugLog("  🏷️ badge #\(wallpaper.acquireSeq) wid=\(wid.prefix(8)) role=\(wallpaper.isPreview ? "preview" : (wallpaper.isScreenSaver ? "saver" : "wallpaper")) did=\(wallpaper.displayID.map(String.init) ?? "nil") variant=\(wallpaper.experimentVariant)")
+        wallpaper.rootLayer.addSublayer(made)
+        badge = made
+        debugLog("  🏷️ badge #\(wallpaper.acquireSeq) wid=\(wid.prefix(8)) role=\(wallpaper.isPreview ? "preview" : (wallpaper.isScreenSaver ? "saver" : "wallpaper")) did=\(state.displayID.map(String.init) ?? "nil") variant=\(wallpaper.experimentVariant)")
     }
     CATransaction.commit()
+    wallpaper.mutate { $0.debugBadge = badge }
 }
 
 // MARK: - Variant D: contents-swap presenter
@@ -380,6 +390,13 @@ final class ContentsSwapPresenter {
     }
 
     func stop() {
+        // Timers and `presented` are main-queue state, and `tick()`/`downshift()` run on
+        // main. A stop from the XPC teardown thread could race a downshift that recreates
+        // `idleTimer` after it was nilled here, leaking a 1 Hz source per evicted window.
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [self] in stop() }
+            return
+        }
         stopped = true
         if let displayLink {
             CVDisplayLinkStop(displayLink)

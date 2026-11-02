@@ -220,7 +220,6 @@ struct PlayViewButton: View {
         switch target {
         case .userPlaylist(let id):
             PlaylistManager.shared.activateUserPlaylist(id: id, for: scopeUUID)
-            refreshPlayback(for: scopeUUID)
         case .filter(let mode, let filters):
             if let scopeUUID {
                 PlaylistManager.shared.regenerate(for: scopeUUID, mode: mode, filterStrings: filters)
@@ -231,7 +230,6 @@ struct PlayViewButton: View {
                 PrefsVideos.newShouldPlayString = filters
                 PlaylistManager.shared.regenerate(for: nil, mode: mode, filterStrings: filters)
             }
-            refreshPlayback(for: scopeUUID)
             DownloadCoordinator.shared.selectionDidChange()
         }
         showNewSelectionNow(scopeUUID: scopeUUID)
@@ -249,31 +247,19 @@ struct PlayViewButton: View {
         switch target {
         case .userPlaylist(let id):
             PlaylistManager.shared.activateUserPlaylist(id: id, for: nil)
-            refreshPlayback(for: nil)
             for uuid in perScreenUUIDs {
                 PlaylistManager.shared.activateUserPlaylist(id: id, for: uuid)
-                refreshPlayback(for: uuid)
             }
         case .filter(let mode, let filters):
             PrefsVideos.newShouldPlay = mode
             PrefsVideos.newShouldPlayString = filters
             PlaylistManager.shared.regenerate(for: nil, mode: mode, filterStrings: filters)
-            refreshPlayback(for: nil)
             for uuid in perScreenUUIDs {
                 PlaylistManager.shared.regenerate(for: uuid, mode: mode, filterStrings: filters)
-                refreshPlayback(for: uuid)
             }
             DownloadCoordinator.shared.selectionDidChange()
         }
         showNewSelectionNow(scopeUUID: nil)
-    }
-
-    private func refreshPlayback(for scopeUUID: String?) {
-        if let scopeUUID {
-            PlaybackManager.shared.refreshPlayback(for: scopeUUID)
-        } else {
-            PlaybackManager.shared.refreshPlayback()
-        }
     }
 
     /// Make the new selection visible right away. The playlist-change

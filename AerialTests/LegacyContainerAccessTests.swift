@@ -126,4 +126,34 @@ struct LegacyContainerAccessTests {
         #expect(!LegacyContainerAccess.removeStagingIfEmpty(path: busy))
         #expect(fm.fileExists(atPath: busy + "/Cache/a.mov"))
     }
+
+    @Test("staging folder: created when absent, accepted when it is a plain folder of ours")
+    func stagingGuardAccepts() throws {
+        let fresh = try tempDir() + "/staging"
+        try LegacyContainerAccess.prepareStaging(at: fresh)
+        var isDir: ObjCBool = false
+        #expect(FileManager.default.fileExists(atPath: fresh, isDirectory: &isDir) && isDir.boolValue)
+        // Idempotent on the folder it just made.
+        try LegacyContainerAccess.prepareStaging(at: fresh)
+    }
+
+    @Test("staging folder: a symlink or a plain file at the path is refused, and the link target is left alone")
+    func stagingGuardRefuses() throws {
+        let base = try tempDir()
+        let target = base + "/elsewhere"
+        try makeFile(target + "/Cache/precious.mov")
+        let link = base + "/staging-link"
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
+
+        #expect(throws: LegacyContainerAccess.StagingError.self) {
+            try LegacyContainerAccess.prepareStaging(at: link)
+        }
+        #expect(FileManager.default.fileExists(atPath: target + "/Cache/precious.mov"))
+
+        let file = base + "/staging-file"
+        try makeFile(file)
+        #expect(throws: LegacyContainerAccess.StagingError.self) {
+            try LegacyContainerAccess.prepareStaging(at: file)
+        }
+    }
 }

@@ -170,7 +170,6 @@ final class PlaybackSelectorModel: ObservableObject {
         guard let screenUUID = effectiveScreenUUID else { return }
         let filters = Array(selectedItems)
         PlaylistManager.shared.regenerate(for: screenUUID, mode: selectedCategory, filterStrings: filters)
-        playbackManager.refreshPlayback(for: screenUUID)
         DownloadCoordinator.shared.selectionDidChange()
     }
 
@@ -179,7 +178,6 @@ final class PlaybackSelectorModel: ObservableObject {
         let filters = Array(selectedItems)
         PrefsVideos.newShouldPlayString = filters
         PlaylistManager.shared.regenerate(for: nil, mode: selectedCategory, filterStrings: filters)
-        playbackManager.refreshPlayback()
         DownloadCoordinator.shared.selectionDidChange()
     }
 
@@ -318,11 +316,6 @@ final class PlaybackSelectorModel: ObservableObject {
 
     func activateUserPlaylist(_ id: UUID) {
         PlaylistManager.shared.activateUserPlaylist(id: id, for: effectiveScreenUUID)
-        if let screenUUID = effectiveScreenUUID {
-            playbackManager.refreshPlayback(for: screenUUID)
-        } else {
-            playbackManager.refreshPlayback()
-        }
         playlistActivationTick &+= 1
     }
 
@@ -330,10 +323,8 @@ final class PlaybackSelectorModel: ObservableObject {
         let mode = selectedCategory
         if let screenUUID = effectiveScreenUUID {
             PlaylistManager.shared.regenerate(for: screenUUID, mode: mode, filterStrings: Array(selectedItems))
-            playbackManager.refreshPlayback(for: screenUUID)
         } else {
             PlaylistManager.shared.regenerate()
-            playbackManager.refreshPlayback()
         }
         popoverCategory = .filter(mode)
     }

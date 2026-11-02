@@ -42,13 +42,26 @@ enum SaverDisplayRule {
     /// found, nothing ticked yet) falls back to every display — a
     /// screensaver that is black everywhere reads as broken.
     ///
+    /// The one exception is "Override if only one display remains" set
+    /// to Don't play (2026-10-15): with a single display connected, and a
+    /// mode other than All displays, the result is deliberately EMPTY so
+    /// every saver window stays black. `.play` plays on the lone display
+    /// — the fallback's own answer, stated explicitly; `nil` = override
+    /// off. "One display" uses the same `countsAsScreen` quirk as
+    /// "secondary only", so the two rules agree on what a single-display
+    /// setup is.
+    ///
     /// 3.x semantics otherwise: allDisplays → all; mainOnly → the main
     /// display; secondaryOnly → every non-main display when more than
     /// one display counts as a screen, else all; selection → the
     /// entries stored `true` (unknown displays are off).
-    static func playingDisplays(mode: DisplayMode, selection: [String: Bool], displays: [Display]) -> Set<String> {
+    static func playingDisplays(mode: DisplayMode, selection: [String: Bool], displays: [Display],
+                                singleDisplayOverride: SingleDisplayOverride? = nil) -> Set<String> {
         let known = displays.filter { !$0.uuid.isEmpty }
         let all = Set(known.map(\.uuid))
+        if mode != .allDisplays, let override = singleDisplayOverride, isSingleDisplaySetup(known) {
+            return override == .play ? all : []
+        }
         let chosen: Set<String>
         switch mode {
         case .allDisplays:
@@ -72,6 +85,37 @@ enum SaverDisplayRule {
         guard isSaverRole, !isPreview else { return true }
         guard let uuid, !uuid.isEmpty else { return true }
         return playing.contains(uuid)
+    }
+
+    /// "Only one display remains": at most one connected display (with a
+    /// UUID) counts as a screen — the `countsAsScreen` quirk "secondary
+    /// only" already uses, so every lone-display rule agrees on what a
+    /// single-display setup is.
+    static func isSingleDisplaySetup(_ displays: [Display]) -> Bool {
+        displays.filter { !$0.uuid.isEmpty && $0.countsAsScreen }.count <= 1
+    }
+
+    /// The single-display override is WHY the lone display plays: a mode
+    /// other than All displays, the override on and set to Play, and a
+    /// single-display setup. (Under Don't play nothing plays, so nothing
+    /// that hangs off the override applies either.)
+    static func singleDisplayOverrideApplies(mode: DisplayMode, displays: [Display],
+                                             singleDisplayOverride: SingleDisplayOverride?) -> Bool {
+        mode != .allDisplays && singleDisplayOverride == .play && isSingleDisplaySetup(displays)
+    }
+
+    /// "Use overlays from" (2026-10-15): the display UUID whose per-screen
+    /// overlay layout a saver window borrows, nil for its own. Non-nil
+    /// only while the override applies, per-screen overlay layouts are on
+    /// and a screen is selected ("" = this display). A selected screen
+    /// with no stored layout renders empty, exactly as it would itself.
+    static func overlayScreenOverride(mode: DisplayMode, displays: [Display],
+                                      singleDisplayOverride: SingleDisplayOverride?,
+                                      perScreenOverlays: Bool, selected: String) -> String? {
+        guard perScreenOverlays, !selected.isEmpty,
+              singleDisplayOverrideApplies(mode: mode, displays: displays, singleDisplayOverride: singleDisplayOverride)
+        else { return nil }
+        return selected
     }
 }
 
