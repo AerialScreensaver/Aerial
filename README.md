@@ -1,33 +1,43 @@
-# Aerial (formerly Aerial Companion)
+# Aerial 4
 
 [![Total downloads](https://img.shields.io/github/downloads/AerialScreensaver/Aerial/total?style=flat-square&logo=apple&logoColor=white)](https://github.com/AerialScreensaver/Aerial/releases) [![Latest release](https://img.shields.io/github/v/release/AerialScreensaver/Aerial?style=flat-square)](https://github.com/AerialScreensaver/Aerial/releases/latest)
 
 ![Aerial screensaver showing weather, clock, and now-playing overlays atop a sunset video](screenshot.webp)
 
-The Apple TV screensaver for your mac, now with optional wallpaper continuity. With optional overlays, time-of-day adaptation, and live camera feeds support. Now distributed as an App + App Extension.
+The Apple TV screensaver for your mac, now with optional wallpaper continuity. With optional overlays, multi-monitor support, time-of-day adaptation, live camera feeds support and many more features. 
 
-Version 4.1 is currently available in beta with a native wallpaper extension, replacing continuity and fixing the last remaining issues!
-
-For more details, check the website: [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
-
-## App Extension
-
-Starting with version 4, Aerial is now distributed as an App Extension, bundled inside the Aerial.app. This is using the same private API that Apple introduced in macOS 10.15 (yes, Catalina !) but still has not made public. The App Extension API allows to provide full compatibility with Sonoma and Tahoe, sidestepping the longstanding issues with the old outdated `.saver` API and it's terrible `legacyScreenSaver.appex` "compatibility layer". 
-
-If you want to make your own macOS App Extension screensaver, instead of messing with Aerial code (which has so much backward compatibility/legacy things), I vastly recommend you start with  [AppexSaverMinimal](https://github.com/AerialScreensaver/AppexSaverMinimal) as a much easier to understand starting point ! It's a minimal working sample, with a clear documentation of what works, what changes from the old API, and what you should adapt if you already have a `.saver` project. 
+Check-out the website for more info : [aerialscreensaver.github.io](https://aerialscreensaver.github.io)
 
 ## Requirements
 
-- macOS 15 (Sequoia) or later.
+- macOS 26 (Tahoe) or later.
 - Xcode 16 or later to build from source.
 
-For earlier macOS Versions, check the [old saver repository](https://github.com/JohnCoates/Aerial). 
+For earlier macOS versions, check the [download page](https://aerialscreensaver.github.io/download/) to see the last supported release.
 
-For macOS 27 Golden Gate, use the latest beta.
+## Something not working ? 
 
-- If you only want the old `.saver`, [version 3.6.3](https://github.com/JohnCoates/Aerial/releases/tag/v3.6.3) is the latest available.
+Bugs happen, and some features may not work as intended. 
 
-- If you want to use the old desktop mode from Companion, [version 1.5.3beta1](https://github.com/AerialScreensaver/Aerial/releases/download/v1.5.3beta1/Aerial.Companion.zip) is the latest : you *will need* to disable the update checks as you will be prompted to upgrade to version 4 ! It will automatically download version 3.6.3 of the `.saver` at first launch. 
+First, make sure you check out the [FAQ](https://aerialscreensaver.github.io/faq/) as it contains a lot of information about limitations and how to use some of the more niche features. 
+
+If you don't find your answer, you can check the existing [issues](https://github.com/AerialScreensaver/Aerial/issues) and post your own if nothing match. Or you can reach out on our [Discord server](https://discord.com/invite/TPuA5WG) in the `#support` channel. 
+
+Whichever way you pick, remember Aerial is very much a one-person passion project. Be kind.
+
+Interested in how it works? See the technical info below.
+
+## App Extension
+
+With version 4.0, the screensaver is distributed as an App Extension, bundled inside `Aerial.app`. Launching the app  registers the screensaver which can then be found in System Settings, ready to be used. 
+
+Screensaver App Extensions were introduced by Apple in macOS 10.*15* (yes, Catalina!) and bring a lot of improvements, including a much improved security model compared to the old, unsafe, plugins that shared their host's memory. Screensaver App Extensions run in their own sandboxed process instead. They also fix many issues that have crept in over the years with the old `.saver` plugin format and its `legacyScreenSaver.appex` compatibility layer.
+
+If you want to make your own macOS screensaver App Extension, I recommend you check [AppexSaverMinimal](https://github.com/AerialScreensaver/AppexSaverMinimal) first. It's a minimal working sample, with a clear documentation of what works, what changed from the old API, and what you should adapt if you already have a `.saver` project. Porting an existing `.saver` project is fairly easy as much of the old API is retained, with a few caveats. 
+
+Version 4.1 of Aerial went one step further and moved to the `com.apple.wallpaper` extension point, backed by Apple's private `WallpaperExtensionKit` framework. Those extensions register as both a dynamic wallpaper and a screensaver. This is what enables the seamless continuity that Aerial 4 provides. It is however a more complex and undocumented API, with a very different instance-based lifecycle and remote `CAContext` rendering.  
+
+To enable wallpapers and screensavers, Aerial relies on [PaperSaver](https://github.com/AerialScreensaver/PaperSaver). You can use this library to set your own screensaver as the old `defaults` plist configuration no longer works.
 
 ## Build from source
 
@@ -37,7 +47,7 @@ cd Aerial
 open Aerial.xcodeproj
 ```
 
-In Xcode, pick the **Aerial** scheme and build (`⌘B`) or run (`⌘R`).
+In Xcode, pick the **Aerial** scheme and run (`⌘R`).
 
 Note that `ScreenSaver/Source/Models/API/APISecrets.swift` ships with a blank OpenWeather key in the public source. The weather overlay won't display data unless you put your own key. Everything else in the app works without it.
 
@@ -45,17 +55,19 @@ Note that `ScreenSaver/Source/Models/API/APISecrets.swift` ships with a blank Op
 
 Weather overlays are provided thanks to [Openweather](https://openweathermap.org) who has offerred free support for Aerial for *many* years now ! Many thanks to them !
 
-<a href="https://openweathermap.org"><img src="ScreenSaver/Resources/openweather_logo.png" alt="OpenWeather" width="200"></a>
+<a href="https://openweathermap.org"><img src="Aerial/Resources/Assets.xcassets/OpenWeatherLogo.imageset/ow_logo.svg" alt="OpenWeather" width="200"></a>
 
 Aerial relies on a few great open source projects, you should check them out : 
 - [Sparkle](https://sparkle-project.org) for auto-updates
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) by Sindre Sorhus for global shortcuts handling
 - [Github releases to discord](https://github.com/SethCohen/github-releases-to-discord) by Seth Cohen for release notes in the community Discord
 - [Swift Argument parser](https://github.com/apple/swift-argument-parser) by Apple (not used directly by Aerial, but [PaperSaver](https://github.com/AerialScreensaver/PaperSaver) does use it)
+- [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) by Jonas van den Berg which restored access to the `mediaremote` framework
+- [PaperSaver](https://github.com/AerialScreensaver/PaperSaver) by Guillaume Louel to enable the app extensions
 
-Many thanks to those maintainers and their contributors !
+Thanks to those maintainers and their contributors !
 
-To enable the screensaver (and wallpaper in version 4.1), Aerial relies on [PaperSaver](https://github.com/AerialScreensaver/PaperSaver). You can use this library to set your own screensaver too as the old API is no longer available to do this, and Apple does not provide a replacement.
+And finally, to everyone who has used, supported or contributed to Aerial, thanks for your continued support over those long years! 
 
 ## Contributing
 
