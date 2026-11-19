@@ -105,6 +105,13 @@ final class WallpaperStatusMonitor: ObservableObject {
             }
         }
 
+        // The feeds NOT on screen need it too: one whose turn comes hours
+        // into a playlist used to start on an expired URL. Self-throttled
+        // (one pass per 5 min, per-feed refresh age and failure backoff).
+        if isRunning {
+            LiveFeedResolver.shared.refreshPlaylistFeedsIfNeeded()
+        }
+
         // Deaf-extension self-heal: the status echoes the control
         // version the extension last APPLIED. Running but behind our
         // writer means a missed/coalesced Darwin notification (throttled

@@ -57,6 +57,10 @@ final class SystemSleepState {
                        selector: #selector(handleDidWake),
                        name: NSWorkspace.didWakeNotification,
                        object: nil)
+
+        // A launch implies an awake session — clear any flag stranded by
+        // a Companion that was killed mid-sleep.
+        WallpaperControl.shared.setSystemAsleep(false)
     }
 
     // MARK: - Notifications
@@ -64,11 +68,17 @@ final class SystemSleepState {
     @objc private func handleWillSleep() {
         lock.lock(); _isAsleep = true; lock.unlock()
         debugLog("SystemSleepState: willSleep — gating background maintenance")
+        // Force-pause the wallpaper for the whole sleep span (💤). The
+        // agent never reports `suspended` for the headless virtual
+        // display macOS swaps in when the monitor powers off, so without
+        // this a locked renderer decodes at 1× through every dark wake.
+        WallpaperControl.shared.setSystemAsleep(true)
     }
 
     @objc private func handleDidWake() {
         lock.lock(); _isAsleep = false; lock.unlock()
         debugLog("SystemSleepState: didWake — background maintenance ungated")
+        WallpaperControl.shared.setSystemAsleep(false)
 
         // Catch up on the maintenance we deferred during sleep. Clearing the
         // flag *before* this call (above) keeps the ordering deterministic:

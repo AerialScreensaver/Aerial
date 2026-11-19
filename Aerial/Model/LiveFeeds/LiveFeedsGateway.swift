@@ -33,6 +33,13 @@ final class LiveFeedsGateway {
     private let accessLock = NSLock()
     private var lastAccessTimes: [UUID: Date] = [:]
 
+    /// Playlist requests parked while their feed's transmuxer starts on
+    /// demand. One start per feed; later requests join the list. Gateway
+    /// queue only.
+    private var pendingStarts: [UUID: [NWConnection]] = [:]
+    private let startQueue = DispatchQueue(label: "com.glouel.aerial.livefeeds.gateway.start",
+                                           qos: .userInitiated, attributes: .concurrent)
+
     private init() {
         ensureRoot()
     }
@@ -249,13 +256,58 @@ final class LiveFeedsGateway {
             .appendingPathComponent(components[0], isDirectory: true)
             .appendingPathComponent(components[1])
 
+        // A player asking for a feed's playlist while no ffmpeg runs for
+        // it: start one now and answer when the stream is ready. Checked
+        // on "not running" rather than "file missing" — a transmuxer whose
+        // camera went away leaves its last playlist behind, and serving
+        // that stale file is what made a stopped feed stall for a minute
+        // and then never come back (2026-11-17).
+        // Also while ffmpeg is running but has not written its playlist
+        // yet: answering 404 there failed the player twice during a 4 s
+        // start; the wait joins the start in flight instead.
+        if components[1] == "index.m3u8",
+           !LiveFeedTransmuxerManager.shared.isRunning(feedID: feedID)
+            || !FileManager.default.fileExists(atPath: fileURL.path) {
+            startOnDemand(feedID: feedID, playlist: fileURL, for: conn)
+            return
+        }
+        serveExisting(fileURL, feedID: feedID, name: components[1], on: conn)
+    }
+
+    /// Park `conn` until the feed's transmuxer has started (or failed),
+    /// then serve the fresh playlist or a 404. Gateway queue.
+    private func startOnDemand(feedID: UUID, playlist: URL, for conn: NWConnection) {
+        if pendingStarts[feedID] != nil {
+            pendingStarts[feedID]?.append(conn)
+            return
+        }
+        pendingStarts[feedID] = [conn]
+        startQueue.async { [weak self] in
+            // Blocks for ffmpeg's connect + first segment (a few seconds),
+            // or returns at once inside the failure backoff.
+            let started = LiveFeedTransmuxerManager.shared.startOnDemand(feedID: feedID)
+            self?.queue.async {
+                guard let self else { return }
+                let waiting = self.pendingStarts.removeValue(forKey: feedID) ?? []
+                for parked in waiting {
+                    if started {
+                        self.serveExisting(playlist, feedID: feedID, name: "index.m3u8", on: parked)
+                    } else {
+                        self.respond(status: "404 Not Found", on: parked, close: true)
+                    }
+                }
+            }
+        }
+    }
+
+    private func serveExisting(_ fileURL: URL, feedID: UUID, name: String, on conn: NWConnection) {
         guard FileManager.default.fileExists(atPath: fileURL.path),
               let data = try? Data(contentsOf: fileURL) else {
             respond(status: "404 Not Found", on: conn, close: true)
             return
         }
         recordAccess(for: feedID)
-        let contentType = components[1].hasSuffix(".m3u8")
+        let contentType = name.hasSuffix(".m3u8")
             ? "application/vnd.apple.mpegurl"
             : "video/mp2t"
         respond(status: "200 OK", on: conn, body: data, contentType: contentType, close: true)

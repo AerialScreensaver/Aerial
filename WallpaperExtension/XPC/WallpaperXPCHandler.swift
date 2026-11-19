@@ -162,10 +162,31 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
     // result.resumeTimestamp IS used: it's non-nil only on the first pop
     // after a playlist cache load — exactly the cold-start/respawn case
     // where the renderer should resume at the persisted position.
-    let result = ExtensionVideoLoader.shared.getNextVideo(
+    var result = ExtensionVideoLoader.shared.getNextVideo(
         isVertical: false, screenUUID: playlistScreenUUID
     )
-    if let video = result.video {
+    // Skip live feeds that just proved unplayable (see
+    // `LiveFeedAvailability`): pop past them. Seeing an id twice means the
+    // playlist wrapped with nothing but benched feeds — leave the loop and
+    // let the cached fallback below take the slot.
+    let now = ProcessInfo.processInfo.systemUptime
+    var skipped: Set<String> = []
+    var nothingPlayable = false
+    // The user picked this entry (popover jump): try it even if benched.
+    let userPicked = benchBypassScopes.withLock { $0.remove(playlistScreenUUID ?? sharedPlaylistScope) != nil }
+    while !userPicked, let video = result.video, video.isLive,
+          liveFeedAvailability.withLock({ $0.isBenched(id: video.id, now: now) }) {
+        guard skipped.insert(video.id).inserted, skipped.count <= 64 else {
+            debugLog("  selectPlayback(uuid=\(playlistScreenUUID?.prefix(8) ?? "nil-shared")): every live entry is unavailable (\(skipped.count)) — cached fallback")
+            nothingPlayable = true
+            break
+        }
+        debugLog("  selectPlayback: skipping unavailable live feed \(video.secondaryName)")
+        result = ExtensionVideoLoader.shared.getNextVideo(
+            isVertical: false, screenUUID: playlistScreenUUID
+        )
+    }
+    if !nothingPlayable, let video = result.video {
         if let selection = playbackSelection(for: video, resumeAt: result.resumeTimestamp,
                                              playDuration: result.playDuration) {
             debugLog("  selectPlayback(uuid=\(playlistScreenUUID?.prefix(8) ?? "nil-shared")) → \(video.isLive ? "LIVE" : "playlist"): \(video.secondaryName)\(result.resumeTimestamp.map { String(format: ", resumeAt=%.1fs", $0) } ?? "")")
@@ -178,6 +199,36 @@ private func selectPlayback(screenUUID playlistScreenUUID: String?) -> PlaybackS
         return .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback), playDuration: nil)
     }
     return nil
+}
+
+/// Live feeds that ran out of recovery attempts, benched for a cooldown
+/// (id → failure). Written from live renderer queues, read by the playlist
+/// selection and the status writer.
+private let liveFeedAvailability = OSAllocatedUnfairLock(initialState: LiveFeedAvailability())
+
+/// Playlist scopes (screen UUID, or `sharedPlaylistScope`) whose NEXT
+/// selection is an explicit user pick and must not skip a benched feed.
+private let benchBypassScopes = OSAllocatedUnfairLock<Set<String>>(initialState: [])
+private let sharedPlaylistScope = "shared"
+
+/// Call right before an explicit jump re-pops the playlist: rotation
+/// skips benched feeds, but an entry the user picked is tried at once.
+func allowBenchedFeedOnNextSelection(screenUUID: String?) {
+    _ = benchBypassScopes.withLock { $0.insert(screenUUID ?? sharedPlaylistScope) }
+}
+
+/// Benched live feeds for `wallpaper-status.json`, so the Companion can
+/// flag them: id → reason, and id → when each is tried again. The bench
+/// runs on system uptime; the retry times are converted to wall clock
+/// here (seconds since 1970).
+func unavailableLiveFeeds() -> (reasons: [String: String], retryAt: [String: Double]) {
+    let now = ProcessInfo.processInfo.systemUptime
+    let wallClock = Date().timeIntervalSince1970
+    return liveFeedAvailability.withLock { state in
+        state.prune(now: now)
+        return (state.benched(now: now),
+                state.retryDelays(now: now).mapValues { wallClock + $0 })
+    }
 }
 
 /// Map a playlist pick to the engine-facing selection. Live entries are
@@ -816,6 +867,9 @@ func writeWallpaperStatus(reason: String) {
         }
     }
     status.autoPausedScreens = WallpaperControlListener.shared.autoPausedScreens()
+    let unavailable = unavailableLiveFeeds()
+    status.unavailableLiveFeeds = unavailable.reasons
+    status.unavailableLiveFeedsRetryAt = unavailable.retryAt
     _ = JSONPreferencesStore.shared.write(status, to: WallpaperStatusState.fileURL)
     CFNotificationCenterPostNotification(
         CFNotificationCenterGetDarwinNotifyCenter(),
@@ -1298,7 +1352,8 @@ private func seedPauseState(_ renderer: any PlaybackRenderer, rendererKey: Strin
         battery: listener.currentBatteryPaused,
         coverage: inputs.coverage,
         thermal: listener.currentThermalPaused,
-        camera: listener.currentCameraPaused
+        camera: listener.currentCameraPaused,
+        systemSleep: listener.currentSystemAsleep
     )
 }
 
@@ -1643,11 +1698,19 @@ private func makeRenderer(
 /// live handoff. Shared mode passes nil so `resolvePlaylist` returns
 /// the sharedPlaylist — same content across all subscribed displays.
 private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, playlistScreenUUID: String?) {
-    renderer.nextVideoProvider = {
-        // A stashed live entry: this call IS the loop boundary (the
-        // first pop happened at the START of the current video) — hand
-        // the slot to the live engine now.
-        if let pending = sharedHandlerState.takePendingSwitch(key: rendererKey) {
+    renderer.nextVideoProvider = { request in
+        // A stashed live entry (popped at the START of the current video)
+        // takes the slot at the loop boundary or on an explicit advance.
+        // Any other call is a mid-clip re-pick — a reader rebuilt after a
+        // deep pause or a watchdog recovery, a replacement renderer
+        // starting up: the entry stays stashed and the clip keeps looping.
+        // Treating those as the boundary cut files short and bounced a
+        // manual jump straight back to the stream (2026-11-16).
+        if sharedHandlerState.hasPendingSwitch(key: rendererKey) {
+            guard request.allowsPendingEngineSwitch,
+                  let pending = sharedHandlerState.takePendingSwitch(key: rendererKey) else {
+                return nil
+            }
             switchSharedRenderer(key: rendererKey, to: pending, playlistScreenUUID: playlistScreenUUID)
             return nil   // loop current until the switch lands
         }
@@ -1663,6 +1726,17 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
             debugLog("  live entry queued for key=\(shortKey(rendererKey)) — engine switch at the loop boundary")
             return nil
         }
+    }
+
+    // Play-duration cut before a live entry: the renderer arms the cut
+    // when an engine switch is stashed, and fires it here.
+    renderer.hasPendingEngineSwitch = {
+        sharedHandlerState.hasPendingSwitch(key: rendererKey)
+    }
+    renderer.triggerPendingEngineSwitch = {
+        guard let pending = sharedHandlerState.takePendingSwitch(key: rendererKey) else { return false }
+        switchSharedRenderer(key: rendererKey, to: pending, playlistScreenUUID: playlistScreenUUID)
+        return true
     }
 
     renderer.previousVideoProvider = {
@@ -1698,11 +1772,53 @@ private func installFileHooks(on renderer: VideoRenderer, rendererKey: String, p
         pushCurrentVideoToOverlays(rendererKey: rendererKey, reason: "video-change")
     }
 
-    // Watchdog escalation: the reader cancel did not free the pump. Log
-    // only for now — the mirror keeps status/snapshot/control served;
-    // a renderer replacement hangs off this hook if field logs show it.
-    renderer.onQueueWedged = {
-        debugLog("🐕 [Handler] renderer key=\(shortKey(rendererKey)) queue still wedged after the watchdog cancel — replacement not implemented; status/snapshot keep serving from the mirror")
+    // Pump watchdog: the renderer's queue is stuck inside a blocking
+    // read. Replace the whole renderer (same video, same position, new
+    // queue) and abandon the stuck one — its reader is never cancelled
+    // from outside. Fired off the renderer queue.
+    renderer.onPumpStalled = { [weak renderer] url, resumeAt in
+        guard let renderer else { return }
+        replaceStalledRenderer(renderer, key: rendererKey, url: url, resumeAt: resumeAt,
+                               playlistScreenUUID: playlistScreenUUID)
+    }
+}
+
+/// When each key's renderer was last replaced for a stalled pump
+/// (`ProcessInfo.systemUptime`). `rendererSwitchQueue` only.
+private nonisolated(unsafe) var stallReplacedAt: [String: TimeInterval] = [:]
+
+/// Swap a renderer whose pump is stuck inside a blocking AVFoundation
+/// read for a fresh one on the same video and position. At most once per
+/// key per `PumpWatchdogPolicy.replacementInterval`: when the decoder is
+/// slow for everyone a second renderer would stall the same way, and the
+/// slow read usually returns by itself.
+private func replaceStalledRenderer(_ stalled: VideoRenderer, key: String, url: URL, resumeAt: Double?,
+                                    playlistScreenUUID: String?) {
+    rendererSwitchQueue.async {
+        let live = sharedHandlerState.allRenderers().contains { $0.rendererKey == key && $0.renderer === stalled }
+        guard live else {
+            debugLog("🐕 [Handler] stalled renderer key=\(shortKey(key)) is no longer installed — nothing to replace")
+            return
+        }
+        let now = ProcessInfo.processInfo.systemUptime
+        guard PumpWatchdogPolicy.mayReplace(lastReplacedAt: stallReplacedAt[key], now: now) else {
+            let ago = now - (stallReplacedAt[key] ?? now)
+            debugLog("🐕 [Handler] renderer key=\(shortKey(key)) stalled again \(Int(ago))s after its last replacement — not replacing (at most one per \(Int(PumpWatchdogPolicy.replacementInterval))s); status/snapshot keep serving from the mirror")
+            return
+        }
+        guard !switchesInFlight.contains(key) else {
+            debugLog("🐕 [Handler] renderer key=\(shortKey(key)) stalled during an engine switch — leaving it to the switch")
+            return
+        }
+        stallReplacedAt[key] = now
+        let at = resumeAt.map { String(format: "%.1fs", $0) } ?? "start"
+        debugLog("🐕 [Handler] replacing stalled renderer key=\(shortKey(key)) → \(url.lastPathComponent) at \(at)")
+        switchSharedRenderer(
+            key: key,
+            to: .file(url: url, resumeAt: resumeAt, rotation: rotationOverride(for: url), playDuration: nil),
+            playlistScreenUUID: playlistScreenUUID,
+            abandoningStalled: stalled
+        )
     }
 }
 
@@ -1731,13 +1847,22 @@ private func installLiveHooks(on renderer: LiveStreamRenderer, rendererKey: Stri
         }
         return video.url
     }
-    renderer.requestCachedFallback = {
-        guard let fallback = pickRandomCachedVideo() else { return }
-        switchSharedRenderer(
-            key: rendererKey,
-            to: .file(url: fallback, resumeAt: nil, rotation: rotationOverride(for: fallback), playDuration: nil),
-            playlistScreenUUID: playlistScreenUUID
-        )
+    renderer.onFeedUnavailable = { videoId, name, reason in
+        liveFeedAvailability.withLock {
+            $0.noteFailure(id: videoId, reason: reason, now: ProcessInfo.processInfo.systemUptime)
+        }
+        debugLog("🎥 [LiveStream] \(name) benched for \(Int(LiveFeedAvailability.cooldown / 60)) min — \(reason)")
+        statusWriteQueue.async { writeWallpaperStatus(reason: "live-feed-unavailable") }
+    }
+    renderer.onFeedRecovered = { videoId in
+        let wasBenched = liveFeedAvailability.withLock { state -> Bool in
+            let benched = state.failures[videoId] != nil
+            state.noteSuccess(id: videoId)
+            return benched
+        }
+        if wasBenched {
+            statusWriteQueue.async { writeWallpaperStatus(reason: "live-feed-recovered") }
+        }
     }
     renderer.onVideoChanged = {
         scheduleVideoChangeStatusWrite()
@@ -1792,8 +1917,10 @@ private func applyOverlayVideo(rendererKey: String, reason: String, generation: 
     let targets = sharedHandlerState.allWallpapers()
         .filter { $0.wallpaper.mirror.rendererKey == rendererKey && $0.wallpaper.mirror.hasOverlay }
         .map(\.wallpaper)
-    // The menu bar band ("Color from video") rides the same cut timing.
-    let menuBarFollows = WallpaperControlListener.shared.currentMenuBarBackground == .videoColor
+    // The menu bar band ("Color from video", the blur styles) rides the
+    // same cut timing.
+    let menuBarStyle = WallpaperControlListener.shared.currentMenuBarBackground
+    let menuBarFollows = menuBarStyle == .videoColor || menuBarStyle.isBlur
     guard !targets.isEmpty || menuBarFollows else { return }
 
     let file = renderer.currentAssetURL.lastPathComponent
@@ -1869,7 +1996,14 @@ private nonisolated(unsafe) var switchesInFlight: Set<String> = []
 /// (`replaceRenderer` keeps the refCount), migrates the subscriber
 /// layers, re-seeds live state, and stops the old engine. Hard cut —
 /// no ghost transition across engines (v1).
-func switchSharedRenderer(key: String, to selection: PlaybackSelection, playlistScreenUUID: String?) {
+///
+/// `abandoningStalled`: the stalled-pump replacement. Once the new
+/// renderer is installed, that renderer (if it is still the one being
+/// replaced) is abandoned instead of stopped — its queue is blocked, so
+/// nothing may wait on it, and its late-running subscriber removals
+/// must not touch layers the new renderer feeds by then.
+func switchSharedRenderer(key: String, to selection: PlaybackSelection, playlistScreenUUID: String?,
+                          abandoningStalled stalled: VideoRenderer? = nil) {
     rendererSwitchQueue.async {
         guard !switchesInFlight.contains(key) else {
             debugLog("  engine switch already in flight for key=\(shortKey(key)) — ignoring")
@@ -1897,6 +2031,9 @@ func switchSharedRenderer(key: String, to selection: PlaybackSelection, playlist
                     debugLog("  engine switch: key=\(shortKey(key)) vanished — discarding new renderer")
                     newRenderer.stop()
                     return
+                }
+                if let stalled, old.renderer === stalled {
+                    stalled.abandon(reason: "pump stalled, replaced")
                 }
                 handlerQueue.async {
                     // Migrate every wallpaper on this key (rekey ordering):
@@ -3574,6 +3711,9 @@ final class WallpaperXPCHandler: NSObject, WallpaperExtensionXPCProtocol {
         // idle→locked mode churn has settled (the trace shows ~2 s
         // between hostDidWake and the locked updates).
         if String(describing: name ?? "").contains("hostDidWake") {
+            // Full wake only (never fires on dark wakes) — lift the 💤
+            // force pause before the recovery re-primes.
+            WallpaperControlListener.shared.noteHostDidWake()
             recoverAllRenderersAfterWake(reason: "hostDidWake")
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2) {
                 recoverAllRenderersAfterWake(reason: "hostDidWake+2s")

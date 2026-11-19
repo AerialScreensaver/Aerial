@@ -9,6 +9,7 @@
 
 import SwiftUI
 import AppKit
+import Combine
 
 struct LiveFeedsContentView: View {
     @ObservedObject var state: VideoBrowserState
@@ -19,6 +20,11 @@ struct LiveFeedsContentView: View {
     /// Feed id → its catalog video (absent until the stream URL resolves).
     @State private var videoByFeedId: [UUID: AerialVideo] = [:]
     @State private var pendingCacheDelete: PendingCacheDelete?
+    /// Feed id (UUID string) → why the wallpaper extension is currently
+    /// skipping it. From the extension's status file.
+    @State private var unavailable: [String: String] = [:]
+    /// Same feeds: feed id → when the wallpaper tries it again.
+    @State private var retryAt: [String: Date] = [:]
 
     var body: some View {
         ScrollView {
@@ -41,6 +47,14 @@ struct LiveFeedsContentView: View {
         // A feed's catalog video appears once its stream URL resolves
         // (VideoList callback → refreshTrigger).
         .onChange(of: state.refreshTrigger) { _ in reload() }
+        // Only the unavailable-feeds map, de-duplicated: the status file
+        // is rewritten every 30 s and must not redraw the list each time.
+        .onReceive(WallpaperStatusMonitor.shared.$status
+            .map { $0?.unavailableLiveFeeds ?? [:] }
+            .removeDuplicates()) { unavailable = $0 }
+        .onReceive(WallpaperStatusMonitor.shared.$status
+            .map { $0?.unavailableLiveFeedsRetryAt ?? [:] }
+            .removeDuplicates()) { retryAt = LiveFeedDownMessage.pending($0) }
         .videoCacheDeleteAlert($pendingCacheDelete) { state.refreshTrigger += 1 }
         .sheet(isPresented: $showingAdd) {
             LiveFeedEditor(feed: nil, onSave: { feed in
@@ -119,6 +133,8 @@ struct LiveFeedsContentView: View {
     @ViewBuilder
     private func feedRow(_ feed: LiveFeed) -> some View {
         let row = LiveFeedRow(feed: feed,
+                              playbackIssue: unavailable[feed.id.uuidString],
+                              retryAt: retryAt[feed.id.uuidString],
                               onEdit: { editing = feed },
                               onDelete: { LiveFeedManager.shared.remove(id: feed.id) },
                               onPreview: { LiveFeedPreviewWindowController.show(for: feed) },
@@ -228,6 +244,10 @@ struct LiveFeedsContentView: View {
 
 private struct LiveFeedRow: View {
     let feed: LiveFeed
+    /// Why the wallpaper is skipping this feed right now (nil = it isn't).
+    let playbackIssue: String?
+    /// When the wallpaper tries it again (nil = unknown or already due).
+    let retryAt: Date?
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onPreview: () -> Void
@@ -257,6 +277,13 @@ private struct LiveFeedRow: View {
                         Text(resolutionStatus)
                             .font(.caption2)
                             .foregroundStyle(feed.resolvedURL == nil ? .orange : .secondary)
+                    }
+                    if let issue {
+                        Label(issue, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .lineLimit(3)
+                            .help(issueDetail ?? issue)
                     }
                 }
 
@@ -343,6 +370,42 @@ private struct LiveFeedRow: View {
             }
         }
         return feed.sourceURL
+    }
+
+    /// What is wrong with this feed, if anything: a failed resolve
+    /// (yt-dlp / ffmpeg) first, else the wallpaper's own playback failure
+    /// — the only signal a plain HLS link has.
+    private var issue: String? {
+        if let error = feed.lastResolveError, !error.isEmpty {
+            if feed.kind == .rtsp {
+                // The feed stays in its playlists; the stream is started
+                // again whenever the wallpaper next asks for it.
+                return "Can't reach this stream: \(error) It is tried again when its turn comes."
+            }
+            // YouTube: what to do about it, then when it is tried again.
+            // yt-dlp's own message is in the tooltip (`issueDetail`).
+            let lead = feed.resolvedURL != nil ? "Last refresh failed." : "Can't resolve this stream."
+            var text = "\(lead) \(LiveFeedResolver.hint(for: error))"
+            if let failedAt = feed.lastResolveFailedAt {
+                let next = LiveFeedResolvePolicy.nextAutomaticRetry(lastFailedAt: failedAt,
+                                                                   failureCount: feed.resolveFailureCount)
+                if next > Date() {
+                    text += " Next try at \(next.formatted(date: .omitted, time: .shortened))."
+                }
+            }
+            return text
+        }
+        if let playbackIssue {
+            let retry = retryAt.map { LiveFeedDownMessage.text(retryAt: $0) } ?? "Feed down, will retry shortly"
+            return "\(retry) (\(playbackIssue))"
+        }
+        return nil
+    }
+
+    /// Tooltip for the issue line: the tool's raw message when there is one.
+    private var issueDetail: String? {
+        guard feed.kind == .youtube, let error = feed.lastResolveError, !error.isEmpty else { return nil }
+        return "yt-dlp: \(error)"
     }
 
     private var resolutionStatus: String {

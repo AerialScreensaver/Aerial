@@ -48,6 +48,10 @@ struct DesktopSettingsPanel: View {
 
     /// "Menu bar background" band style (wallpaper only).
     @State private var menuBarBackground: MenuBarBackgroundStyle = WallpaperControl.shared.currentMenuBarBackground
+    /// Tint strength of the blur styles.
+    @State private var menuBarBlurStrength: Double = WallpaperControl.shared.currentMenuBarBlurStrength
+    /// How blurred the blur styles are (0...1).
+    @State private var menuBarBlurAmount: Double = WallpaperControl.shared.currentMenuBarBlurAmount
 
     /// Auto-advance the playlist at a fixed cadence (even while paused).
     @State private var autoAdvanceEnabled: Bool = false
@@ -528,7 +532,46 @@ struct DesktopSettingsPanel: View {
                     WallpaperControl.shared.setMenuBarBackground(newValue)
                 }
 
-                Text("Draws a solid band behind the menu bar so its text keeps the same color whatever the video shows. \"Color from video\" picks a tone from the top of each video. Desktop only; hidden when the menu bar is set to hide automatically.")
+                if menuBarBackground.isBlur {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Blur")
+                                .font(.system(size: 14))
+                            Spacer()
+                            Text("\(Int((menuBarBlurAmount * 100).rounded()))%")
+                                .font(.system(size: 14, weight: .medium))
+                                .monospacedDigit()
+                                .frame(width: 40, alignment: .trailing)
+                        }
+
+                        Slider(value: $menuBarBlurAmount, in: 0...1, step: 0.05)
+                            .onChange(of: menuBarBlurAmount) { newValue in
+                                WallpaperControl.shared.setMenuBarBlurAmount(newValue)
+                            }
+
+                        HStack {
+                            Text("Tint strength")
+                                .font(.system(size: 14))
+                            Spacer()
+                            Text("\(Int((menuBarBlurStrength * 100).rounded()))%")
+                                .font(.system(size: 14, weight: .medium))
+                                .monospacedDigit()
+                                .frame(width: 40, alignment: .trailing)
+                        }
+
+                        Slider(value: $menuBarBlurStrength, in: MenuBarBackgroundRule.blurStrengthRange, step: 0.05)
+                            .onChange(of: menuBarBlurStrength) { newValue in
+                                WallpaperControl.shared.setMenuBarBlurStrength(newValue)
+                            }
+
+                        Text("Higher values keep the menu bar text steadier; lower values show more of the video.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Text("Draws a band behind the menu bar so its text keeps the same color whatever the video shows. \"Color from video\" picks a tone from the top of each video; the blur options show a softened, lightened or darkened view of the video. Desktop only; hidden when the menu bar is set to hide automatically.")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

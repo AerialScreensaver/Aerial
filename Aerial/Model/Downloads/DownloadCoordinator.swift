@@ -403,16 +403,29 @@ class DownloadCoordinator {
             debugLog("DownloadCoordinator: cache full, cadence not elapsed — skipping space-gated downloads this cycle")
         }
 
-        switch priority {
-        case .critical:
-            downloadCritical(uncached: uncached)
-        case .coverage:
-            downloadCoverage(cached: cached, uncached: uncached, canFree: canFree)
-        case .variety:
-            downloadVariety(uncached: uncached, canFree: canFree)
-        case .maintenance:
-            // Nothing urgent, just regenerate playlist
-            break
+        // Active user playlists first: their entries are not covered by any
+        // filter above, so a video that went missing from the cache was
+        // never fetched again. When this queues something, the filter
+        // strategies sit this cycle out — they would compete for the same
+        // space and the next evaluation picks them up.
+        let playlistIds = PlaylistManager.shared.activeUserPlaylistVideoIds()
+        let missingFromPlaylists = VideoList.instance.videos.filter {
+            playlistIds.contains($0.id) && !$0.isAvailableOffline
+        }
+        if downloadUserPlaylistEntries(missingFromPlaylists) > 0 {
+            debugLog("DownloadCoordinator: user playlist downloads queued — skipping \(priority) downloads this cycle")
+        } else {
+            switch priority {
+            case .critical:
+                downloadCritical(uncached: uncached)
+            case .coverage:
+                downloadCoverage(cached: cached, uncached: uncached, canFree: canFree)
+            case .variety:
+                downloadVariety(uncached: uncached, canFree: canFree)
+            case .maintenance:
+                // Nothing urgent, just regenerate playlist
+                break
+            }
         }
 
         notifyIfDownloading()
@@ -448,6 +461,43 @@ class DownloadCoordinator {
 
     // MARK: - Download Strategies
 
+    /// Active user playlist entries that are not in the cache: queue them
+    /// all, whatever the Replace cadence says — the user picked these
+    /// videos by hand. Returns the number queued.
+    ///
+    /// On a full cache each cacheable download is paid for by one eviction
+    /// (cadence-gated rotation first, then the critical path's single
+    /// force-evict), so a playlist-sized batch can't push the cache over
+    /// its limit. Evictors never pick playlist videos, so this can't eat
+    /// the playlist it is restoring.
+    private func downloadUserPlaylistEntries(_ missing: [AerialVideo]) -> Int {
+        var queued = 0
+        var cacheIsTight = false
+        var queuedCacheable = 0
+        for video in missing {
+            if video.source.isCachable {
+                if !Cache.hasSomeFreeSpace() {
+                    cacheIsTight = true
+                    ensureSpaceOnce()
+                }
+                // Downloads queued so far haven't landed on disk yet, so on
+                // a tight cache the size check alone would wave them all in.
+                if cacheIsTight, !Cache.hasSomeFreeSpace() || queuedCacheable > 0 {
+                    forceEvictOneForCritical()
+                }
+                guard Cache.hasSomeFreeSpace() else {
+                    debugLog("DownloadCoordinator: no room for user playlist video \(video.secondaryName)")
+                    continue
+                }
+                queuedCacheable += 1
+            }
+            debugLog("DownloadCoordinator: user playlist download \(video.secondaryName)")
+            VideoManager.sharedInstance.queueDownload(video)
+            queued += 1
+        }
+        return queued
+    }
+
     /// Critical: download smallest video immediately for fastest first playback.
     private func downloadCritical(uncached: [AerialVideo]) {
         guard let smallest = uncached.first else { return }
@@ -482,9 +532,11 @@ class DownloadCoordinator {
     }
 
     /// Evict the single oldest cached video that's safe to remove (not a
-    /// favorite, not hidden, from a cacheable source). Only called from the
-    /// critical-download path when the cadence-gated `freeCache()` declined
-    /// to free anything but the user needs at least one playable video.
+    /// favorite, not in a user playlist, not hidden, from a cacheable
+    /// source). Only called when the cadence-gated `freeCache()` declined
+    /// to free anything but a download can't wait: the critical path (the
+    /// user needs at least one playable video) and missing user playlist
+    /// entries.
     private func forceEvictOneForCritical() {
         // Same oldest-first order as every other evictor; additionally
         // skips hidden videos (they're the rotation's own first tier) and
@@ -497,7 +549,7 @@ class DownloadCoordinator {
         else { return }
         do {
             try FileManager.default.removeItem(atPath: path)
-            debugLog("DownloadCoordinator: force-evicted \(video.secondaryName) to make room for a critical download")
+            debugLog("DownloadCoordinator: force-evicted \(video.secondaryName) to make room for a required download")
         } catch {
             errorLog("DownloadCoordinator: force-evict failed for \(video.secondaryName): \(error.localizedDescription)")
         }

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct PlaylistSectionView: View {
     @ObservedObject var playbackManager: PlaybackManager
@@ -30,6 +31,12 @@ struct PlaylistSectionView: View {
     /// snapshot never serves a stale playlist list.
     @State private var userPlaylists: [UserPlaylistSummary] = []
     @State private var pendingCacheDelete: PendingCacheDelete?
+    /// Live feeds the wallpaper is skipping: feed id → when it tries
+    /// again. From the extension's status file.
+    @State private var feedDownUntil: [String: Date] = [:]
+    /// YouTube feeds with no playable URL because their resolve keeps
+    /// failing: feed id → hint. From `LiveFeedManager`.
+    @State private var unresolvedFeeds: [String: String] = [:]
 
     var body: some View {
         VStack(spacing: 4) {
@@ -53,6 +60,8 @@ struct PlaylistSectionView: View {
                         uncachedEntries: uncachedEntries,
                         currentIdx: currentIdx,
                         thumbnails: thumbnails,
+                        feedDownUntil: feedDownUntil,
+                        unresolvedFeeds: unresolvedFeeds,
                         playbackManager: playbackManager,
                         downloadTracker: downloadTracker,
                         onTapEntry: { tapEntry(index: $0) },
@@ -73,7 +82,15 @@ struct PlaylistSectionView: View {
             }
         }
         .videoCacheDeleteAlert($pendingCacheDelete) { reload() }
-        .onAppear { reload() }
+        .onAppear { reload(); reloadUnresolvedFeeds() }
+        .onReceive(NotificationCenter.default.publisher(for: LiveFeedManager.didChangeNotification)) { _ in
+            reloadUnresolvedFeeds()
+        }
+        // Only the retry map, de-duplicated — the status file is rewritten
+        // every 30 s and must not redraw the playlist each time.
+        .onReceive(WallpaperStatusMonitor.shared.$status
+            .map { $0?.unavailableLiveFeedsRetryAt ?? [:] }
+            .removeDuplicates()) { feedDownUntil = LiveFeedDownMessage.pending($0) }
         .onChange(of: playbackManager.popoverScreenUUID) { _ in
             // Only the popover scope follows the active screen; a pinned
             // `.screen` scope ignores popover navigation.
@@ -381,6 +398,20 @@ struct PlaylistSectionView: View {
                     .accessibilityLabel(label)
                     .keyboardShortcut(.space, modifiers: [])
                 }
+
+                // A live feed the wallpaper is skipping: badge + tooltip
+                // (the strip has no room for the sentence itself).
+                if let message = feedWarning(for: entry) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.orange)
+                        .padding(3)
+                        .background(Circle().fill(Color.black.opacity(0.55)))
+                        .frame(width: 96, height: 54, alignment: .topTrailing)
+                        .padding(.top, 2)
+                        .help(message)
+                        .accessibilityLabel(message)
+                }
             }
             .shadow(color: isCurrent ? Color.aerial.opacity(0.3) : .clear, radius: 4)
 
@@ -402,6 +433,27 @@ struct PlaylistSectionView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(thumbnailAccessibilityLabel(entry: entry, index: index))
         .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
+    }
+
+    /// Strip tooltip for a live entry in trouble: the wallpaper is skipping
+    /// it, or its YouTube URL can't be resolved.
+    private func feedWarning(for entry: PlaylistEntry) -> String? {
+        if let retryAt = feedDownUntil[entry.videoId], retryAt > Date() {
+            return LiveFeedDownMessage.text(retryAt: retryAt)
+        }
+        if let hint = unresolvedFeeds[entry.videoId] {
+            return "\(LiveFeedDownMessage.cannotResolve). \(hint)"
+        }
+        return nil
+    }
+
+    private func reloadUnresolvedFeeds() {
+        var map: [String: String] = [:]
+        for feed in LiveFeedManager.shared.allFeeds() where feed.kind == .youtube {
+            guard feed.resolvedURL == nil, let error = feed.lastResolveError, !error.isEmpty else { continue }
+            map[feed.id.uuidString] = LiveFeedResolver.hint(for: error)
+        }
+        if map != unresolvedFeeds { unresolvedFeeds = map }
     }
 
     private func thumbnailAccessibilityLabel(entry: PlaylistEntry, index: Int) -> String {

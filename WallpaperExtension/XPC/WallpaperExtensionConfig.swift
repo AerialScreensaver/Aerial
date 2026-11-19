@@ -106,14 +106,15 @@ struct WallpaperExtensionConfig: AppExtensionConfiguration {
         connection.interruptionHandler = { debugLog("XPC interrupted") }
         connection.invalidationHandler = {
             debugLog("XPC invalidated")
-            // The agent dropped us (its 5-min idle disconnect); RunningBoard
-            // suspends ~100 ms later and kills a process holding Metal's
-            // file lock (0xDEAD10CC). When nothing is hosted, leave now —
-            // the ONLY place a voluntary exit is safe: the agent has already
+            // The agent dropped us (its 5-min disconnect — which can fire
+            // even while a wallpaper is still hosted); RunningBoard
+            // suspends within ~100 ms and kills a process holding Metal's
+            // file lock (0xDEAD10CC). Leave now, hosted or not — the ONLY
+            // place a voluntary exit is safe: the agent has already
             // invalidated its proxy, so its next acquire launches a fresh
             // process. Exiting anywhere else leaves it with an interrupted
             // proxy and every acquire failing with 4099 (default saver).
-            // May not return; the async line above can be lost and the
+            // Never returns; the async line above can be lost and the
             // synchronous "🚪 idle exit" line is the record.
             idleExit.onConnectionInvalidated()
         }

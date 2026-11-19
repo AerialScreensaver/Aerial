@@ -653,6 +653,18 @@ class PlaylistManager {
         }
     }
 
+    /// Every video id referenced by any playlist (shared and per screen).
+    /// Used to keep the live feeds that will actually play resolved.
+    func videoIDsInPlaylists() -> Set<String> {
+        return queue.sync {
+            var ids = Set(state.sharedPlaylist?.entries.map(\.videoId) ?? [])
+            for playlist in state.screenPlaylists.values {
+                ids.formUnion(playlist.entries.map(\.videoId))
+            }
+            return ids
+        }
+    }
+
     /// Get all entries for a screen's playlist (nil = shared).
     func allEntries(for screenUUID: String? = nil) -> [PlaylistEntry] {
         return queue.sync {
@@ -703,6 +715,21 @@ class PlaylistManager {
                 }
             }
             return result
+        }
+    }
+
+    /// Video ids of every ACTIVE user playlist (shared + per-screen).
+    /// `activeFilters()` can't express these (filterMode -1 is no
+    /// `NewShouldPlay`), so the download coordinator asks for them
+    /// separately to re-download entries that went missing from the cache.
+    func activeUserPlaylistVideoIds() -> Set<String> {
+        return queue.sync {
+            var ids = Set<String>()
+            let playlists = [state.sharedPlaylist].compactMap { $0 } + Array(state.screenPlaylists.values)
+            for playlist in playlists where playlist.filterMode == -1 {
+                ids.formUnion(playlist.entries.map(\.videoId))
+            }
+            return ids
         }
     }
 

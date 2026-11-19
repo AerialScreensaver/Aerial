@@ -64,6 +64,16 @@ struct WallpaperStatusState: Codable, Equatable {
     var nowPlayingRotationElapsed: [String: Double] = [:]
     var nowPlayingRotationLength: [String: Double] = [:]
 
+    /// Live feeds the extension could not play and is skipping for now:
+    /// feed id (UUID string) → short reason. Cleared when the feed plays
+    /// again or its cooldown ends. Lets the Companion flag dead links —
+    /// plain HLS feeds have no resolve step that could fail visibly.
+    var unavailableLiveFeeds: [String: String] = [:]
+    /// Same feeds: feed id → when the extension will try it again
+    /// (seconds since 1970). The popover shows "Feed down, will retry at
+    /// HH:MM" from it.
+    var unavailableLiveFeedsRetryAt: [String: Double] = [:]
+
     /// Version of the control state the extension last applied. Companion
     /// compares this against its own counter to detect a deaf extension
     /// (missed Darwin notification) and re-post.
@@ -113,6 +123,8 @@ extension WallpaperStatusState {
         nowPlayingRate = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRate) ?? [:]
         nowPlayingRotationElapsed = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRotationElapsed) ?? [:]
         nowPlayingRotationLength = try c.decodeIfPresent([String: Double].self, forKey: .nowPlayingRotationLength) ?? [:]
+        unavailableLiveFeeds = try c.decodeIfPresent([String: String].self, forKey: .unavailableLiveFeeds) ?? [:]
+        unavailableLiveFeedsRetryAt = try c.decodeIfPresent([String: Double].self, forKey: .unavailableLiveFeedsRetryAt) ?? [:]
         appliedControlVersion = try c.decodeIfPresent(Int.self, forKey: .appliedControlVersion) ?? 0
         extensionVersion = try c.decodeIfPresent(String.self, forKey: .extensionVersion) ?? ""
         extensionBuild = try c.decodeIfPresent(String.self, forKey: .extensionBuild) ?? ""

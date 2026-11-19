@@ -11,8 +11,9 @@
 // Lifecycle quirks handled here:
 //  - yt-dlp-resolved URLs expire (~hours): the stall watchdog rebuilds
 //    the item from a fresh URL (the handler hook re-reads entries.json
-//    after the Companion's TTL-gated re-resolve), then falls back to a
-//    cached file after repeated failures.
+//    after the Companion's TTL-gated re-resolve). A feed that stays dead
+//    is benched and the playlist moves on to its next entry; a cached
+//    file only takes over when nothing else is playable.
 //  - Rotation after `playSeconds` re-pops the playlist: live→live
 //    replaces the item in place (free URL refresh), live→file asks the
 //    handler to swap the whole renderer.
@@ -76,8 +77,16 @@ final class LiveStreamRenderer: @unchecked Sendable {
     private var framesEnqueued: Int = 0
     /// Stall-recovery ladder position; resets when frames flow again.
     private var recoveryAttempts = 0
+    /// The current player has not delivered a frame yet — the first one
+    /// reports the feed as working (clears a bench).
+    private var awaitingFirstFrame = true
     /// Throttle for the failed-renderer 🚑 log in the 60 Hz pull loop.
     private var lastFailedFlushLogAt: CFAbsoluteTime = 0
+    /// Per-subscriber readiness gate (see `LiveEnqueueGate`) and its
+    /// counters: per-layer enqueues withheld, and flushes it triggered.
+    private var enqueueGates: [ObjectIdentifier: LiveEnqueueGate] = [:]
+    private var framesSkipped: Int = 0
+    private var gateFlushes: Int = 0
 
     /// Off-queue mirror of the queue-confined state (same rationale as
     /// `VideoRenderer.Published`): status, snapshot and diagnostics reads
@@ -115,8 +124,11 @@ final class LiveStreamRenderer: @unchecked Sendable {
     /// Stall recovery: re-read the live source from disk and return a
     /// fresh stream URL for the given feed id (nil = feed gone).
     var refreshStreamURL: ((String) -> URL?)?
-    /// Recovery exhausted — show any cached file instead of a dead feed.
-    var requestCachedFallback: (() -> Void)?
+    /// Recovery exhausted for a feed (id, name, reason): the handler
+    /// benches it so the playlist skips it for a while.
+    var onFeedUnavailable: ((String, String, String) -> Void)?
+    /// A feed delivered its first frame since the player was built.
+    var onFeedRecovered: ((String) -> Void)?
     /// Video changed (rotation) — handler debounces a status write.
     var onVideoChanged: (() -> Void)?
 
@@ -208,6 +220,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
         self.itemOutput = output
         self.formatDescription = nil
         self.lastFrameAt = CFAbsoluteTimeGetCurrent()
+        self.awaitingFirstFrame = true
         applyAudioToPlayer()
 
         debugLog("  [LiveStream] playing \(feedName) — \(url.absoluteString.prefix(96))…")
@@ -289,12 +302,35 @@ final class LiveStreamRenderer: @unchecked Sendable {
             } else if renderer.requiresFlushToResumeDecoding {
                 renderer.flush()
             }
-            renderer.enqueue(immediate)
+            // Never queue into a layer that is not taking data: an
+            // unconditional enqueue here is what let 52,000 frames pile up
+            // behind a stuck queue (2026-11-15/16). Variant-D windows
+            // present from `lastSample`, so a skipped layer still shows
+            // the frame.
+            let key = ObjectIdentifier(layer)
+            var gate = enqueueGates[key] ?? LiveEnqueueGate()
+            let action = gate.decide(ready: renderer.isReadyForMoreMediaData)
+            enqueueGates[key] = gate
+            switch action {
+            case .enqueue:
+                renderer.enqueue(immediate)
+            case .skip:
+                framesSkipped &+= 1
+            case .flushThenEnqueue:
+                gateFlushes &+= 1
+                debugLog("🚑 [LiveStream] subscriber not accepting frames — flushing (flush #\(gateFlushes), \(framesSkipped) frame(s) skipped so far)")
+                renderer.flush()
+                renderer.enqueue(immediate)
+            }
         }
         lastSample = immediate
         lastFrameAt = CFAbsoluteTimeGetCurrent()
         framesEnqueued &+= 1
         recoveryAttempts = 0
+        if awaitingFirstFrame {
+            awaitingFirstFrame = false
+            onFeedRecovered?(videoId)
+        }
         publish()
     }
 
@@ -334,6 +370,8 @@ final class LiveStreamRenderer: @unchecked Sendable {
         }
         switch selection {
         case .live(let url, let videoId, let name, let seconds):
+            // A new feed starts its own recovery ladder.
+            recoveryAttempts = 0
             streamURL = url
             self.videoId = videoId
             self.feedName = name
@@ -377,8 +415,20 @@ final class LiveStreamRenderer: @unchecked Sendable {
                 buildPlayer(url: streamURL)
                 publish()
             } else {
-                debugLog("⚠️ [LiveStream] \(feedName) unrecoverable — falling back to cached video")
-                requestCachedFallback?()
+                // Out of attempts: bench this feed and move on to the next
+                // playlist entry right away — live in place, file through
+                // the engine switch. The selection skips benched feeds and
+                // hands back a cached video when nothing else is playable.
+                let detail = player?.currentItem?.error?.localizedDescription
+                let reason = failed ? "playback failed\(detail.map { ": \($0)" } ?? "")" : "no video received"
+                debugLog("⚠️ [LiveStream] \(feedName) unrecoverable (\(reason)) — skipping to the next entry")
+                onFeedUnavailable?(videoId, feedName, reason)
+                // Restart the ladder: if nothing else can take the slot
+                // (no other entry, no cached video) this feed is simply
+                // retried rather than declared dead every 2 s.
+                recoveryAttempts = 0
+                lastFrameAt = CFAbsoluteTimeGetCurrent()
+                rotate(using: selectNext)
             }
         }
     }
@@ -390,7 +440,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
     }
 
     private var effectivePaused: Bool {
-        pauseReasons.contains(.policy) || (!pauseReasons.isEmpty && !pauseInhibited)
+        !pauseReasons.isDisjoint(with: .forced) || (!pauseReasons.isEmpty && !pauseInhibited)
     }
 
     /// Converge the player to the current intent. Live pauses are
@@ -459,7 +509,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
         }
     }
 
-    func syncCompanionPauseReasons(user: Bool, battery: Bool, coverage: Bool, thermal: Bool, camera: Bool) {
+    func syncCompanionPauseReasons(user: Bool, battery: Bool, coverage: Bool, thermal: Bool, camera: Bool, systemSleep: Bool) {
         queue.async { [weak self] in
             guard let self else { return }
             var next = pauseReasons.intersection(.policy)
@@ -468,6 +518,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
             if coverage { next.insert(.coverage) }
             if thermal { next.insert(.thermal) }
             if camera { next.insert(.camera) }
+            if systemSleep { next.insert(.systemSleep) }
             guard next != pauseReasons else { return }
             pauseReasons = next
             convergePlaybackState(context: "seed")
@@ -607,6 +658,10 @@ final class LiveStreamRenderer: @unchecked Sendable {
     func addSubscriber(_ layer: AVSampleBufferDisplayLayer) {
         queue.async { [weak self] in
             guard let self, isRunning else { return }
+            // A layer coming from the file engine still carries that
+            // engine's stopped timebase and unpresented frames — live
+            // frames queued behind them without ever being released.
+            SubscriberLayerHandover.adopt(layer, timebase: nil)
             subscribers.append(layer)
             debugLog("  [LiveStream] subscriber +1 → \(subscribers.count) total")
             // Instant join with the most recent frame.
@@ -621,6 +676,10 @@ final class LiveStreamRenderer: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self else { return }
             subscribers.removeAll { $0 === layer }
+            enqueueGates.removeValue(forKey: ObjectIdentifier(layer))
+            // Leave no live frame behind for the next engine: the file
+            // engine's feed never started on a layer that still held them.
+            SubscriberLayerHandover.release(layer, from: nil)
             debugLog("  [LiveStream] subscriber -1 → \(subscribers.count) total")
             publish()
         }
@@ -741,7 +800,7 @@ final class LiveStreamRenderer: @unchecked Sendable {
 
     private func diagnosticsLineOnQueue() -> String {
         let sinceFrame = String(format: "%.1f", CFAbsoluteTimeGetCurrent() - lastFrameAt)
-        return "LIVE subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) feed=\(feedName) rate=\(player?.rate ?? 0) paused=\(isPaused) reasons=\(pauseReasons.summary) fed=\(framesEnqueued) lastFrame=\(sinceFrame)s recovery=\(recoveryAttempts)"
+        return "LIVE subs=\(subscribers.count) ssCount=\(screensaverSubscriberCount) locked=\(lockedScreenCount) ssNotif=\(screensaverActiveFromNotification) feed=\(feedName) rate=\(player?.rate ?? 0) paused=\(isPaused) reasons=\(pauseReasons.summary) fed=\(framesEnqueued) skipped=\(framesSkipped) flushes=\(gateFlushes) lastFrame=\(sinceFrame)s recovery=\(recoveryAttempts)"
     }
 
     private static let snapshotContext = CIContext(options: [.useSoftwareRenderer: false])

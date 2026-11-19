@@ -167,9 +167,11 @@ struct IdleExitRuleTests {
         #expect(IdleExitRule.decide(contexts: 0, renderers: 2) == .exit)
     }
 
-    @Test("a hosted window keeps the process")
-    func stayWhenHosting() {
-        #expect(IdleExitRule.decide(contexts: 1, renderers: 0) == .stay(reason: "hosting contexts=1 renderers=0"))
-        #expect(IdleExitRule.decide(contexts: 2, renderers: 2) == .stay(reason: "hosting contexts=2 renderers=2"))
+    @Test("the agent's disconnect exits even with a window still hosted (staying = suspend → 0xDEAD10CC)")
+    func exitWhenHosting() {
+        // 2026-11-05: agent dropped us with the headless display's wallpaper live.
+        #expect(IdleExitRule.decide(contexts: 1, renderers: 1) == .exit)
+        #expect(IdleExitRule.decide(contexts: 1, renderers: 0) == .exit)
+        #expect(IdleExitRule.decide(contexts: 2, renderers: 2) == .exit)
     }
 }

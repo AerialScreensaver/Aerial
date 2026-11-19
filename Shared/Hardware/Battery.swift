@@ -10,18 +10,33 @@ import IOKit.ps
 
 struct Battery {
 
+    // MARK: - Logging
+    /// These helpers are polled about once a second by the Battery overlay,
+    /// so each line is logged only when it differs from the last one logged
+    /// under the same key.
+    private static let logLock = NSLock()
+    private static var lastLogged: [String: String] = [:]
+
+    private static func logOnChange(_ key: String, _ message: String) {
+        logLock.lock()
+        let changed = lastLogged[key] != message
+        if changed { lastLogged[key] = message }
+        logLock.unlock()
+        if changed { debugLog(message) }
+    }
+
     // MARK: - Battery detection
     static func hasBattery() -> Bool {
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else {
-            debugLog("🔋 IOPSCopyPowerSourcesInfo returned nil")
+            logOnChange("hasBattery", "🔋 IOPSCopyPowerSourcesInfo returned nil")
             return false
         }
         guard let sources: NSArray = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() else {
-            debugLog("🔋 IOPSCopyPowerSourcesList returned nil")
+            logOnChange("hasBattery", "🔋 IOPSCopyPowerSourcesList returned nil")
             return false
         }
         let result = sources.count > 0
-        debugLog("🔋 hasBattery = \(result) (sources: \(sources.count))")
+        logOnChange("hasBattery", "🔋 hasBattery = \(result) (sources: \(sources.count))")
         return result
     }
 
@@ -34,7 +49,7 @@ struct Battery {
         #endif
         let estimate = IOPSGetTimeRemainingEstimate()
         let result = estimate != kIOPSTimeRemainingUnlimited
-        debugLog("🔋 isUnplugged = \(result) (timeEstimate: \(estimate))")
+        logOnChange("isUnplugged", "🔋 isUnplugged = \(result)")
         return result
     }
 
@@ -57,12 +72,12 @@ struct Battery {
 
     static func getRemainingPercent() -> Int {
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else {
-            debugLog("🔋 getRemainingPercent — no snapshot")
+            logOnChange("percent", "🔋 getRemainingPercent — no snapshot")
             return 0
         }
 
         guard let sources: NSArray = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() else {
-            debugLog("🔋 getRemainingPercent — no sources list")
+            logOnChange("percent", "🔋 getRemainingPercent — no sources list")
             return 0
         }
 
@@ -70,20 +85,20 @@ struct Battery {
         if sources.count > 0 {
             for ps in sources {
                 guard let info: NSDictionary = IOPSGetPowerSourceDescription(snapshot, ps as CFTypeRef)?.takeUnretainedValue() else {
-                    debugLog("🔋 getRemainingPercent — no description for source")
+                    logOnChange("percent", "🔋 getRemainingPercent — no description for source")
                     return 0
                 }
 
                 if let capacity = info[kIOPSCurrentCapacityKey] as? Int,
                     let max = info[kIOPSMaxCapacityKey] as? Int {
                     let percent = Int(Double(capacity)/Double(max)*100)
-                    debugLog("🔋 getRemainingPercent = \(percent)% (\(capacity)/\(max))")
+                    logOnChange("percent", "🔋 getRemainingPercent = \(percent)% (\(capacity)/\(max))")
                     return percent
                 }
             }
         }
 
-        debugLog("🔋 getRemainingPercent — no sources found")
+        logOnChange("percent", "🔋 getRemainingPercent — no sources found")
         return 0
     }
 }

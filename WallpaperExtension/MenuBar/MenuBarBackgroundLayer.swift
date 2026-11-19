@@ -2,11 +2,12 @@
 //  MenuBarBackgroundLayer.swift
 //  Aerial4WallpaperExtension
 //
-//  The "Menu bar background" band: a solid strip across the top of a
-//  desktop window, exactly as tall as the menu bar (notch included),
-//  with a soft shadow beneath. macOS picks the menu bar's text/glyph
-//  tint from the pixels behind it; a solid band keeps that choice
-//  stable whatever the video shows.
+//  The "Menu bar background" band: a strip across the top of a desktop
+//  window, exactly as tall as the menu bar (notch included), with a
+//  soft shadow beneath. macOS picks the menu bar's text/glyph tint from
+//  the pixels behind it; a solid colour, or a tiny tinted blur of the
+//  video stretched across the strip, keeps that choice stable whatever
+//  the video shows.
 //
 //  Pure presentation — knows nothing about renderers or settings.
 //  `MenuBarBackgroundController` decides when it exists and what colour
@@ -29,6 +30,9 @@ final class MenuBarBackgroundLayer: CALayer {
         // the "No videos" fallback (1 000) and the diagnostic badge (10 000).
         layer.zPosition = 900
         layer.backgroundColor = color
+        // The blur styles' image is a few pixels tall: stretch it smoothly.
+        layer.contentsGravity = .resize
+        layer.magnificationFilter = .linear
         layer.shadowColor = CGColor(gray: 0, alpha: 1)
         layer.shadowOpacity = 0.25
         layer.shadowRadius = 3
@@ -59,5 +63,26 @@ final class MenuBarBackgroundLayer: CALayer {
         fade.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         backgroundColor = color
         add(fade, forKey: "color")
+    }
+
+    /// Show a blur image over the colour, cross-fading from whatever the
+    /// band shows now. Keep `fade` under the sampling interval so two
+    /// fades never overlap.
+    func setImage(_ image: CGImage, fade: CFTimeInterval) {
+        if fade > 0 {
+            let transition = CATransition()
+            transition.type = .fade
+            transition.duration = fade
+            transition.timingFunction = CAMediaTimingFunction(name: .linear)
+            add(transition, forKey: "image")
+        }
+        contents = image
+    }
+
+    /// Back to the plain colour (a solid style was picked).
+    func clearImage() {
+        guard contents != nil else { return }
+        removeAnimation(forKey: "image")
+        contents = nil
     }
 }

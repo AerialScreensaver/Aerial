@@ -13,6 +13,10 @@ struct PlaylistListView<MenuContent: View>: View {
     let uncachedEntries: [PlaylistEntry]
     let currentIdx: Int
     let thumbnails: [String: NSImage]
+    /// Live feeds the wallpaper is skipping: feed id → when it tries again.
+    var feedDownUntil: [String: Date] = [:]
+    /// YouTube feeds with no playable URL: feed id → what to do about it.
+    var unresolvedFeeds: [String: String] = [:]
     @ObservedObject var playbackManager: PlaybackManager
     @ObservedObject var downloadTracker: DownloadTracker
     var onTapEntry: (Int) -> Void
@@ -131,10 +135,26 @@ struct PlaylistListView<MenuContent: View>: View {
                         .lineLimit(1)
                 }
 
-                Text(entry.videoName)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                if let retryAt = feedDownUntil[entry.videoId], retryAt > Date() {
+                    // The wallpaper is skipping this feed until then;
+                    // clicking the row tries it at once.
+                    Label(LiveFeedDownMessage.text(retryAt: retryAt), systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                        .lineLimit(1)
+                        .help("Click to try this feed now")
+                } else if let hint = unresolvedFeeds[entry.videoId] {
+                    Label(LiveFeedDownMessage.cannotResolve, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                        .lineLimit(1)
+                        .help(hint)
+                } else {
+                    Text(entry.videoName)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()

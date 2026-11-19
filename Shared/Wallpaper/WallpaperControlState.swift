@@ -101,6 +101,14 @@ struct WallpaperControlState: Codable, Equatable {
     /// rationale as the other flags.
     var cameraPaused: Bool = false
 
+    /// System-sleep span flag, set by Companion's `SystemSleepState` on
+    /// willSleep and cleared on the next full wake (didWake) — true
+    /// through every dark wake in between. The extension maps it to a
+    /// FORCE pause (wins over lock/saver): nothing is visible asleep,
+    /// and decoding into a headless virtual display during dark wakes
+    /// exhausted swap on macOS 27 (💤).
+    var systemAsleep: Bool = false
+
     /// Per-screenUUID state — keyed by the CFUUIDCreateString form of
     /// the screen's CGDisplayCreateUUIDFromDisplayID output (matches
     /// what the playlist code keys by).
@@ -196,6 +204,15 @@ struct WallpaperControlState: Codable, Equatable {
     /// without a permanent menu bar has height 0.
     var menuBarGeometry: [String: MenuBarGeometry] = [:]
 
+    /// Tint strength of the blur styles, set by the slider under the
+    /// style picker (see `MenuBarBackgroundRule.blurStrength`); nil =
+    /// never changed, the default.
+    var menuBarBlurStrength: Double?
+
+    /// How blurred the blur styles are, 0...1, set by the "Blur" slider
+    /// (see `MenuBarBackgroundRule.blurAmount`); nil = the default.
+    var menuBarBlurAmount: Double?
+
     var menuBarBackgroundValue: MenuBarBackgroundStyle {
         MenuBarBackgroundStyle(rawValue: menuBarBackground) ?? .off
     }
@@ -236,6 +253,7 @@ extension WallpaperControlState {
         batteryPaused = try c.decodeIfPresent(Bool.self, forKey: .batteryPaused) ?? false
         thermalPaused = try c.decodeIfPresent(Bool.self, forKey: .thermalPaused) ?? false
         cameraPaused = try c.decodeIfPresent(Bool.self, forKey: .cameraPaused) ?? false
+        systemAsleep = try c.decodeIfPresent(Bool.self, forKey: .systemAsleep) ?? false
         screens = try c.decodeIfPresent([String: WallpaperScreenControl].self, forKey: .screens) ?? [:]
         settingsGeneration = try c.decodeIfPresent(Int.self, forKey: .settingsGeneration) ?? 0
         overlayGeneration = try c.decodeIfPresent(Int.self, forKey: .overlayGeneration) ?? 0
@@ -252,6 +270,8 @@ extension WallpaperControlState {
         menuBarBackground = try c.decodeIfPresent(String.self, forKey: .menuBarBackground)
             ?? MenuBarBackgroundStyle.off.rawValue
         menuBarGeometry = try c.decodeIfPresent([String: MenuBarGeometry].self, forKey: .menuBarGeometry) ?? [:]
+        menuBarBlurStrength = try c.decodeIfPresent(Double.self, forKey: .menuBarBlurStrength)
+        menuBarBlurAmount = try c.decodeIfPresent(Double.self, forKey: .menuBarBlurAmount)
     }
 }
 
@@ -316,8 +336,8 @@ enum SaverAcquireRule {
 /// `archiveUsage.db/lock.mdb` file lock (held for the process lifetime by
 /// the Metal framework, not ours to release; the lock allow-list for an
 /// extension is empty) and kills with 0xDEAD10CC — 9 of 9 idle kills on
-/// 2026-09-23/24. Leaving inside the agent's disconnect, when nothing is
-/// hosted, is the only clean way out: the agent has already invalidated
+/// 2026-09-23/24. Leaving inside the agent's disconnect (hosted windows or
+/// not, since 2026-11-05) is the only clean way out: the agent has already invalidated
 /// its proxy (`[…] disconnect` / `invalidationHandler called` in its log),
 /// so the next acquire launches a fresh process exactly as it does after
 /// the kill, without the crash report.
@@ -335,24 +355,30 @@ enum SaverAcquireRule {
 enum IdleExitRule {
     enum Verdict: Equatable, Sendable {
         case exit
-        case stay(reason: String)
     }
 
-    /// `contexts` = hosted wallpaper windows; `renderers` = live
-    /// SharedRenderers, which may outlive the last window: the 120 s grace
-    /// teardown runs on the uptime clock (paused while the Mac sleeps), the
-    /// agent's 5-min disconnect on the wall clock. Display sleep → idle
-    /// sleep invalidates the saver at sleep entry, and the first dark wake
-    /// past 5 min brings the disconnect with the renderers still alive
-    /// (13 kills 24–27 Sept 2026, all `renderers=1|2`; a real user wake
-    /// re-arms the agent via hostDidWake, dark wakes do not). Those
-    /// renderers have no subscribers (timebase held at rate 0) and the
-    /// sidecar and snapshots were flushed at invalidate, so leaving with
-    /// them alive loses nothing on disk — only hosted windows keep the
-    /// process.
+    /// Always `.exit`: once the agent has dropped us, nothing we still
+    /// hold keeps the process alive.
+    ///
+    /// `renderers` = live SharedRenderers, which may outlive the last
+    /// window: the 120 s grace teardown runs on the uptime clock (paused
+    /// while the Mac sleeps), the agent's 5-min disconnect on the wall
+    /// clock (13 kills 24–27 Sept 2026, all `renderers=1|2`). They have no
+    /// subscribers and the sidecar/snapshots were flushed at invalidate.
+    ///
+    /// `contexts` = windows we still believe are hosted. This used to keep
+    /// the process ("stay"), but the agent does disconnect with a wallpaper
+    /// still live in its runtime — 2026-11-05 13:45:50 on a user's Mac: a
+    /// powered-off monitor left only the headless virtual display's
+    /// wallpaper (`Computed lifecycle action nothing … display: 29A3E625`),
+    /// yet the 5-min timer armed at the real display's invalidate fired,
+    /// the agent dropped its assertion, RunningBoard suspended us ~0 ms
+    /// later, found Metal's archiveUsage.db lock and killed us 0xDEAD10CC.
+    /// The kill leaves the agent with an *interrupted* proxy, so the
+    /// wallpaper never came back (no INIT for 75+ min, 21 such
+    /// `skipped … contexts≥1` on that Mac in a month). Staying can only end
+    /// in that kill; those contexts are dead with the assertion anyway.
     static func decide(contexts: Int, renderers: Int) -> Verdict {
-        contexts == 0
-            ? .exit
-            : .stay(reason: "hosting contexts=\(contexts) renderers=\(renderers)")
+        .exit
     }
 }

@@ -6,6 +6,7 @@
 //  protection, and the stop condition.
 //
 
+import Foundation
 import Testing
 @testable import Aerial
 
@@ -77,5 +78,52 @@ struct CacheTrimPlannerTests {
             C(id: "y", bytes: gb, isHidden: false, inRotation: false, order: 0),
         ])
         #expect(result.ids == ["x", "y"])
+    }
+}
+
+/// Every evictor exempts the videos of user playlists; this is the id set
+/// they exempt, read from the manifests on disk.
+@Suite("User playlist video ids (eviction exemption)")
+struct UserPlaylistVideoIdsTests {
+
+    private func makeDirectory() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AerialTests-Playlists-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private func write(_ json: String, _ name: String, in dir: URL) throws {
+        try json.write(to: dir.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+
+    @Test("union of every manifest's entries; index and unreadable files ignored")
+    func unionAcrossManifests() throws {
+        let dir = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        // Same shape the Companion writes (field bundle 4.1.0beta15).
+        try write("""
+        { "createdAt": 811705198.45, "cycleMode": 0, "id": "67322176-CA50-47F3-9A45-C9B60F92193F", "name": "sea",
+          "entries": [
+            { "duration": 241.2, "secondaryName": "Bumpheads", "videoId": "A", "videoName": "Sea" },
+            { "secondaryName": "Cownose Rays", "videoId": "B", "videoName": "Sea" } ] }
+        """, "67322176-CA50-47F3-9A45-C9B60F92193F.json", in: dir)
+        try write("""
+        { "entries": [ { "videoId": "B" }, { "videoId": "C" } ] }
+        """, "second.json", in: dir)
+        try write("""
+        { "version": 1, "playlists": [ { "id": "67322176-CA50-47F3-9A45-C9B60F92193F", "name": "sea", "entryCount": 2, "order": 0 } ] }
+        """, "_index.json", in: dir)
+        try write("not json", "broken.json", in: dir)
+        try write("{ \"entries\": [ { \"videoId\": \"Z\" } ] }", "notes.txt", in: dir)
+
+        #expect(UserPlaylistIndex.allVideoIds(in: dir) == ["A", "B", "C"])
+    }
+
+    @Test("no Playlists directory: nothing exempted")
+    func missingDirectory() {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("AerialTests-missing-\(UUID().uuidString)")
+        #expect(UserPlaylistIndex.allVideoIds(in: dir).isEmpty)
     }
 }

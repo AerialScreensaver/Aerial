@@ -25,6 +25,12 @@ final class WallpaperControlListener: @unchecked Sendable {
 
     private let lock = NSLock()
     private var lastApplied: WallpaperControlState
+    /// Set when the host reports a full wake (`hostDidWake`) while the
+    /// Companion's `systemAsleep` flag is still up — masks the flag so a
+    /// late (or missing: Companion killed mid-sleep) didWake write can't
+    /// hold the wallpaper paused. Cleared by the next systemAsleep
+    /// change from the Companion. Guarded by `lock`.
+    private var hostWokeSinceSleepSignal = false
 
     private init() {
         // Read whatever Companion wrote during a prior session. Counts
@@ -95,6 +101,27 @@ final class WallpaperControlListener: @unchecked Sendable {
         return lastApplied.cameraPaused
     }
 
+    /// Whether the system is in its sleep span (Companion willSleep →
+    /// didWake), masked by a host full-wake. Acquires during a dark wake
+    /// seed the renderer's FORCE `.systemSleep` reason from this (💤).
+    var currentSystemAsleep: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.systemAsleep && !hostWokeSinceSleepSignal
+    }
+
+    /// The host reported a full wake (`hostDidWake`). Lift the sleep
+    /// pause now instead of waiting for the Companion's didWake write.
+    func noteHostDidWake() {
+        let wasAsleep: Bool = lock.withLock {
+            let was = lastApplied.systemAsleep && !hostWokeSinceSleepSignal
+            hostWokeSinceSleepSignal = true
+            return was
+        }
+        guard wasAsleep else { return }
+        debugLog("💤 [WallpaperControl] hostDidWake — lifting system-sleep pause ahead of Companion")
+        forEachRenderer { $0.renderer.resume(reason: .systemSleep) }
+    }
+
     /// Version of the last-applied control state — echoed into the
     /// status file so the Companion can detect a deaf extension and
     /// re-post the control notification.
@@ -141,6 +168,18 @@ final class WallpaperControlListener: @unchecked Sendable {
     var currentMenuBarBackground: MenuBarBackgroundStyle {
         lock.lock(); defer { lock.unlock() }
         return lastApplied.menuBarBackgroundValue
+    }
+
+    /// Tint strength Companion wants for the blur styles (nil = default).
+    var currentMenuBarBlurStrength: Double? {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.menuBarBlurStrength
+    }
+
+    /// Blur amount Companion wants for the blur styles (nil = default).
+    var currentMenuBarBlurAmount: Double? {
+        lock.lock(); defer { lock.unlock() }
+        return lastApplied.menuBarBlurAmount
     }
 
     /// Per-screen menu bar geometry relayed by Companion (screen UUID →
@@ -242,7 +281,9 @@ final class WallpaperControlListener: @unchecked Sendable {
     /// legit write. Counters/generations are deliberately NOT replayed.
     private func resyncAbsoluteState() {
         wakeContentsSwapPresenters()
-        let state = lock.withLock { lastApplied }
+        let (state, systemAsleep) = lock.withLock {
+            (lastApplied, lastApplied.systemAsleep && !hostWokeSinceSleepSignal)
+        }
         let config = TransitionConfig(
             style: state.transitionStyleValue,
             duration: state.transitionDuration
@@ -258,7 +299,8 @@ final class WallpaperControlListener: @unchecked Sendable {
                 battery: state.batteryPaused,
                 coverage: inputs.coverage,
                 thermal: state.thermalPaused,
-                camera: state.cameraPaused
+                camera: state.cameraPaused,
+                systemSleep: systemAsleep
             )
         }
         reassertAudioOwnership(context: "rebaseline")
@@ -340,6 +382,16 @@ final class WallpaperControlListener: @unchecked Sendable {
                     : shared.renderer.resume(reason: .camera)
             }
         }
+        if next.systemAsleep != prev.systemAsleep {
+            // A fresh Companion signal supersedes any hostDidWake mask.
+            lock.withLock { hostWokeSinceSleepSignal = false }
+            debugLog("💤 [WallpaperControl] system sleep pause \(prev.systemAsleep) → \(next.systemAsleep)")
+            forEachRenderer { shared in
+                next.systemAsleep
+                    ? shared.renderer.pause(reason: .systemSleep)
+                    : shared.renderer.resume(reason: .systemSleep)
+            }
+        }
 
         // 1b-bis. Audio enable/volume — converge every renderer through
         //     the owner policy (exactly one renderer sounds).
@@ -373,7 +425,9 @@ final class WallpaperControlListener: @unchecked Sendable {
         // 1d. Menu bar background style or geometry (auto-hide toggled,
         //     display added, notch screen resized) — re-apply the band on
         //     every window.
-        if next.menuBarBackground != prev.menuBarBackground || next.menuBarGeometry != prev.menuBarGeometry {
+        if next.menuBarBackground != prev.menuBarBackground || next.menuBarGeometry != prev.menuBarGeometry
+            || next.menuBarBlurStrength != prev.menuBarBlurStrength
+            || next.menuBarBlurAmount != prev.menuBarBlurAmount {
             MenuBarBackgroundController.applyAll(reason: "control-delta")
         }
 
@@ -496,6 +550,9 @@ final class WallpaperControlListener: @unchecked Sendable {
                     // The jump supersedes any queued engine switch.
                     sharedHandlerState.clearPendingSwitch(key: shared.rendererKey)
                     ExtensionVideoLoader.shared.seekPlaylist(to: targetIndex, screenUUID: scope)
+                    // The user picked this entry: a benched live feed is
+                    // tried anyway instead of being skipped like in rotation.
+                    allowBenchedFeedOnNextSelection(screenUUID: scope)
                     shared.renderer.jumpNow()
                 }
             }

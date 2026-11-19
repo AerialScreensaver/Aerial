@@ -336,6 +336,9 @@
 		F0QCF0032F30000000000001 /* QueueConfined.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0QCF0012F30000000000001 /* QueueConfined.swift */; };
 		F0PWP0022F30000000000001 /* PumpWatchdogPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */; };
 		F0PWP0032F30000000000001 /* PumpWatchdogPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */; };
+		F0LPP0022F30000000000001 /* LivePlaybackPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LPP0012F30000000000001 /* LivePlaybackPolicy.swift */; };
+		F0LPP0032F30000000000001 /* LivePlaybackPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LPP0012F30000000000001 /* LivePlaybackPolicy.swift */; };
+		F0LPT0022F30000000000001 /* LivePlaybackPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0LPT0012F30000000000001 /* LivePlaybackPolicyTests.swift */; };
 		F0PWT0022F30000000000001 /* PumpWatchdogPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */; };
 		F0BST0022F30000000000001 /* BoundedSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BST0012F30000000000001 /* BoundedSyncTests.swift */; };
 		F0QCT0022F30000000000001 /* QueueConfinedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0QCT0012F30000000000001 /* QueueConfinedTests.swift */; };
@@ -419,6 +422,7 @@
 		F0MNB0082F30000000000001 /* MenuBarBackgroundLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MNB0072F30000000000001 /* MenuBarBackgroundLayer.swift */; };
 		F0MNB00A2F30000000000001 /* MenuBarColorSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MNB0092F30000000000001 /* MenuBarColorSampler.swift */; };
 		F0MNB00C2F30000000000001 /* MenuBarBackgroundController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MNB00B2F30000000000001 /* MenuBarBackgroundController.swift */; };
+		F0MNB00F2F30000000000001 /* MenuBarBlurSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MNB00E2F30000000000001 /* MenuBarBlurSampler.swift */; };
 		F0MNB10F2F30000000000001 /* MenuBarBackgroundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0MNB10E2F30000000000001 /* MenuBarBackgroundTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -771,6 +775,8 @@
 		F0BSY0012F30000000000001 /* BoundedSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedSync.swift; sourceTree = "<group>"; };
 		F0QCF0012F30000000000001 /* QueueConfined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueConfined.swift; sourceTree = "<group>"; };
 		F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PumpWatchdogPolicy.swift; sourceTree = "<group>"; };
+		F0LPP0012F30000000000001 /* LivePlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackPolicy.swift; sourceTree = "<group>"; };
+		F0LPT0012F30000000000001 /* LivePlaybackPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackPolicyTests.swift; sourceTree = "<group>"; };
 		F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PumpWatchdogPolicyTests.swift; sourceTree = "<group>"; };
 		F0BST0012F30000000000001 /* BoundedSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedSyncTests.swift; sourceTree = "<group>"; };
 		F0QCT0012F30000000000001 /* QueueConfinedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueConfinedTests.swift; sourceTree = "<group>"; };
@@ -803,6 +809,7 @@
 		F0MNB0072F30000000000001 /* MenuBarBackgroundLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBackgroundLayer.swift; sourceTree = "<group>"; };
 		F0MNB0092F30000000000001 /* MenuBarColorSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarColorSampler.swift; sourceTree = "<group>"; };
 		F0MNB00B2F30000000000001 /* MenuBarBackgroundController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBackgroundController.swift; sourceTree = "<group>"; };
+		F0MNB00E2F30000000000001 /* MenuBarBlurSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBlurSampler.swift; sourceTree = "<group>"; };
 		F0MNB10E2F30000000000001 /* MenuBarBackgroundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBackgroundTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1316,6 +1323,7 @@
 				F0LSR0042F30000000000001 /* PlaybackRenderer.swift */,
 				F0PRG0012F30000000000001 /* PresentingRing.swift */,
 				F0PWP0012F30000000000001 /* PumpWatchdogPolicy.swift */,
+				F0LPP0012F30000000000001 /* LivePlaybackPolicy.swift */,
 				F0WPX01B2F30000000000001 /* VideoRenderer.swift */,
 				F0TRN0022F30000000000001 /* VideoTransitionCoordinator.swift */,
 				F0WPX01C2F30000000000001 /* WallpaperSnapshotCache.swift */,
@@ -1327,6 +1335,7 @@
 			isa = PBXGroup;
 			children = (
 				F0MNB00B2F30000000000001 /* MenuBarBackgroundController.swift */,
+				F0MNB00E2F30000000000001 /* MenuBarBlurSampler.swift */,
 				F0MNB0072F30000000000001 /* MenuBarBackgroundLayer.swift */,
 				F0MNB0092F30000000000001 /* MenuBarColorSampler.swift */,
 			);
@@ -1574,6 +1583,7 @@
 				F0TST0132F30000000000001 /* CodableShimsABITests.swift */,
 				F0PRT0072F30000000000001 /* ConcurrencyTests.swift */,
 				F0PWT0012F30000000000001 /* PumpWatchdogPolicyTests.swift */,
+				F0LPT0012F30000000000001 /* LivePlaybackPolicyTests.swift */,
 				F0BST0012F30000000000001 /* BoundedSyncTests.swift */,
 				F0QCT0012F30000000000001 /* QueueConfinedTests.swift */,
 				F0MRT0012F30000000000001 /* MediaRemoteAdapterProtocolTests.swift */,
@@ -1852,6 +1862,7 @@
 				F0BSY0032F30000000000001 /* BoundedSync.swift in Sources */,
 				F0QCF0032F30000000000001 /* QueueConfined.swift in Sources */,
 				F0PWP0032F30000000000001 /* PumpWatchdogPolicy.swift in Sources */,
+				F0LPP0032F30000000000001 /* LivePlaybackPolicy.swift in Sources */,
 				F0GSN0032F30000000000001 /* GeometrySanitizer.swift in Sources */,
 				F0OBX0042F30000000000001 /* ObjCExceptionCatcher.m in Sources */,
 				F0OBX0072F30000000000001 /* ObjCException.swift in Sources */,
@@ -2090,6 +2101,7 @@
 				F0PRT0162F30000000000001 /* SidecarJSONFuzzTests.swift in Sources */,
 				F0PRT0172F30000000000001 /* ConcurrencyTests.swift in Sources */,
 				F0PWT0022F30000000000001 /* PumpWatchdogPolicyTests.swift in Sources */,
+				F0LPT0022F30000000000001 /* LivePlaybackPolicyTests.swift in Sources */,
 				F0BST0022F30000000000001 /* BoundedSyncTests.swift in Sources */,
 				F0QCT0022F30000000000001 /* QueueConfinedTests.swift in Sources */,
 				F0MRT0022F30000000000001 /* MediaRemoteAdapterProtocolTests.swift in Sources */,
@@ -2113,6 +2125,7 @@
 				F0BSY0022F30000000000001 /* BoundedSync.swift in Sources */,
 				F0QCF0022F30000000000001 /* QueueConfined.swift in Sources */,
 				F0PWP0022F30000000000001 /* PumpWatchdogPolicy.swift in Sources */,
+				F0LPP0022F30000000000001 /* LivePlaybackPolicy.swift in Sources */,
 				F0GSN0022F30000000000001 /* GeometrySanitizer.swift in Sources */,
 				F0OBX0032F30000000000001 /* ObjCExceptionCatcher.m in Sources */,
 				F0OBX0062F30000000000001 /* ObjCException.swift in Sources */,
@@ -2164,6 +2177,7 @@
 				F0MNB0082F30000000000001 /* MenuBarBackgroundLayer.swift in Sources */,
 				F0MNB00A2F30000000000001 /* MenuBarColorSampler.swift in Sources */,
 				F0MNB00C2F30000000000001 /* MenuBarBackgroundController.swift in Sources */,
+				F0MNB00F2F30000000000001 /* MenuBarBlurSampler.swift in Sources */,
 				F0WPX0B92F30000000000001 /* DarkMode.swift in Sources */,
 				F0WPX0BA2F30000000000001 /* ExtensionHelpers.swift in Sources */,
 				F0WPX0BB2F30000000000001 /* Battery.swift in Sources */,
@@ -2364,7 +2378,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.9;
+				MARKETING_VERSION = 4.1.12test2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2395,7 +2409,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.9;
+				MARKETING_VERSION = 4.1.12test2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2462,7 +2476,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.9;
+				MARKETING_VERSION = 4.1.12test2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2496,7 +2510,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 4.1.9;
+				MARKETING_VERSION = 4.1.12test2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.glouel.Aerial-App.Aerial4WallpaperExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

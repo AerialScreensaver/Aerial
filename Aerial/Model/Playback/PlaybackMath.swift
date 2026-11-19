@@ -42,6 +42,27 @@ enum PlaybackMath {
         return (false, nil)
     }
 
+    /// What follows the current clip, as far as a bounded-loop budget cut
+    /// is concerned.
+    enum BudgetCutSuccessor: Equatable {
+        /// Nothing different follows (single-entry playlist, the same file
+        /// again, no pick): no cut — the clip keeps its seamless loop.
+        case none
+        /// A different file is buffered: cut and swap gaplessly.
+        case nextClip
+        /// A live entry is stashed for this slot: cut by switching engines.
+        case engineSwitch
+    }
+
+    /// Whether a play-duration cut may be armed for this pass, and how it
+    /// completes. The cut used to be armed only for a different FILE, so a
+    /// clip followed by a live feed ignored its play duration and ran to
+    /// its end (2026-11-17: "play for 20 s" still playing at 23 s).
+    static func budgetCutSuccessor(pick: URL?, current: URL, engineSwitchPending: Bool) -> BudgetCutSuccessor {
+        if let pick, pick != current { return .nextClip }
+        return engineSwitchPending ? .engineSwitch : .none
+    }
+
     /// Cold-start resume position for a clip: 0 when the request is nil,
     /// non-finite, ≤ 0, or within `minTail` of the clip's end. A stale
     /// sidecar past EOF (2026-09-21: the idle timebase used to keep

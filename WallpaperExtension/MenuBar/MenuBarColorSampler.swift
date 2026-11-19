@@ -18,13 +18,14 @@ enum MenuBarColorSampler {
     private static let minStripPixels: CGFloat = 32
 
     /// One per process — CIContext setup is expensive. The output is a
-    /// single pixel, so the render itself is cheap.
-    private static let context = CIContext(options: [
+    /// single pixel (or the blur styles' tiny image), so the render
+    /// itself is cheap. Shared with `MenuBarBlurSampler`.
+    static let context = CIContext(options: [
         .useSoftwareRenderer: false,
         .cacheIntermediates: false,
     ])
 
-    private static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
+    static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 
     static func color(from buffer: CVPixelBuffer) -> CGColor? {
         let image = CIImage(cvPixelBuffer: buffer)

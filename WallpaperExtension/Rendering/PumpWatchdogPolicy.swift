@@ -9,27 +9,38 @@
 // watchdog was `queue.async` onto the very queue that was stuck.
 //
 // The watchdog runs OFF the renderer queue (the 2 s feed-health timer):
-// it reads the pump's blocking-call marker and, past `stallThreshold`,
-// calls `cancelReading()` on the stuck reader — the one AVFoundation
-// call that makes a pending `copyNextSampleBuffer` return. If the queue
-// is still blocked `escalateAfterCancel` later the cancel was ignored
-// and the handler's escalation hook fires. The pump then rebuilds the
-// reader on a backoff ladder, never immediately (an immediate rebuild
-// wedged again in the same window).
+// it reads the pump's blocking-call marker and, past the stall threshold,
+// reports the stall to the handler, which replaces the whole renderer
+// (new queue, new reader, same video and position) and abandons the
+// stuck one.
+//
+// It used to call `cancelReading()` on the stuck reader instead. That
+// call, made from another thread while `copyNextSampleBuffer` waits,
+// tears the reader's semaphore down under the waiting thread: in the
+// 2026-11-12 field bundle 22 of 47 watchdog cancels were the process's
+// last log line (EXC_BAD_ACCESS in FigSemaphoreWaitRelative), 12 of them
+// on the first read after login, which was only slow. Rule since then:
+// no thread other than the renderer queue ever cancels a reader.
 
 import Foundation
 
 enum PumpWatchdogPolicy {
-    /// Seconds a single blocking AVFoundation call may take before the
-    /// watchdog cancels the reader. A 4K HEVC decode step is tens of ms;
-    /// a cold decoder session is under a second; a slow external cache
-    /// volume produces its first frame in 1–2 s. Well inside the agent's
-    /// ~30 s snapshot budget even with the backoff + rebuild that follow.
-    static let stallThreshold: TimeInterval = 5
-    /// Seconds after the cancel before the queue counts as wedged for good.
-    static let escalateAfterCancel: TimeInterval = 10
-    /// Rebuild delays after a watchdog cancel, by attempt (1-based);
-    /// the last value repeats.
+    /// Seconds a blocking AVFoundation call may take on a WARM reader
+    /// (one that already delivered a sample) before the pump counts as
+    /// stalled. A 4K HEVC decode step is tens of ms.
+    static let stallThreshold: TimeInterval = 10
+    /// Same, for a COLD call: `startReading`, or the first
+    /// `copyNextSampleBuffer` of a reader. That one opens the decoder
+    /// session and seeks; right after login it took more than 5 s on a
+    /// healthy Mac (the 2026-11-12 bundle), so it gets a long allowance.
+    static let coldStallThreshold: TimeInterval = 30
+    /// While the same call stays blocked, the stall is reported again at
+    /// this interval — and the handler replaces a given renderer key at
+    /// most once per interval, so a decoder that is slow for everyone
+    /// cannot spawn renderers in a loop.
+    static let replacementInterval: TimeInterval = 60
+    /// Rebuild delays after a failed reader create, by attempt
+    /// (1-based); the last value repeats.
     static let backoff: [TimeInterval] = [2, 5, 15]
     /// Re-check cadence while a rebuild is deferred (renderer paused or
     /// without subscribers).
@@ -45,22 +56,30 @@ enum PumpWatchdogPolicy {
 
     enum Decision: Equatable {
         case none
-        case cancel
-        case escalate
+        case stalled
     }
 
-    /// `enteredAt`: when the pump entered its current blocking call (nil
-    /// = not in one). `cancelIssuedAt`: when the watchdog already
-    /// cancelled that call's reader. `escalated`: the escalation for this
-    /// call already fired.
-    static func decide(enteredAt: TimeInterval?, cancelIssuedAt: TimeInterval?,
-                       escalated: Bool, now: TimeInterval) -> Decision {
+    /// All times are on one monotonic clock that does not advance while
+    /// the Mac sleeps (`ProcessInfo.systemUptime`) — a read in flight
+    /// across a sleep is not a stall. `enteredAt`: when the pump entered
+    /// its current blocking call (nil = not in one). `cold`: see
+    /// `coldStallThreshold`. `lastReportedAt`: when this call's stall was
+    /// last reported.
+    static func decide(enteredAt: TimeInterval?, cold: Bool,
+                       lastReportedAt: TimeInterval?, now: TimeInterval) -> Decision {
         guard let enteredAt else { return .none }
-        if let cancelIssuedAt {
-            if !escalated, now - cancelIssuedAt >= escalateAfterCancel { return .escalate }
-            return .none
+        if let lastReportedAt {
+            return now - lastReportedAt >= replacementInterval ? .stalled : .none
         }
-        return now - enteredAt >= stallThreshold ? .cancel : .none
+        let threshold = cold ? coldStallThreshold : stallThreshold
+        return now - enteredAt >= threshold ? .stalled : .none
+    }
+
+    /// Handler-side gate: may the renderer behind a key be replaced now,
+    /// given when it was last replaced for a stall?
+    static func mayReplace(lastReplacedAt: TimeInterval?, now: TimeInterval) -> Bool {
+        guard let lastReplacedAt else { return true }
+        return now - lastReplacedAt >= replacementInterval
     }
 
     /// Delay before rebuild attempt `attempt` (1-based; ≤ 0 reads as 1).

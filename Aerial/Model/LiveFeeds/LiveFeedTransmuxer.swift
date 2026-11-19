@@ -209,6 +209,85 @@ final class LiveFeedTransmuxerManager {
     private let lock = NSLock()
     private var transmuxers: [UUID: LiveFeedTransmuxer] = [:]
     private var reaperTimer: DispatchSourceTimer?
+    /// One start at a time per feed: the gateway (on-demand start), the
+    /// resolver (on-screen refresh, Restart button) and the preview can
+    /// all ask for the same feed at once, and two concurrent starts
+    /// spawned two ffmpeg processes writing the same directory.
+    private var startLocks: [UUID: NSLock] = [:]
+    /// When each feed's last start failed (guarded by `lock`). Written
+    /// and read while holding that feed's start lock, so a caller that
+    /// waited behind a failing start sees the failure — the persisted timestamp in live-feeds.json is
+    /// written later, on the main queue, and let a second ffmpeg launch
+    /// through 400 ms after the first (2026-11-17).
+    private var lastStartFailure: [UUID: Date] = [:]
+
+    /// Thrown to an automatic caller inside the failure backoff. Not a
+    /// new failure: nothing was started.
+    static let backoffErrorCode = -20
+    static func isBackoff(_ error: Error) -> Bool {
+        let ns = error as NSError
+        return ns.domain == "com.glouel.aerial.transmuxer" && ns.code == backoffErrorCode
+    }
+
+    private func startLock(for feedID: UUID) -> NSLock {
+        lock.lock()
+        defer { lock.unlock() }
+        if let existing = startLocks[feedID] { return existing }
+        let created = NSLock()
+        startLocks[feedID] = created
+        return created
+    }
+
+    private func startFailure(for feedID: UUID) -> Date? {
+        lock.lock()
+        defer { lock.unlock() }
+        return lastStartFailure[feedID]
+    }
+
+    private func setStartFailure(_ date: Date?, for feedID: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        lastStartFailure[feedID] = date
+    }
+
+    /// Whether ffmpeg is currently running for this feed.
+    func isRunning(feedID: UUID) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return transmuxers[feedID]?.isRunning == true
+    }
+
+    /// On-demand start, called by the gateway when a player asks for a
+    /// feed's playlist and no transmuxer is running (never started this
+    /// session, idle-reaped, or its camera went away). Blocks until the
+    /// stream is ready or has failed — call it OFF the gateway queue.
+    ///
+    /// This is what lets an RTSP feed stay in the playlist: the
+    /// extension's own attempt to play it is the retry. A camera that is
+    /// still down fails fast, and the failure backoff keeps a player that
+    /// retries every 2 s from respawning ffmpeg each time.
+    func startOnDemand(feedID: UUID) -> Bool {
+        guard let feed = LiveFeedManager.shared.feed(id: feedID), feed.kind == .rtsp else { return false }
+        do {
+            let url = try ensureRunning(for: feed, automatic: true)
+            debugLog("🎥 RTSP feed \(feed.displayName) started on demand")
+            DispatchQueue.main.async {
+                LiveFeedManager.shared.updateResolution(id: feedID, resolvedURL: url.absoluteString, resolvedAt: Date())
+            }
+            return true
+        } catch {
+            // Inside the backoff nothing was started — not a new failure.
+            if Self.isBackoff(error) { return false }
+            let message = error.localizedDescription
+            errorLog("🎥 RTSP on-demand start for \(feed.displayName) failed: \(message)")
+            stop(feedID: feedID)
+            let summary = message.split(separator: "\n").first.map(String.init) ?? message
+            DispatchQueue.main.async {
+                LiveFeedManager.shared.recordResolveFailure(id: feedID, error: summary)
+            }
+            return false
+        }
+    }
 
     private init() {}
 
@@ -216,8 +295,14 @@ final class LiveFeedTransmuxerManager {
     /// the loopback playback URL the extension / preview should use.
     /// Throws if ffmpeg is missing, the gateway can't bind, or ffmpeg
     /// fails to launch.
+    ///
+    /// `automatic`: the caller is not a user action (gateway on-demand
+    /// start, on-screen refresh, playlist pre-warm). Such a call does not
+    /// respawn ffmpeg within the failure backoff — it throws the backoff
+    /// error instead. The Restart button, the preview and add/edit always
+    /// start.
     @discardableResult
-    func ensureRunning(for feed: LiveFeed) throws -> URL {
+    func ensureRunning(for feed: LiveFeed, automatic: Bool = false) throws -> URL {
         guard feed.kind == .rtsp else {
             throw NSError(domain: "com.glouel.aerial.transmuxer", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "feed is not RTSP"])
@@ -229,6 +314,12 @@ final class LiveFeedTransmuxerManager {
 
         try LiveFeedsGateway.shared.ensureRunning()
         let outputDir = LiveFeedsGateway.shared.outputDirectory(for: feed.id)
+
+        // Single-flight: a second caller waits here and then finds the
+        // transmuxer running (or gets its own attempt if the first failed).
+        let starting = startLock(for: feed.id)
+        starting.lock()
+        defer { starting.unlock() }
 
         lock.lock()
         var transmuxer = transmuxers[feed.id]
@@ -246,13 +337,25 @@ final class LiveFeedTransmuxerManager {
         lock.unlock()
 
         if !wasAlreadyRunning {
-            try transmuxer?.start()
-            // ffmpeg needs a few seconds to connect to the RTSP source
-            // and emit the first HLS segment. Block here so the caller
-            // never hands AVPlayer a URL that 404s — if the playlist
-            // doesn't appear (bad URL, unreachable source, codec issue…)
-            // the thrown error carries ffmpeg's stderr tail.
-            try transmuxer?.waitForReady()
+            // Checked here, under the start lock: a caller that queued
+            // behind a start that just failed must not launch its own.
+            if automatic, !LiveFeedResolvePolicy.shouldStartTransmuxer(lastFailedAt: startFailure(for: feed.id), now: Date()) {
+                throw NSError(domain: "com.glouel.aerial.transmuxer", code: Self.backoffErrorCode,
+                              userInfo: [NSLocalizedDescriptionKey: "not restarting ffmpeg yet — the last start just failed"])
+            }
+            do {
+                try transmuxer?.start()
+                // ffmpeg needs a few seconds to connect to the RTSP source
+                // and emit the first HLS segment. Block here so the caller
+                // never hands AVPlayer a URL that 404s — if the playlist
+                // doesn't appear (bad URL, unreachable source, codec issue…)
+                // the thrown error carries ffmpeg's stderr tail.
+                try transmuxer?.waitForReady()
+            } catch {
+                setStartFailure(Date(), for: feed.id)
+                throw error
+            }
+            setStartFailure(nil, for: feed.id)
             // Seed the idle reaper so a pre-warmed feed gets a full
             // timeout window to attract a consumer before being reaped.
             LiveFeedsGateway.shared.recordAccess(for: feed.id)

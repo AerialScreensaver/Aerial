@@ -227,6 +227,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // LiveFeedManager.updateResolution when they come back.
         LiveFeedResolver.shared.resolveAllIfNeeded()
 
+        // RTSP feeds: publish their loopback URLs (gateway listener only,
+        // no ffmpeg). Their transmuxers start when the wallpaper actually
+        // asks for the stream.
+        LiveFeedResolver.shared.publishRTSPFeeds()
+
         // Backfill thumbnails for any feeds that don't have one yet
         // (e.g. first run after upgrading to a build that added them).
         for feed in LiveFeedManager.shared.allFeeds() {

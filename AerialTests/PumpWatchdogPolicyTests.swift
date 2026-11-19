@@ -6,6 +6,9 @@
 //  diagnostics line (WallpaperExtension/Rendering/PumpWatchdogPolicy.swift).
 //  The 2026-09-20 wake wedge: a copyNextSampleBuffer that never returned
 //  took the whole extension down because nothing ran off the stuck queue.
+//  The 2026-11-12 bundle: the watchdog's own cancelReading() crashed the
+//  process on reads that were only slow — hence cold/warm thresholds and
+//  "report, never cancel".
 //
 
 import Foundation
@@ -18,26 +21,42 @@ struct PumpWatchdogPolicyTests {
 
     @Test("no blocking call in flight → nothing to do")
     func idle() {
-        #expect(PumpWatchdogPolicy.decide(enteredAt: nil, cancelIssuedAt: nil, escalated: false, now: t0 + 60) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: nil, cold: false, lastReportedAt: nil, now: t0 + 600) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: nil, cold: true, lastReportedAt: nil, now: t0 + 600) == .none)
     }
 
-    @Test("a call blocked under the threshold is left alone; at the threshold the reader is cancelled")
-    func cancelAtThreshold() {
+    @Test("a warm read is left alone under the threshold and reported stalled at it")
+    func warmThreshold() {
         let threshold = PumpWatchdogPolicy.stallThreshold
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: nil, escalated: false, now: t0 + threshold - 0.1) == .none)
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: nil, escalated: false, now: t0 + threshold) == .cancel)
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: nil, escalated: false, now: t0 + 60) == .cancel)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: false, lastReportedAt: nil, now: t0 + threshold - 0.1) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: false, lastReportedAt: nil, now: t0 + threshold) == .stalled)
     }
 
-    @Test("after the cancel: quiet until escalateAfterCancel, then escalate exactly once")
-    func escalation() {
-        let cancelAt = t0 + PumpWatchdogPolicy.stallThreshold
-        let grace = PumpWatchdogPolicy.escalateAfterCancel
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: cancelAt, escalated: false, now: cancelAt + grace - 1) == .none)
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: cancelAt, escalated: false, now: cancelAt + grace) == .escalate)
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: cancelAt, escalated: true, now: cancelAt + grace + 100) == .none)
-        // A cancel already issued never re-issues, however long it takes.
-        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cancelIssuedAt: cancelAt, escalated: false, now: cancelAt + 1) != .cancel)
+    @Test("a cold read (startReading / first sample) gets the long allowance — the login case")
+    func coldThreshold() {
+        let cold = PumpWatchdogPolicy.coldStallThreshold
+        #expect(cold > PumpWatchdogPolicy.stallThreshold)
+        // The field stalls were cut at 5–8 s; none of those may trip now.
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: true, lastReportedAt: nil, now: t0 + 8.5) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: true, lastReportedAt: nil, now: t0 + cold - 0.1) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: true, lastReportedAt: nil, now: t0 + cold) == .stalled)
+    }
+
+    @Test("a reported stall stays quiet, then repeats once per replacement interval")
+    func repeatedReport() {
+        let reportedAt = t0 + PumpWatchdogPolicy.stallThreshold
+        let interval = PumpWatchdogPolicy.replacementInterval
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: false, lastReportedAt: reportedAt, now: reportedAt + 2) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: false, lastReportedAt: reportedAt, now: reportedAt + interval - 0.1) == .none)
+        #expect(PumpWatchdogPolicy.decide(enteredAt: t0, cold: false, lastReportedAt: reportedAt, now: reportedAt + interval) == .stalled)
+    }
+
+    @Test("a key is replaced at most once per replacement interval")
+    func replacementGate() {
+        let interval = PumpWatchdogPolicy.replacementInterval
+        #expect(PumpWatchdogPolicy.mayReplace(lastReplacedAt: nil, now: t0))
+        #expect(!PumpWatchdogPolicy.mayReplace(lastReplacedAt: t0, now: t0 + interval - 0.1))
+        #expect(PumpWatchdogPolicy.mayReplace(lastReplacedAt: t0, now: t0 + interval))
     }
 
     @Test("rebuild backoff ladder is 2 → 5 → 15 and clamps at both ends")

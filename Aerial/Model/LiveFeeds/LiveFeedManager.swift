@@ -152,9 +152,58 @@ final class LiveFeedManager {
             guard let idx = cache.feeds.firstIndex(where: { $0.id == id }) else { return }
             cache.feeds[idx].resolvedURL = resolvedURL
             cache.feeds[idx].resolvedAt = resolvedAt
+            if resolvedURL != nil {
+                cache.feeds[idx].lastResolveError = nil
+                cache.feeds[idx].lastResolveFailedAt = nil
+                cache.feeds[idx].resolveFailureCount = nil
+            }
             persistLocked()
         }
         syncAndNotify()
+    }
+
+    /// A resolve failed. The error is kept for the Live Feeds panel. The
+    /// URL already on file stays while it is still usable — one failed
+    /// refresh (a transient yt-dlp bot check) must not take a playing
+    /// feed off the air — and is dropped once it has expired, which
+    /// removes the feed from the extension's manifest until it resolves.
+    func recordResolveFailure(id: UUID, error: String, now: Date = Date()) {
+        queue.sync(flags: .barrier) {
+            guard let idx = cache.feeds.firstIndex(where: { $0.id == id }) else { return }
+            cache.feeds[idx].lastResolveError = error
+            cache.feeds[idx].lastResolveFailedAt = now
+            cache.feeds[idx].resolveFailureCount = (cache.feeds[idx].resolveFailureCount ?? 0) + 1
+            // Only a YouTube URL expires. An RTSP feed's loopback URL stays
+            // valid for the session and must stay published: the gateway
+            // restarts its transmuxer on demand, so the extension's next
+            // attempt to play it is the retry.
+            if cache.feeds[idx].kind == .youtube,
+               !LiveFeedResolvePolicy.isUsable(resolvedURL: cache.feeds[idx].resolvedURL,
+                                               resolvedAt: cache.feeds[idx].resolvedAt, now: now) {
+                cache.feeds[idx].resolvedURL = nil
+                cache.feeds[idx].resolvedAt = nil
+            }
+            persistLocked()
+        }
+        syncAndNotify()
+    }
+
+    /// Give every RTSP feed its loopback playback URL (`urlFor` returns
+    /// nil when the gateway is not up). The feed is then listed in the
+    /// extension's manifest whether or not ffmpeg is running — the gateway
+    /// starts it when the stream is actually requested.
+    func publishRTSPURLs(_ urlFor: (UUID) -> String?) {
+        var changed = false
+        queue.sync(flags: .barrier) {
+            for idx in cache.feeds.indices where cache.feeds[idx].kind == .rtsp {
+                guard let url = urlFor(cache.feeds[idx].id), cache.feeds[idx].resolvedURL != url else { continue }
+                cache.feeds[idx].resolvedURL = url
+                cache.feeds[idx].resolvedAt = Date()
+                changed = true
+            }
+            if changed { persistLocked() }
+        }
+        if changed { syncAndNotify() }
     }
 
     // MARK: - Private

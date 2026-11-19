@@ -30,6 +30,44 @@ enum PlaybackSelection {
     case live(url: URL, videoId: String, name: String, playSeconds: Double)
 }
 
+/// A display layer changing hands between engines (live↔file switch,
+/// re-key) or leaving one for good.
+///
+/// The two engines drive a layer differently — the file engine slaves it
+/// to its own `CMTimebase` and enqueues timed frames ahead of the clock,
+/// the live engine enqueues DisplayImmediately frames and uses no
+/// timebase — and neither can drain what the other left behind:
+///  - file → live: the layer kept the stopped file timebase (rate 0) and
+///    its unpresented frames; every live frame queued behind them and
+///    was never released (2026-11-15/16 field bundles: ~52,000 frames,
+///    154 GiB charged to VTDecoderXPCService).
+///  - live → file: the layer's request-media-data callback never fired
+///    for the new feed, which starved after its 2 instant-join frames.
+///
+/// So both sides reset the layer, each on its own queue: the outgoing
+/// engine once it has stopped feeding, the incoming one before its first
+/// enqueue. The two run on different queues in either order; each step
+/// is safe after the other. `flush()` keeps the displayed image.
+enum SubscriberLayerHandover {
+    /// Incoming engine, before its first enqueue. `timebase` nil = the
+    /// engine does not pace the layer (live).
+    static func adopt(_ layer: AVSampleBufferDisplayLayer, timebase: CMTimebase?) {
+        layer.sampleBufferRenderer.flush()
+        layer.controlTimebase = timebase
+    }
+
+    /// Outgoing engine, after it stopped feeding `layer`. `timebase` is
+    /// the one this engine slaved the layer to (nil for live): it is
+    /// cleared only while still installed, so a late release never
+    /// unslaves a layer the next file engine already adopted.
+    static func release(_ layer: AVSampleBufferDisplayLayer, from timebase: CMTimebase?) {
+        layer.sampleBufferRenderer.flush()
+        if let timebase, layer.controlTimebase === timebase {
+            layer.controlTimebase = nil
+        }
+    }
+}
+
 protocol PlaybackRenderer: AnyObject {
     // Subscribers
     func addSubscriber(_ layer: AVSampleBufferDisplayLayer)
@@ -47,7 +85,7 @@ protocol PlaybackRenderer: AnyObject {
     // Pause-reason model
     func pause(reason: PauseReasons)
     func resume(reason: PauseReasons)
-    func syncCompanionPauseReasons(user: Bool, battery: Bool, coverage: Bool, thermal: Bool, camera: Bool)
+    func syncCompanionPauseReasons(user: Bool, battery: Bool, coverage: Bool, thermal: Bool, camera: Bool, systemSleep: Bool)
     func applyActivityPolicy(paused: Bool, animated: Bool)
 
     // Saver / lock modes

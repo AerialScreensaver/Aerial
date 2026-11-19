@@ -558,12 +558,21 @@ struct Cache {
     /// restricts the list to files older than that date (the Replace
     /// cadence); nil means every candidate, which is what a manual trim
     /// needs. Hidden videos are included (they go next in every evictor).
+    /// Videos in any user playlist are never candidates, like favourites:
+    /// nothing re-downloads what a playlist lost except the coordinator's
+    /// active-playlist pass, and a playlist with no cached entry plays
+    /// random videos instead.
     static func evictionCandidates(olderThan cutoff: Date?) -> [AerialVideo] {
         let disabled = disabledSourceCachedVideos()
         let disabledIds = Set(disabled.map(\.id))
-        let currentlyCached = disabled + VideoList.instance.videos.filter {
+        let allCached = disabled + VideoList.instance.videos.filter {
             $0.isAvailableOffline && $0.source.isCachable && !PrefsVideos.favorites.contains($0.id)
                 && !disabledIds.contains($0.id)
+        }
+        let playlistIds = UserPlaylistIndex.allVideoIds()
+        let currentlyCached = allCached.filter { !playlistIds.contains($0.id) }
+        if currentlyCached.count != allCached.count {
+            debugLog("Cache rotation: keeping \(allCached.count - currentlyCached.count) user-playlist video(s)")
         }
         var dated: [(date: Date, disabled: Bool, video: AerialVideo)] = []
         for video in currentlyCached {

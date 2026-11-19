@@ -645,13 +645,19 @@ final class HandlerState: @unchecked Sendable {
     /// The file engine's provider pops the NEXT playlist entry at the
     /// START of the current video — switching engines on that pop would
     /// cut the current video short. The mismatched selection is stashed
-    /// here and the switch fires on the SECOND provider call, exactly
-    /// at the loop boundary.
+    /// here and the switch fires on the provider call made at the loop
+    /// boundary (`NextVideoRequest.allowsPendingEngineSwitch`) — not on a
+    /// mid-clip re-pick.
     private var pendingEngineSwitch: [String: PlaybackSelection] = [:]
 
     func setPendingSwitch(_ selection: PlaybackSelection, key: String) {
         lockChecked(); defer { lock.unlock() }
         pendingEngineSwitch[key] = selection
+    }
+
+    func hasPendingSwitch(key: String) -> Bool {
+        lockChecked(); defer { lock.unlock() }
+        return pendingEngineSwitch[key] != nil
     }
 
     func takePendingSwitch(key: String) -> PlaybackSelection? {
@@ -776,39 +782,32 @@ final class HandlerState: @unchecked Sendable {
 
     // MARK: Idle exit
 
-    /// Decide under the lock and, on `.exit`, end the process WITHOUT
-    /// releasing it: `acquire()` parks its ActiveWallpaper before it
-    /// replies, so an acquire that has replied is visible in `contexts`
-    /// here (→ stay), and one that has not reached `store` yet blocks on
-    /// this lock and dies with the process — the agent never receives a
-    /// contextId from a process about to vanish. `_exit`, not `exit`: no
-    /// atexit handlers or destructors while CoreMedia and dispatch threads
-    /// are live (every disk writer in this process is atomic anyway).
-    /// Nothing in the critical section re-enters this lock. Returns only
-    /// when staying, with the reason. Live renderers do not keep the
-    /// process (their grace timer may never have run across a sleep, see
-    /// `IdleExitRule`); a grace timer firing now blocks on this lock and
-    /// dies with us. `desktopWallpaperActive` is logged for triage only
-    /// (a hosted desktop wallpaper never idles).
-    func exitProcessIfIdle(desktopWallpaperActive: Bool) -> String {
+    /// Decide under the lock and end the process WITHOUT releasing it: an
+    /// acquire that has not reached `store` yet blocks on this lock and
+    /// dies with the process, and a grace timer firing now does the same.
+    /// `_exit`, not `exit`: no atexit handlers or destructors while
+    /// CoreMedia and dispatch threads are live (every disk writer in this
+    /// process is atomic anyway). Nothing in the critical section
+    /// re-enters this lock. Hosted windows and live renderers no longer
+    /// keep the process — see `IdleExitRule` for why staying can only end
+    /// in a 0xDEAD10CC kill. `desktopWallpaperActive` is logged for triage
+    /// only.
+    func exitProcessIfIdle(desktopWallpaperActive: Bool) -> Never {
         lockChecked()
         // A window `invalidate` has marked is on its way out even if its
         // teardown is still queued on the handler queue — count it gone.
         // (A teardown that reaches `remove` after this point blocks on
         // the lock and dies with the process; its disk writes are atomic.)
         let hosted = contexts.count - invalidating.count
-        let verdict = IdleExitRule.decide(contexts: hosted, renderers: renderers.count)
-        switch verdict {
+        switch IdleExitRule.decide(contexts: hosted, renderers: renderers.count) {
         case .exit:
-            let graceNote = renderers.isEmpty ? "" : " (grace teardown pending, no subscribers — leaving anyway)"
+            let hostingNote = hosted == 0 ? "" : " (agent dropped live hosting — leaving anyway)"
+            let graceNote = renderers.isEmpty ? "" : " (grace teardown pending — leaving anyway)"
             let invalidatingNote = invalidating.isEmpty ? "" : " invalidating=\(invalidating.count) (teardown still queued)"
             LogBridge.shared.writeSynchronously(
-                "🚪 idle exit: agent disconnected, contexts=0\(invalidatingNote) renderers=\(renderers.count)\(graceNote) desktopActive=\(desktopWallpaperActive) — leaving before RunningBoard suspends the process; Metal holds archiveUsage.db/lock.mdb and a suspended extension is killed with 0xDEAD10CC",
+                "🚪 idle exit: agent disconnected, contexts=\(hosted)\(hostingNote)\(invalidatingNote) renderers=\(renderers.count)\(graceNote) desktopActive=\(desktopWallpaperActive) — leaving before RunningBoard suspends the process; Metal holds archiveUsage.db/lock.mdb and a suspended extension is killed with 0xDEAD10CC",
                 osLogType: .info)
             Darwin._exit(0)
-        case .stay(let reason):
-            lock.unlock()
-            return reason
         }
     }
 }
@@ -820,18 +819,17 @@ let sharedHandlerState = HandlerState()
 
 // MARK: - Idle exit
 
-/// Runs the "nothing hosted" check when the agent drops the connection —
-/// the one moment a voluntary exit is safe, see `IdleExitRule`.
+/// Leaves the process when the agent drops the connection — the one
+/// moment a voluntary exit is safe, see `IdleExitRule`.
 final class IdleExit: @unchecked Sendable {
-    /// Synchronous on purpose: RunningBoard suspends ~100 ms after the
-    /// disconnect (this handler runs ~1 ms after it), so there is no time
-    /// to defer. May not return.
-    func onConnectionInvalidated() {
+    /// Synchronous on purpose: RunningBoard suspends within ~0–100 ms of
+    /// the disconnect (this handler runs ~1 ms after it), so there is no
+    /// time to defer. Never returns.
+    func onConnectionInvalidated() -> Never {
         // Read the control flag BEFORE the HandlerState lock — never nest
         // the two. Triage only; it does not enter the decision.
         let desktopActive = WallpaperControlListener.shared.currentDesktopWallpaperActive
-        let stayReason = sharedHandlerState.exitProcessIfIdle(desktopWallpaperActive: desktopActive)
-        debugLog("🚪 idle exit skipped (xpc-invalidated): \(stayReason)")
+        sharedHandlerState.exitProcessIfIdle(desktopWallpaperActive: desktopActive)
     }
 }
 

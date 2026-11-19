@@ -210,6 +210,18 @@ final class WallpaperControl: @unchecked Sendable {
         controlQueue.sync { state.menuBarBackgroundValue }
     }
 
+    /// Current blur tint strength (the default when never set). Settings
+    /// UI reads this to seed its slider on appear.
+    var currentMenuBarBlurStrength: Double {
+        controlQueue.sync { MenuBarBackgroundRule.blurStrength(state.menuBarBlurStrength) }
+    }
+
+    /// Current blur amount (the default when never set). Settings UI
+    /// reads this to seed its slider on appear.
+    var currentMenuBarBlurAmount: Double {
+        controlQueue.sync { MenuBarBackgroundRule.blurAmount(state.menuBarBlurAmount) }
+    }
+
     /// Current "play audio from videos" flag. Settings UI reads this
     /// to seed its toggle on appear.
     var currentAudioEnabled: Bool {
@@ -281,6 +293,28 @@ final class WallpaperControl: @unchecked Sendable {
         mutate("setMenuBarBackground(\(style.rawValue))") { state in
             guard style.rawValue != state.menuBarBackground else { return false }
             state.menuBarBackground = style.rawValue
+            return true
+        }
+    }
+
+    /// Set the tint strength of the "Light blur" / "Dark blur" menu bar
+    /// styles (clamped to `MenuBarBackgroundRule.blurStrengthRange`).
+    func setMenuBarBlurStrength(_ value: Double) {
+        let strength = MenuBarBackgroundRule.blurStrength(value)
+        mutate("setMenuBarBlurStrength(\(strength))") { state in
+            guard state.menuBarBlurStrength != strength else { return false }
+            state.menuBarBlurStrength = strength
+            return true
+        }
+    }
+
+    /// Set how blurred the "Light blur" / "Dark blur" menu bar styles are
+    /// (0...1, see `MenuBarBackgroundRule.blurAmount`).
+    func setMenuBarBlurAmount(_ value: Double) {
+        let amount = MenuBarBackgroundRule.blurAmount(value)
+        mutate("setMenuBarBlurAmount(\(amount))") { state in
+            guard state.menuBarBlurAmount != amount else { return false }
+            state.menuBarBlurAmount = amount
             return true
         }
     }
@@ -406,6 +440,18 @@ final class WallpaperControl: @unchecked Sendable {
         mutate("setCameraPaused(\(paused))") { state in
             guard paused != state.cameraPaused else { return false }
             state.cameraPaused = paused
+            return true
+        }
+    }
+
+    /// Set the system-sleep span flag. Driven by `SystemSleepState`
+    /// (willSleep → true, full-wake didWake → false; also false at
+    /// launch so a flag stranded by a Companion killed mid-sleep can't
+    /// hold the wallpaper paused).
+    func setSystemAsleep(_ asleep: Bool) {
+        mutate("setSystemAsleep(\(asleep))") { state in
+            guard asleep != state.systemAsleep else { return false }
+            state.systemAsleep = asleep
             return true
         }
     }
